@@ -1,38 +1,11 @@
 (function () {
-    const script = document.currentScript;
-    const mode = script?.dataset?.wordfall;
-    const gasUrl = window.WORDFALL_CONFIG?.gasUrl;
-
-    function getWordsPromise() {
-        if (window.__wordfallWordsPromise) {
-            return window.__wordfallWordsPromise;
-        }
-        if (!gasUrl) {
-            return Promise.resolve([]);
-        }
-        window.__wordfallWordsPromise = fetch(gasUrl)
-            .then((response) => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .catch((e) => {
-                console.error('データの取得に失敗しました:', e);
-                return [{ word: '取得失敗。URLを確認してください', url: '#' }];
-            });
-        return window.__wordfallWordsPromise;
-    }
-
-    if (mode === 'prefetch') {
-        getWordsPromise();
+    const words = window.WORDFALL_CONFIG?.words;
+    if (!words?.length) {
+        console.error('WORDFALL_CONFIG.words is required');
         return;
     }
 
-    if (!gasUrl) {
-        console.error('WORDFALL_CONFIG.gasUrl is required');
-        return;
-    }
-
-    function pickWord(words) {
+    function pickWord() {
         return words[Math.floor(Math.random() * words.length)];
     }
 
@@ -49,19 +22,12 @@
         setTimeout(() => a.remove(), duration * 1000);
     }
 
-    async function init() {
-        const words = await getWordsPromise();
-        if (words.length === 0) return;
-
-        const initialCount = Math.min(5, words.length);
-        for (let i = 0; i < initialCount; i++) {
-            createWord(pickWord(words));
-        }
-
-        setInterval(() => {
-            createWord(pickWord(words));
-        }, 200);
+    const initialCount = Math.min(5, words.length);
+    for (let i = 0; i < initialCount; i++) {
+        createWord(pickWord());
     }
 
-    init();
+    setInterval(() => {
+        createWord(pickWord());
+    }, 200);
 })();
