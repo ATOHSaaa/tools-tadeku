@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interval</title>
+    <style>
+        :root {
+            --bg-color: #fdfcf0; /* 和紙のような落ち着いた色 */
+            --text-color: #333;
+            --limit-color: #d9534f;
+            --safe-color: #5b7e91;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: "Sawarabi Mincho", "Hiragino Mincho ProN", serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #container {
+            width: 80%;
+            max-width: 700px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 制限インジケーター */
+        .gauge-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .gauge-text {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: var(--safe-color);
+            transition: color 0.3s;
+        }
+
+        .gauge-text.limit {
+            color: var(--limit-color);
+            font-weight: bold;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        #bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--safe-color);
+            transition: width 0.2s linear, background-color 0.3s;
+        }
+
+        #bar-fill.limit {
+            background-color: var(--limit-color);
+        }
+
+        /* エディタ */
+        #editor {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            border-left: 1px solid #ccc;
+            padding: 0 20px;
+            font-size: 1.25rem;
+            line-height: 2;
+            color: var(--text-color);
+            outline: none;
+            resize: none;
+            transition: opacity 0.3s;
+        }
+
+        #editor:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .notice {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #999;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <div class="gauge-container">
+        <div id="gauge-label" class="gauge-text">10秒間の負荷: <span id="current-count">0</span> / 30</div>
+        <div class="bar-bg">
+            <div id="bar-fill"></div>
+        </div>
+    </div>
+
+    <textarea id="editor" placeholder="静かに、言葉を置いてください..."></textarea>
+    
+    <div class="notice">
+        ※10秒間に30文字を超えると、言葉が冷めるまで入力できません。
+    </div>
+</div>
+
+<script>
+    const editor = document.getElementById('editor');
+    const barFill = document.getElementById('bar-fill');
+    const currentCountLabel = document.getElementById('current-count');
+    const gaugeLabel = document.getElementById('gauge-label');
+
+    let inputHistory = []; // 入力されたタイムスタンプを記録
+    const LIMIT_CHARS = 30;
+    const TIME_WINDOW = 10000; // 10秒
+
+    // 監視タイマー
+    setInterval(updateStatus, 100);
+
+    editor.addEventListener('input', (e) => {
+        // 文字が増えた場合のみカウント（削除は制限しない）
+        const now = Date.now();
+        inputHistory.push(now);
+        updateStatus();
+    });
+
+    function updateStatus() {
+        const now = Date.now();
+        
+        // 10秒より前の履歴を削除
+        inputHistory = inputHistory.filter(time => now - time < TIME_WINDOW);
+        
+        const count = inputHistory.length;
+        currentCountLabel.textContent = count;
+
+        // ゲージの反映
+        const percentage = Math.min(100, (count / LIMIT_CHARS) * 100);
+        barFill.style.width = percentage + "%";
+
+        // 制限チェック
+        if (count >= LIMIT_CHARS) {
+            editor.disabled = true;
+            barFill.classList.add('limit');
+            gaugeLabel.classList.add('limit');
+            gaugeLabel.childNodes[0].textContent = "言葉が溢れました。少し待ってください: ";
+            
+            // 余裕ができるまでフォーカスを外す
+            editor.blur();
+        } else {
+            if (editor.disabled) {
+                editor.disabled = false;
+                editor.focus();
+            }
+            barFill.classList.remove('limit');
+            gaugeLabel.classList.remove('limit');
+            gaugeLabel.childNodes[0].textContent = "10秒間の負荷: ";
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>蓼食う虫式 tools</title>
+  <style>
+    :root {
+      --ink: #1a1a18;
+      --paper: #f7f4ee;
+      --muted: #5c5a54;
+      --accent: #6b4e3d;
+      --rule: #d8d2c6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "游明朝", Georgia, serif;
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    main {
+      max-width: 32rem;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 4rem;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.35rem;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 0 0 2.5rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-top: 1px solid var(--rule);
+    }
+    li {
+      border-bottom: 1px solid var(--rule);
+    }
+    a {
+      display: block;
+      padding: 1.1rem 0;
+      color: var(--ink);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    a:hover {
+      color: var(--accent);
+    }
+    .name {
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.15rem;
+    }
+    .title {
+      font-size: 1.05rem;
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>蓼食う虫式 tools</h1>
+    <p class="lead">書くための小さな道具たち</p>
+    <ul>
+      <li>
+        <a href="pedantryfall/">
+          <div class="name">PedantryFall</div>
+          <div class="title">衒学の滝</div>
+        </a>
+      </li>
+      <li>
+        <a href="WordFall/">
+          <div class="name">WordFall</div>
+          <div class="title">物書きのための語彙が降ってくる</div>
+        </a>
+      </li>
+      <li>
+        <a href="stoic/">
+          <div class="name">stoic</div>
+          <div class="title">前進専用エディタ</div>
+        </a>
+      </li>
+      <li>
+        <a href="tachometer/">
+          <div class="name">tachometer</div>
+          <div class="title">執筆速度計測エディタ</div>
+        </a>
+      </li>
+      <li>
+        <a href="Interval/">
+          <div class="name">Interval</div>
+          <div class="title">立ち止まりたい人のための執筆エディタ</div>
+        </a>
+      </li>
+    </ul>
+    <footer>tools.tadeku.net</footer>
+  </main>
+</body>
+</html>

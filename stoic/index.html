@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前進専用エディタ - Stoic</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .status-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        #editor {
+            flex-grow: 1;
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            resize: none;
+            outline: none;
+            padding: 20px 0;
+            caret-color: #00ff00;
+        }
+
+        /* 脱稿ボタンのスタイル */
+        .finish-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #888;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .finish-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 警告時の背景色変化 */
+        body.warning {
+            background-color: #4a0000;
+        }
+
+        /* 脱稿エフェクト */
+        @keyframes flash {
+            0% { background-color: #fff; }
+            100% { background-color: #1a1a1a; }
+        }
+        .flash-animation {
+            animation: flash 0.8s ease-out;
+        }
+
+        .notice {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body id="body">
+    <div id="container">
+        <header>
+            <div class="status-group">
+                <div class="status">文字数: <span id="char-count">0</span></div>
+                <div class="status" id="timer-status">放置: <span id="idle-seconds">0</span>秒</div>
+            </div>
+            <button id="finish-btn" class="finish-btn">脱稿（全消去）</button>
+        </header>
+        <textarea id="editor" placeholder="ここには『前進』しかありません。止まらずに書き続けてください..."></textarea>
+        <div class="notice">Backspace / Delete は無効です</div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const body = document.getElementById('body');
+        const charCount = document.getElementById('char-count');
+        const idleSecondsLabel = document.getElementById('idle-seconds');
+        const finishBtn = document.getElementById('finish-btn');
+
+        let lastInputTime = Date.now();
+
+        // 1. データの復元
+        const savedData = localStorage.getItem('forward-only-content');
+        if (savedData) {
+            editor.value = savedData;
+            charCount.textContent = savedData.length;
+        }
+
+        // 2. 文字数カウント & 自動保存
+        editor.addEventListener('input', () => {
+            const content = editor.value;
+            localStorage.setItem('forward-only-content', content);
+            
+            charCount.textContent = content.length;
+            lastInputTime = Date.now();
+            body.classList.remove('warning');
+            body.style.backgroundColor = '';
+        });
+
+        // 3. 削除キーの無効化
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+            }
+        });
+
+        // 4. 放置監視
+        setInterval(() => {
+            const now = Date.now();
+            const diff = Math.floor((now - lastInputTime) / 1000);
+            idleSecondsLabel.textContent = diff;
+
+            if (diff >= 10 && diff < 30) {
+                body.style.backgroundColor = `rgb(${26 + (diff - 10) * 5}, 26, 26)`;
+            } else if (diff >= 30) {
+                body.classList.add('warning');
+            }
+        }, 1000);
+
+        // 5. 脱稿処理（全消去）
+        finishBtn.addEventListener('click', () => {
+            // 確認ダイアログを表示
+            const message = "【最終確認】\nこれまでの執筆内容をすべて消去し、新しく書き始めますか？\n（この操作は取り消せません）";
+            
+            if (window.confirm(message)) {
+                // OKを押した場合のみ実行
+                body.classList.remove('warning');
+                body.classList.add('flash-animation');
+                
+                editor.value = '';
+                localStorage.removeItem('forward-only-content');
+                charCount.textContent = '0';
+                lastInputTime = Date.now();
+
+                setTimeout(() => {
+                    body.classList.remove('flash-animation');
+                }, 800);
+
+                console.log("脱稿完了！");
+            } else {
+                // キャンセルした場合は何もしない
+                console.log("脱稿をキャンセルしました。執筆に戻ります。");
+            }
+        });
+
+        // ペースト対応
+        editor.addEventListener('paste', () => {
+            setTimeout(() => {
+                localStorage.setItem('forward-only-content', editor.value);
+                charCount.textContent = editor.value.length;
+                lastInputTime = Date.now();
+            }, 0);
+        });
+    </script>
+</body>
+</html>
