@@ -13,7 +13,8 @@
       --ink: #1a1a1a;
       --muted: #4a4a4a;
       --accent-line: #e8913a;
-      --icon-bg: #ffffff;
+      --border: #d4d0c8;
+      --surface: #ffffff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -36,54 +37,57 @@
       font-weight: 900;
       letter-spacing: -0.03em;
       line-height: 1;
+      margin-bottom: 1rem;
+    }
+    .intro {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.75;
+      color: var(--ink);
       margin-bottom: 2.75rem;
+    }
+    .intro a {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+    .intro a:hover {
+      opacity: 0.7;
     }
     .category + .category {
       margin-top: 3.5rem;
     }
     .category-title {
-      font-size: 1.35rem;
+      font-size: clamp(1.5rem, 4vw, 2rem);
       font-weight: 900;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.12em;
       line-height: 1.2;
       margin-bottom: 1.75rem;
-    }
-    .category-title::after {
-      content: "";
-      display: block;
-      width: 2.5rem;
-      height: 3px;
-      background: var(--accent-line);
-      margin-top: 0.5rem;
     }
     .grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 2.5rem 2rem;
+      gap: 1rem;
     }
     @media (min-width: 720px) {
       .grid {
         grid-template-columns: 1fr 1fr;
-        gap: 3rem 2.5rem;
+        gap: 1.25rem;
       }
     }
     .item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.25rem;
+      display: block;
       color: inherit;
       text-decoration: none;
-      transition: opacity 0.15s ease;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem 1.35rem;
+      transition: border-color 0.15s ease;
     }
     .item:hover {
-      opacity: 0.72;
+      border-color: var(--ink);
     }
-    .item-text {
-      flex: 1;
-      min-width: 0;
-    }
-    .item-text h3 {
+    .item h3 {
       font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.01em;
@@ -96,25 +100,12 @@
       background: var(--accent-line);
       margin-bottom: 0.65rem;
     }
-    .item-text p {
+    .item p {
       font-size: 0.88rem;
       font-weight: 400;
       color: var(--muted);
       line-height: 1.7;
-    }
-    .item-icon {
-      flex-shrink: 0;
-      width: 72px;
-      height: 72px;
-      background: var(--icon-bg);
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .item-icon svg {
-      width: 44px;
-      height: 44px;
+      margin: 0;
     }
     footer {
       margin-top: 4rem;
@@ -128,113 +119,46 @@
 <body>
   <div class="wrap">
     <h1>tadeku-tools</h1>
+    <p class="intro"><a href="https://tadeku.net" target="_blank" rel="noopener noreferrer">蓼食う本の虫</a>が提供する、執筆に役立つツールをまとめています</p>
     <nav aria-label="ツール一覧">
       <section class="category">
         <h2 class="category-title">語彙</h2>
         <div class="grid">
-      <a class="item" href="pedantryfall/">
-        <div class="item-text">
-          <h3>PedantryFall</h3>
-          <div class="accent-line" aria-hidden="true"></div>
-          <p>語彙が画面上から降ってくるビジュアル。衒学の滝を眺めながら、難しい言葉との出会いを楽しめます。</p>
-        </div>
-        <div class="item-icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g1" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#5bc0eb"/><stop offset="1" stop-color="#3a9e6f"/>
-              </linearGradient>
-            </defs>
-            <path d="M10 6h6v6h-6zM22 2h6v6h-6zM34 8h6v6h-6z" fill="url(#g1)" opacity="0.9"/>
-            <path d="M14 18h5v5h-5zM26 14h5v5h-5zM36 20h5v5h-5zM8 28h5v5H8zM20 26h5v5h-5zM32 30h5v5h-5z" fill="url(#g1)" opacity="0.75"/>
-            <path d="M12 38h5v8h-5zM24 36h5v10h-5zM36 40h5v6h-5z" fill="url(#g1)"/>
-          </svg>
-        </div>
-      </a>
-      <a class="item" href="WordFall/">
-        <div class="item-text">
-          <h3>WordFall</h3>
-          <div class="accent-line" aria-hidden="true"></div>
-          <p>物書きのための語彙辞典に収録されている語彙が降ってきます。執筆のひらめきを刺激する語彙の滝です。</p>
-        </div>
-        <div class="item-icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g2" x1="6" y1="8" x2="42" y2="42" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#f77f6a"/><stop offset="1" stop-color="#e8b44a"/>
-              </linearGradient>
-            </defs>
-            <rect x="10" y="8" width="28" height="32" rx="3" stroke="url(#g2)" stroke-width="2.5" fill="none"/>
-            <path d="M16 16h16M16 22h12M16 28h14" stroke="url(#g2)" stroke-width="2.5" stroke-linecap="round"/>
-            <path d="M18 4l2 4M30 4l-2 4" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-      </a>
+          <a class="item" href="https://scrapbox.io/monokaki-goi-jiten/" target="_blank" rel="noopener noreferrer">
+            <h3>物書きのための語彙辞典</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>物書きの語彙力を養うためのオンライン辞典。語彙の意味と用例を Cosense で公開しています。</p>
+          </a>
+          <a class="item" href="pedantryfall/" target="_blank" rel="noopener noreferrer">
+            <h3>PedantryFall</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>語彙が画面上から降ってくるビジュアル。衒学の滝を眺めながら、難しい言葉との出会いを楽しめます。</p>
+          </a>
+          <a class="item" href="WordFall/" target="_blank" rel="noopener noreferrer">
+            <h3>WordFall</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>物書きのための語彙辞典に収録されている語彙が降ってきます。執筆のひらめきを刺激する語彙の滝です。</p>
+          </a>
         </div>
       </section>
       <section class="category">
         <h2 class="category-title">執筆エディタ</h2>
         <div class="grid">
-      <a class="item" href="stoic/">
-        <div class="item-text">
-          <h3>stoic</h3>
-          <div class="accent-line" aria-hidden="true"></div>
-          <p>前進専用エディタ。削除できない、戻れない。書くことだけに向き合うためのミニマルな執筆空間です。</p>
-        </div>
-        <div class="item-icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g3" x1="8" y1="24" x2="40" y2="24" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#6c63ff"/><stop offset="1" stop-color="#48c9b0"/>
-              </linearGradient>
-            </defs>
-            <path d="M10 24h22" stroke="url(#g3)" stroke-width="3" stroke-linecap="round"/>
-            <path d="M28 16l10 8-10 8" stroke="url(#g3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect x="8" y="10" width="30" height="28" rx="4" stroke="url(#g3)" stroke-width="2" fill="none" opacity="0.5"/>
-          </svg>
-        </div>
-      </a>
-      <a class="item" href="tachometer/">
-        <div class="item-text">
-          <h3>tachometer</h3>
-          <div class="accent-line" aria-hidden="true"></div>
-          <p>執筆速度をリアルタイムで計測するエディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認できます。</p>
-        </div>
-        <div class="item-icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g4" x1="10" y1="38" x2="38" y2="14" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#58a6ff"/><stop offset="1" stop-color="#7ee787"/>
-              </linearGradient>
-            </defs>
-            <path d="M24 38a14 14 0 1 0 0-28 14 14 0 0 0 0 28z" stroke="url(#g4)" stroke-width="2.5" fill="none"/>
-            <path d="M24 38L30 22" stroke="url(#g4)" stroke-width="2.5" stroke-linecap="round"/>
-            <circle cx="24" cy="38" r="2.5" fill="url(#g4)"/>
-            <path d="M14 38h20" stroke="url(#g4)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-          </svg>
-        </div>
-      </a>
-      <a class="item" href="Interval/">
-        <div class="item-text">
-          <h3>Interval</h3>
-          <div class="accent-line" aria-hidden="true"></div>
-          <p>立ち止まりたい人のための執筆エディタ。入力ペースを制限し、言葉が冷めるのを待ってから次の一行を書きます。</p>
-        </div>
-        <div class="item-icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="g5" x1="12" y1="8" x2="36" y2="40" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#c9a96e"/><stop offset="1" stop-color="#8b6914"/>
-              </linearGradient>
-            </defs>
-            <rect x="14" y="8" width="6" height="18" rx="2" fill="url(#g5)"/>
-            <rect x="28" y="22" width="6" height="18" rx="2" fill="url(#g5)" opacity="0.7"/>
-            <path d="M17 28v8M31 14v8" stroke="url(#g5)" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="17" cy="38" r="3" fill="url(#g5)" opacity="0.5"/>
-            <circle cx="31" cy="12" r="3" fill="url(#g5)" opacity="0.5"/>
-          </svg>
-        </div>
-      </a>
+          <a class="item" href="stoic/" target="_blank" rel="noopener noreferrer">
+            <h3>stoic</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>前進専用エディタ。削除できない、戻れない。書くことだけに向き合うためのミニマルな執筆空間です。</p>
+          </a>
+          <a class="item" href="tachometer/" target="_blank" rel="noopener noreferrer">
+            <h3>tachometer</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>執筆速度をリアルタイムで計測するエディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認できます。</p>
+          </a>
+          <a class="item" href="Interval/" target="_blank" rel="noopener noreferrer">
+            <h3>Interval</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>立ち止まりたい人のための執筆エディタ。入力ペースを制限し、言葉が冷めるのを待ってから次の一行を書きます。</p>
+          </a>
         </div>
       </section>
     </nav>
