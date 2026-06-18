@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .save-indicator {
+      opacity: 0.35;
+      transition: opacity 0.3s;
+    }
+
+    .save-indicator.saved { opacity: 1; }
+
+    .editor-wrap {
+      min-height: 0;
+      border-right: 2px solid var(--border);
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+    }
+
+    .word-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      background: var(--surface);
+    }
+
+    .inject-rows {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .inject-row {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      padding: 1rem;
+      text-align: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .inject-row + .inject-row {
+      border-top: 2px solid var(--border);
+    }
+
+    .inject-label {
+      width: 100%;
+      max-width: 100%;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+      line-break: anywhere;
+    }
+
+    .inject-word {
+      width: 100%;
+      max-width: 100%;
+      font-size: clamp(0.85rem, 2.5vw, 1.25rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+      line-break: anywhere;
+    }
+
+    .inject-empty {
+      width: 100%;
+      max-width: 100%;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #888;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+    }
+
+    .word-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-top: 2px solid var(--border);
+    }
+
+    .word-timer {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.5rem 0.65rem;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .btn-sm {
+      font-size: 0.65rem;
+      padding: 0.35rem 0.5rem;
+    }
+
+    .btn-inline {
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .modal-overlay[hidden] {
+      display: none;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-message {
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-filename {
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+    }
+
+    .format-options {
+      border: none;
+      margin-bottom: 1rem;
+    }
+
+    .format-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .format-group {
+      display: flex;
+    }
+
+    .format-option {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .format-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .format-option span {
+      display: block;
+      border: 2px solid var(--border);
+      padding: 0.55rem;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .format-option + .format-option span {
+      border-left: none;
+    }
+
+    .format-option input:checked + span {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .format-option input:focus-visible + span {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .modal-actions .btn {
+      width: auto;
+    }
+
+    @media (max-width: 640px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .editor-wrap {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .inject-rows {
+        flex-direction: row;
+        min-width: 0;
+      }
+
+      .inject-row {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 0.75rem 0.5rem;
+      }
+
+      .inject-row + .inject-row {
+        border-top: none;
+        border-left: 2px solid var(--border);
+      }
+
+      .inject-word {
+        font-size: clamp(0.75rem, 3.5vw, 0.95rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="brand">Cue</div>
+      <div class="stats">
+        <span>文字数 <strong id="char-count">0</strong></span>
+        <span class="save-indicator saved" id="save-indicator">保存済み</span>
+        <button class="btn btn-inline" id="export-btn" type="button">書き出し</button>
+      </div>
+    </header>
+
+    <div class="editor-wrap">
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+
+    <aside class="word-panel" aria-live="polite">
+      <div class="inject-rows">
+        <section class="inject-row">
+          <div class="inject-label">from WordFall</div>
+          <p class="inject-word" id="wordfall-text">—</p>
+          <a class="btn btn-sm" id="wordfall-link" href="#" target="_blank" rel="noopener noreferrer">用例を見る</a>
+        </section>
+        <section class="inject-row">
+          <div class="inject-label">from PedantryFall</div>
+          <p class="inject-word" id="pedantry-text">—</p>
+          <a class="btn btn-sm" id="pedantry-link" href="#" target="_blank" rel="noopener noreferrer">Wikipediaを見る</a>
+        </section>
+      </div>
+      <div class="word-footer">
+        <p class="word-timer" id="word-timer">—</p>
+        <button class="btn" id="word-next" type="button">次の語</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="modal-overlay" id="export-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+      <p class="modal-title" id="export-modal-title">書き出し</p>
+      <p class="modal-message" id="export-modal-message"></p>
+      <fieldset class="format-options">
+        <legend class="format-label">形式</legend>
+        <div class="format-group">
+          <label class="format-option">
+            <input type="radio" name="export-format" value="txt" checked>
+            <span>.txt</span>
+          </label>
+          <label class="format-option">
+            <input type="radio" name="export-format" value="md">
+            <span>.md</span>
+          </label>
+        </div>
+      </fieldset>
+      <p class="modal-filename"><strong id="export-filename"></strong></p>
+      <div class="modal-actions">
+        <button class="btn btn-inline" id="export-modal-cancel" type="button">キャンセル</button>
+        <button class="btn btn-inline" id="export-modal-confirm" type="button">書き出す</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/wordfall-words.js"></script>
+  <script>
+    const wordfallWords = window.WORDFALL_CONFIG?.words || [];
+    const wordfallGas = window.WORDFALL_CONFIG?.gasUrl;
+  </script>
+  <script src="../shared/pedantryfall-words.js"></script>
+  <script>
+    const pedantryWords = window.WORDFALL_CONFIG?.words || [];
+    const pedantryGas = window.WORDFALL_CONFIG?.gasUrl;
+
+    const STORAGE_KEY = 'cue-draft-v1';
+    const LEGACY_STORAGE_KEY = 'infuse-draft-v1';
+    const INTERVAL_SEC = 20;
+
+    const state = {
+      wordfallList: wordfallWords,
+      pedantryList: pedantryWords,
+      wordfallCurrent: null,
+      pedantryCurrent: null,
+      secondsLeft: INTERVAL_SEC,
+      saveTimer: null,
+    };
+
+    const els = {
+      editor: document.getElementById('editor'),
+      charCount: document.getElementById('char-count'),
+      saveIndicator: document.getElementById('save-indicator'),
+      wordfallText: document.getElementById('wordfall-text'),
+      wordfallLink: document.getElementById('wordfall-link'),
+      pedantryText: document.getElementById('pedantry-text'),
+      pedantryLink: document.getElementById('pedantry-link'),
+      wordNext: document.getElementById('word-next'),
+      wordTimer: document.getElementById('word-timer'),
+    };
+
+    function pickFrom(list, avoid) {
+      if (!list.length) return null;
+      if (list.length === 1) return list[0];
+      let next;
+      do {
+        next = list[Math.floor(Math.random() * list.length)];
+      } while (next === avoid && list.length > 1);
+      return next;
+    }
+
+    function showWord(row, word) {
+      const textEl = row === 'wordfall' ? els.wordfallText : els.pedantryText;
+      const linkEl = row === 'wordfall' ? els.wordfallLink : els.pedantryLink;
+      if (!word) {
+        textEl.textContent = '—';
+        textEl.className = 'inject-empty';
+        linkEl.style.display = 'none';
+        return;
+      }
+      textEl.textContent = word.word;
+      textEl.className = 'inject-word';
+      linkEl.href = word.url;
+      linkEl.style.display = '';
+    }
+
+    function injectWords() {
+      if (state.wordfallList.length) {
+        state.wordfallCurrent = pickFrom(state.wordfallList, state.wordfallCurrent);
+        showWord('wordfall', state.wordfallCurrent);
+      } else {
+        showWord('wordfall', null);
+      }
+
+      if (state.pedantryList.length) {
+        state.pedantryCurrent = pickFrom(state.pedantryList, state.pedantryCurrent);
+        showWord('pedantry', state.pedantryCurrent);
+      } else {
+        showWord('pedantry', null);
+      }
+
+      state.secondsLeft = INTERVAL_SEC;
+      updateTimer();
+    }
+
+    function updateTimer() {
+      const sec = String(state.secondsLeft).padStart(2, '0');
+      els.wordTimer.textContent = `次の語の表示まで ${sec}秒`;
+    }
+
+    function scheduleSave() {
+      els.saveIndicator.textContent = '保存中…';
+      els.saveIndicator.classList.remove('saved');
+      clearTimeout(state.saveTimer);
+      state.saveTimer = setTimeout(() => {
+        localStorage.setItem(STORAGE_KEY, els.editor.value);
+        els.saveIndicator.textContent = '保存済み';
+        els.saveIndicator.classList.add('saved');
+      }, 400);
+    }
+
+    function refreshWords() {
+      if (wordfallGas && navigator.onLine) {
+        fetch(wordfallGas)
+          .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+          .then(fresh => { if (fresh?.length) state.wordfallList = fresh; })
+          .catch(() => {});
+      }
+      if (pedantryGas && navigator.onLine) {
+        fetch(pedantryGas)
+          .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+          .then(fresh => { if (fresh?.length) state.pedantryList = fresh; })
+          .catch(() => {});
+      }
+    }
+
+    setInterval(() => {
+      state.secondsLeft -= 1;
+      if (state.secondsLeft <= 0) injectWords();
+      updateTimer();
+    }, 1000);
+
+    els.editor.addEventListener('input', () => {
+      els.charCount.textContent = els.editor.value.length;
+      scheduleSave();
+    });
+
+    els.wordNext.addEventListener('click', injectWords);
+
+    function showExportModal() {
+      return new Promise(resolve => {
+        const overlay = document.getElementById('export-modal');
+        const formatInputs = overlay.querySelectorAll('input[name="export-format"]');
+        const filenameEl = document.getElementById('export-filename');
+        const chars = els.editor.value.length;
+
+        document.getElementById('export-modal-message').textContent =
+          chars ? `${chars} 字を書き出します` : '（空の原稿）を書き出します';
+
+        function selectedFormat() {
+          return overlay.querySelector('input[name="export-format"]:checked').value;
+        }
+
+        function updateFilename() {
+          filenameEl.textContent = `無題.${selectedFormat()}`;
+        }
+
+        formatInputs.forEach(input => { input.onchange = updateFilename; });
+        formatInputs[0].checked = true;
+        updateFilename();
+
+        overlay.hidden = false;
+
+        function close(result) {
+          overlay.hidden = true;
+          document.removeEventListener('keydown', onKey);
+          formatInputs.forEach(input => { input.onchange = null; });
+          resolve(result);
+        }
+
+        function onKey(e) {
+          if (e.key === 'Escape') close(null);
+        }
+
+        document.getElementById('export-modal-cancel').onclick = () => close(null);
+        document.getElementById('export-modal-confirm').onclick = () => close(selectedFormat());
+        overlay.onclick = e => { if (e.target === overlay) close(null); };
+        document.addEventListener('keydown', onKey);
+        document.getElementById('export-modal-confirm').focus();
+      });
+    }
+
+    function buildExportContent(format) {
+      const text = els.editor.value;
+      if (format === 'md') return text ? `# 無題\n\n${text}` : '# 無題\n';
+      return text;
+    }
+
+    function exportFile(format) {
+      const content = buildExportContent(format);
+      const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `無題.${format}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      const format = await showExportModal();
+      if (format) exportFile(format);
+    });
+
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+        || localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (saved) {
+        els.editor.value = saved;
+        els.charCount.textContent = saved.length;
+      }
+    } catch (_) {}
+
+    refreshWords();
+    injectWords();
+    els.editor.focus();
+  </script>
+</body>
+</html>

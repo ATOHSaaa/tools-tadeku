@@ -18,6 +18,7 @@
 | `tachometer/` | 執筆速度計測エディタ |
 | `Interval/` | 立ち止まりたい人のための執筆エディタ |
 | `scene/` | Scene — シーン単位の構成エディタ |
+| `cue/` | Cue — 語彙表示型執筆エディタ |
 
 ルートの `index.html` から各ツールへのリンク一覧を表示します。`CNAME` でカスタムドメイン `tools.tadeku.net` を指定しています。
 
