@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scene — シーンエディタ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --muted: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+      --max-chars: 300;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 1.5rem;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .work-title {
+      width: 100%;
+      border: none;
+      border-bottom: 2px solid var(--border);
+      background: transparent;
+      font-family: inherit;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--ink);
+      padding: 0.25rem 0;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .work-title:focus {
+      border-color: var(--ink);
+    }
+
+    .work-title::placeholder {
+      color: #888;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      padding-top: 0.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--invert);
+      border-color: var(--invert);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: var(--invert);
+      border-color: var(--invert);
+      color: #fff;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .stats strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    /* Scene list */
+    .scene-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .scene-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      transition: border-color 0.15s, opacity 0.15s;
+    }
+
+    .scene-card:focus-within {
+      border-color: var(--ink);
+    }
+
+    .scene-card.dragging {
+      opacity: 0.45;
+    }
+
+    .scene-card.drag-over {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .scene-card.drag-over .scene-title,
+    .scene-card.drag-over .scene-text,
+    .scene-card.drag-over .char-count {
+      color: #fff;
+    }
+
+    .scene-card.drag-over .scene-title::placeholder,
+    .scene-card.drag-over .scene-text::placeholder {
+      color: #aaa;
+    }
+
+    .scene-card.drag-over .scene-title {
+      border-color: #fff;
+    }
+
+    .scene-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.75rem 0.5rem;
+      border-right: 2px solid var(--border);
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .drag-handle {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 0.35rem 0.5rem;
+      cursor: grab;
+      border: none;
+      background: transparent;
+      color: #fff;
+      transition: opacity 0.15s;
+    }
+
+    .drag-handle:hover { opacity: 0.65; }
+    .drag-handle:active { cursor: grabbing; }
+
+    .drag-handle span {
+      display: block;
+      width: 14px;
+      height: 2px;
+      background: currentColor;
+    }
+
+    .scene-num {
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.05em;
+      min-width: 1.5rem;
+      text-align: center;
+    }
+
+    .move-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .move-btn {
+      width: 24px;
+      height: 20px;
+      border: 2px solid #fff;
+      background: transparent;
+      color: #fff;
+      font-size: 0.65rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .move-btn:hover:not(:disabled) {
+      background: #fff;
+      color: #000;
+    }
+
+    .move-btn:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    .scene-body {
+      padding: 0.85rem 1rem;
+      min-width: 0;
+    }
+
+    .scene-title {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink);
+      padding: 0 0 0.4rem;
+      margin-bottom: 0.5rem;
+      outline: none;
+    }
+
+    .scene-title::placeholder { color: #888; font-weight: 500; }
+    .scene-title:focus { border-color: var(--ink); }
+
+    .scene-text {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--ink);
+      resize: none;
+      outline: none;
+      min-height: 4.5rem;
+      overflow: hidden;
+    }
+
+    .scene-text::placeholder { color: #888; }
+
+    .scene-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+    }
+
+    .char-count {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.03em;
+    }
+
+    .char-count.warn {
+      background: var(--ink);
+      color: #fff;
+      padding: 0.1rem 0.4rem;
+    }
+
+    .char-count.over {
+      background: var(--ink);
+      color: #fff;
+      padding: 0.1rem 0.4rem;
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .scene-actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0.5rem;
+      border-left: 2px solid var(--border);
+      background: var(--surface);
+    }
+
+    .delete-btn {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .delete-btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    /* Add button */
+    .add-scene {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 1rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .add-scene:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .add-scene .plus {
+      font-size: 1.1rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    /* Empty state */
+    .empty-hint {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+
+    .empty-hint strong {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 2.5rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      text-align: center;
+    }
+
+    .save-indicator {
+      font-size: 0.72rem;
+      color: var(--ink);
+      font-weight: 700;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+
+    .save-indicator.saved { opacity: 1; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .modal-overlay[hidden] {
+      display: none;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-message {
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-message strong {
+      font-weight: 900;
+    }
+
+    .modal-filename {
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+    }
+
+    .format-options {
+      border: none;
+      margin-bottom: 1rem;
+    }
+
+    .format-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .format-group {
+      display: flex;
+    }
+
+    .format-option {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .format-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .format-option span {
+      display: block;
+      border: 2px solid var(--border);
+      padding: 0.55rem;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .format-option + .format-option span {
+      border-left: none;
+    }
+
+    .format-option input:checked + span {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .format-option input:focus-visible + span {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 520px) {
+      .header-top { flex-direction: column; }
+      .header-actions { padding-top: 0; }
+      .scene-side { padding: 0.5rem 0.35rem; }
+      .move-btns { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-top">
+        <div style="flex:1; min-width:0">
+          <div class="brand">Scene — シーンエディタ</div>
+          <input type="text" class="work-title" id="work-title" placeholder="作品タイトル" maxlength="60" spellcheck="false">
+        </div>
+        <div class="header-actions">
+          <button class="btn" id="export-btn" title="テキストを書き出す">書き出し</button>
+          <button class="btn btn-danger" id="clear-btn" title="全シーンを消去">全消去</button>
+        </div>
+      </div>
+      <div class="stats">
+        <span>シーン <strong id="scene-count">0</strong></span>
+        <span>合計 <strong id="total-chars">0</strong> 字</span>
+        <span class="save-indicator" id="save-indicator">保存済み</span>
+      </div>
+    </header>
+
+    <div class="scene-list" id="scene-list"></div>
+
+    <button class="add-scene" id="add-scene" type="button">
+      <span class="plus">+</span>
+      シーンを追加
+    </button>
+
+    <footer class="footer">1シーン300字以内 · ドラッグで並べ替え · 自動保存</footer>
+  </div>
+
+  <div class="modal-overlay" id="export-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+      <p class="modal-title" id="export-modal-title">書き出し</p>
+      <p class="modal-message" id="export-modal-message"></p>
+      <fieldset class="format-options">
+        <legend class="format-label">形式</legend>
+        <div class="format-group">
+          <label class="format-option">
+            <input type="radio" name="export-format" value="txt" checked>
+            <span>.txt</span>
+          </label>
+          <label class="format-option">
+            <input type="radio" name="export-format" value="md">
+            <span>.md</span>
+          </label>
+        </div>
+      </fieldset>
+      <p class="modal-filename"><strong id="export-filename"></strong></p>
+      <div class="modal-actions">
+        <button class="btn" id="export-modal-cancel" type="button">キャンセル</button>
+        <button class="btn" id="export-modal-confirm" type="button">書き出す</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'scene-scenes-v1';
+    const LEGACY_STORAGE_KEY = 'beat-scenes-v1';
+    const MAX_CHARS = 300;
+
+    let data = { title: '', scenes: [] };
+    let saveTimer = null;
+    let dragId = null;
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function load() {
+      try {
+        let raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (raw) data = JSON.parse(raw);
+      } catch (_) {}
+      if (!Array.isArray(data.scenes)) data.scenes = [];
+      if (!data.scenes.length) data.scenes = [makeScene()];
+    }
+
+    function makeScene() {
+      return { id: uid(), title: '', body: '' };
+    }
+
+    function scheduleSave() {
+      const el = document.getElementById('save-indicator');
+      el.textContent = '保存中…';
+      el.classList.remove('saved');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        el.textContent = '保存済み';
+        el.classList.add('saved');
+      }, 400);
+    }
+
+    function updateStats() {
+      document.getElementById('scene-count').textContent = data.scenes.length;
+      const total = data.scenes.reduce((s, sc) => s + sc.body.length, 0);
+      document.getElementById('total-chars').textContent = total;
+    }
+
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    function charClass(len) {
+      if (len > MAX_CHARS) return 'over';
+      if (len > MAX_CHARS * 0.85) return 'warn';
+      return '';
+    }
+
+    function render() {
+      const list = document.getElementById('scene-list');
+      list.innerHTML = '';
+
+      data.scenes.forEach((scene, index) => {
+        const card = document.createElement('article');
+        card.className = 'scene-card';
+        card.dataset.id = scene.id;
+        card.draggable = true;
+
+        const len = scene.body.length;
+
+        card.innerHTML = `
+          <div class="scene-side">
+            <button class="drag-handle" type="button" aria-label="ドラッグして並べ替え" tabindex="-1">
+              <span></span><span></span><span></span>
+            </button>
+            <div class="scene-num">${index + 1}</div>
+            <div class="move-btns">
+              <button class="move-btn" data-action="up" aria-label="上へ" ${index === 0 ? 'disabled' : ''}>▲</button>
+              <button class="move-btn" data-action="down" aria-label="下へ" ${index === data.scenes.length - 1 ? 'disabled' : ''}>▼</button>
+            </div>
+          </div>
+          <div class="scene-body">
+            <input class="scene-title" type="text" placeholder="シーン名（任意）" maxlength="40" value="${esc(scene.title)}" spellcheck="false">
+            <textarea class="scene-text" placeholder="このシーンで起きることを、${MAX_CHARS}字以内で。" maxlength="${MAX_CHARS + 20}">${esc(scene.body)}</textarea>
+            <div class="scene-footer">
+              <span class="char-count ${charClass(len)}">${len} / ${MAX_CHARS}</span>
+            </div>
+          </div>
+          <div class="scene-actions">
+            <button class="delete-btn" type="button" aria-label="シーンを削除" title="削除">×</button>
+          </div>
+        `;
+
+        const titleInput = card.querySelector('.scene-title');
+        const textarea = card.querySelector('.scene-text');
+        const counter = card.querySelector('.char-count');
+
+        titleInput.addEventListener('input', () => {
+          scene.title = titleInput.value;
+          scheduleSave();
+        });
+
+        textarea.addEventListener('input', () => {
+          scene.body = textarea.value;
+          const l = scene.body.length;
+          counter.textContent = `${l} / ${MAX_CHARS}`;
+          counter.className = 'char-count ' + charClass(l);
+          autoResize(textarea);
+          updateStats();
+          scheduleSave();
+        });
+
+        autoResize(textarea);
+
+        card.querySelector('.delete-btn').addEventListener('click', () => {
+          if (data.scenes.length <= 1) {
+            scene.title = '';
+            scene.body = '';
+            render();
+            scheduleSave();
+            return;
+          }
+          if (!confirm(`シーン ${index + 1} を削除しますか？`)) return;
+          data.scenes.splice(index, 1);
+          render();
+          scheduleSave();
+          updateStats();
+        });
+
+        card.querySelectorAll('.move-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const dir = btn.dataset.action;
+            const target = dir === 'up' ? index - 1 : index + 1;
+            if (target < 0 || target >= data.scenes.length) return;
+            [data.scenes[index], data.scenes[target]] = [data.scenes[target], data.scenes[index]];
+            render();
+            scheduleSave();
+          });
+        });
+
+        card.addEventListener('dragstart', e => {
+          dragId = scene.id;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          dragId = null;
+          card.classList.remove('dragging');
+          list.querySelectorAll('.scene-card').forEach(c => c.classList.remove('drag-over'));
+        });
+
+        card.addEventListener('dragover', e => {
+          e.preventDefault();
+          if (scene.id !== dragId) card.classList.add('drag-over');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', e => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+          if (!dragId || dragId === scene.id) return;
+          const from = data.scenes.findIndex(s => s.id === dragId);
+          const to = data.scenes.findIndex(s => s.id === scene.id);
+          if (from < 0 || to < 0) return;
+          const [moved] = data.scenes.splice(from, 1);
+          data.scenes.splice(to, 0, moved);
+          render();
+          scheduleSave();
+        });
+
+        list.appendChild(card);
+      });
+
+      updateStats();
+    }
+
+    function esc(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showExportModal() {
+      return new Promise(resolve => {
+        const overlay = document.getElementById('export-modal');
+        const title = data.title.trim() || '無題';
+        const count = data.scenes.length;
+        const formatInputs = overlay.querySelectorAll('input[name="export-format"]');
+        const filenameEl = document.getElementById('export-filename');
+
+        document.getElementById('export-modal-message').textContent = `${count} シーンを書き出します`;
+
+        function selectedFormat() {
+          return overlay.querySelector('input[name="export-format"]:checked').value;
+        }
+
+        function updateFilename() {
+          filenameEl.textContent = `${title}.${selectedFormat()}`;
+        }
+
+        formatInputs.forEach(input => {
+          input.onchange = updateFilename;
+        });
+        formatInputs[0].checked = true;
+        updateFilename();
+
+        overlay.hidden = false;
+
+        function close(result) {
+          overlay.hidden = true;
+          document.removeEventListener('keydown', onKey);
+          formatInputs.forEach(input => { input.onchange = null; });
+          resolve(result);
+        }
+
+        function onKey(e) {
+          if (e.key === 'Escape') close(null);
+        }
+
+        document.getElementById('export-modal-cancel').onclick = () => close(null);
+        document.getElementById('export-modal-confirm').onclick = () => close(selectedFormat());
+        overlay.onclick = e => { if (e.target === overlay) close(null); };
+        document.addEventListener('keydown', onKey);
+        document.getElementById('export-modal-confirm').focus();
+      });
+    }
+
+    function buildExportContent(format) {
+      const title = data.title.trim() || '無題';
+      if (format === 'md') {
+        const lines = [`# ${title}`, ''];
+        data.scenes.forEach((sc, i) => {
+          const label = sc.title.trim() || `シーン ${i + 1}`;
+          lines.push(`## ${label}`);
+          lines.push('');
+          lines.push(sc.body.trim() || '（未記入）');
+          lines.push('');
+        });
+        return lines.join('\n');
+      }
+      const lines = [title, ''];
+      data.scenes.forEach((sc, i) => {
+        const label = sc.title.trim() || `シーン ${i + 1}`;
+        lines.push(`【${label}】`);
+        lines.push(sc.body.trim() || '（未記入）');
+        lines.push('');
+      });
+      return lines.join('\n');
+    }
+
+    function exportFile(format) {
+      const title = data.title.trim() || '無題';
+      const content = buildExportContent(format);
+      const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${title}.${format}`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    document.getElementById('work-title').value = data.title || '';
+    document.getElementById('work-title').addEventListener('input', e => {
+      data.title = e.target.value;
+      scheduleSave();
+    });
+
+    document.getElementById('add-scene').addEventListener('click', () => {
+      data.scenes.push(makeScene());
+      render();
+      scheduleSave();
+      const cards = document.querySelectorAll('.scene-card');
+      const last = cards[cards.length - 1];
+      last.querySelector('.scene-text').focus();
+      last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      const format = await showExportModal();
+      if (format) exportFile(format);
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      if (!confirm('すべてのシーンを消去しますか？この操作は元に戻せません。')) return;
+      data = { title: '', scenes: [makeScene()] };
+      document.getElementById('work-title').value = '';
+      render();
+      scheduleSave();
+    });
+
+    load();
+    render();
+  </script>
+</body>
+</html>
