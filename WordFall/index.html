@@ -3,86 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>WordFall - 物書きのための語彙が降ってくる</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #ffffff;
-            font-family: "Yu Mincho", "MS Mincho", serif;
-        }
-
-        .word {
-            position: absolute;
-            color: #000000;
-            text-decoration: none;
-            white-space: nowrap;
-            font-size: 1.8rem;
-            animation: fall linear forwards;
-            user-select: none;
-        }
-
-        .word:hover {
-            color: #666; /* ホバー時に少し色を変える */
-            font-weight: bold;
-        }
-
-        @keyframes fall {
-            0% { transform: translateY(-100px); }
-            100% { transform: translateY(110vh); }
-        }
-    </style>
+    <link rel="stylesheet" href="../shared/wordfall.css">
 </head>
 <body>
-
 <script>
-    // 公開したスプレッドシートのCSV URLをここに入れる
-    const gasUrl = 'https://script.google.com/macros/s/AKfycbydGCnIbAmG6X5zdTh2HrW1bgzPMgZ6p1OwySm5S48ctsNW8Sg5HMTK8PkcGYThdIOW8A/exec';
-
-async function fetchWords() {
-    try {
-        const response = await fetch(gasUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        return data; // GASから直接JSONが返ってくるのでパース不要
-    } catch (e) {
-        console.error("データの取得に失敗しました:", e);
-        return [{ word: "取得失敗。URLを確認してください", url: "#" }];
-    }
-}
-
-    function createWord(wordObj) {
-        const a = document.createElement('a');
-        a.innerText = wordObj.word;
-        a.href = wordObj.url;
-        a.target = "_blank";
-        a.className = 'word';
-
-        // ランダムな横位置
-        a.style.left = Math.random() * 90 + 'vw';
-        // ランダムな落下速度 (5秒〜15秒)
-        const duration = Math.random() * 20 + 20;
-        a.style.animationDuration = duration + 's';
-        
-        document.body.appendChild(a);
-
-        // アニメーション終了後に要素を削除
-        setTimeout(() => {
-            a.remove();
-        }, duration * 1000);
-    }
-
-    async function init() {
-        const words = await fetchWords();
-        if (words.length === 0) return;
-
-        // 一定間隔で文字を生成
-        setInterval(() => {
-            const randomIndex = Math.floor(Math.random() * words.length);
-            createWord(words[randomIndex]);
-        }, 200); // 0.8秒ごとに新しい文字が降る
-    }
-
-    init();
+    window.WORDFALL_CONFIG = {
+        gasUrl: 'https://script.google.com/macros/s/AKfycbydGCnIbAmG6X5zdTh2HrW1bgzPMgZ6p1OwySm5S48ctsNW8Sg5HMTK8PkcGYThdIOW8A/exec'
+    };
 </script>
+<script src="../shared/wordfall.js"></script>
 </body>
 </html>

@@ -1,0 +1,26 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #ffffff;
+    font-family: "Yu Mincho", "MS Mincho", serif;
+}
+
+.word {
+    position: absolute;
+    color: #000000;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 1.8rem;
+    animation: fall linear forwards;
+    user-select: none;
+}
+
+.word:hover {
+    color: #666;
+    font-weight: bold;
+}
+
+@keyframes fall {
+    0% { transform: translateY(-100px); }
+    100% { transform: translateY(110vh); }
+}
