@@ -6,128 +6,208 @@
   <title>蓼食う虫式 tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f0f0f0;
-      --surface: #ffffff;
-      --ink: #111111;
-      --muted: #666666;
-      --border: #e0e0e0;
-      --accent: #1a1a1a;
-      --hover: #f5f5f5;
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --accent-line: #e8913a;
+      --icon-bg: #ffffff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
       font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
-      font-weight: 500;
+      font-weight: 400;
       font-size: 15px;
-      line-height: 1.6;
+      line-height: 1.75;
       color: var(--ink);
       background: var(--bg);
       -webkit-font-smoothing: antialiased;
     }
     .wrap {
-      max-width: 720px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 3rem 1.25rem 4rem;
-    }
-    header {
-      margin-bottom: 2.5rem;
+      padding: 3.5rem 1.5rem 4.5rem;
     }
     h1 {
-      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-size: clamp(2.5rem, 8vw, 3.75rem);
       font-weight: 900;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin-bottom: 0.5rem;
-    }
-    .lead {
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--muted);
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 2.75rem;
     }
     .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem 2rem;
+    }
+    @media (min-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem 2.5rem;
+      }
+    }
+    .item {
       display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .card {
-      display: block;
-      background: var(--surface);
-      border: 2px solid var(--border);
-      color: var(--ink);
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      color: inherit;
       text-decoration: none;
-      padding: 1.25rem 1.35rem;
-      transition: background 0.12s ease, border-color 0.12s ease;
+      transition: opacity 0.15s ease;
     }
-    .card:hover {
-      background: var(--hover);
-      border-color: var(--accent);
+    .item:hover {
+      opacity: 0.72;
     }
-    .card:active {
-      background: #ebebeb;
+    .item-text {
+      flex: 1;
+      min-width: 0;
     }
-    .card-name {
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
-    .card-title {
-      font-size: 1.1rem;
+    .item-text h2 {
+      font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.01em;
+      line-height: 1.3;
+      margin-bottom: 0.45rem;
+    }
+    .accent-line {
+      width: 2.5rem;
+      height: 3px;
+      background: var(--accent-line);
+      margin-bottom: 0.65rem;
+    }
+    .item-text p {
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .item-icon {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      background: var(--icon-bg);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .item-icon svg {
+      width: 44px;
+      height: 44px;
     }
     footer {
-      margin-top: 2.5rem;
+      margin-top: 4rem;
       font-size: 0.75rem;
       font-weight: 700;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-    @media (min-width: 540px) {
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
-      }
-      .card--wide {
-        grid-column: 1 / -1;
-      }
+      letter-spacing: 0.06em;
+      color: #999;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <h1>蓼食う虫式 tools</h1>
-      <p class="lead">書くための小さな道具たち</p>
-    </header>
+    <h1>tools</h1>
     <nav class="grid" aria-label="ツール一覧">
-      <a class="card" href="pedantryfall/">
-        <div class="card-name">PedantryFall</div>
-        <div class="card-title">衒学の滝</div>
+      <a class="item" href="pedantryfall/">
+        <div class="item-text">
+          <h2>PedantryFall</h2>
+          <div class="accent-line" aria-hidden="true"></div>
+          <p>語彙が画面上から降ってくるビジュアル。衒学の滝を眺めながら、難しい言葉との出会いを楽しめます。</p>
+        </div>
+        <div class="item-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#5bc0eb"/><stop offset="1" stop-color="#3a9e6f"/>
+              </linearGradient>
+            </defs>
+            <path d="M10 6h6v6h-6zM22 2h6v6h-6zM34 8h6v6h-6z" fill="url(#g1)" opacity="0.9"/>
+            <path d="M14 18h5v5h-5zM26 14h5v5h-5zM36 20h5v5h-5zM8 28h5v5H8zM20 26h5v5h-5zM32 30h5v5h-5z" fill="url(#g1)" opacity="0.75"/>
+            <path d="M12 38h5v8h-5zM24 36h5v10h-5zM36 40h5v6h-5z" fill="url(#g1)"/>
+          </svg>
+        </div>
       </a>
-      <a class="card" href="WordFall/">
-        <div class="card-name">WordFall</div>
-        <div class="card-title">物書きのための語彙が降ってくる</div>
+      <a class="item" href="WordFall/">
+        <div class="item-text">
+          <h2>WordFall</h2>
+          <div class="accent-line" aria-hidden="true"></div>
+          <p>物書きのための語彙辞典に収録されている語彙が降ってきます。執筆のひらめきを刺激する語彙の滝です。</p>
+        </div>
+        <div class="item-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g2" x1="6" y1="8" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#f77f6a"/><stop offset="1" stop-color="#e8b44a"/>
+              </linearGradient>
+            </defs>
+            <rect x="10" y="8" width="28" height="32" rx="3" stroke="url(#g2)" stroke-width="2.5" fill="none"/>
+            <path d="M16 16h16M16 22h12M16 28h14" stroke="url(#g2)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M18 4l2 4M30 4l-2 4" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
       </a>
-      <a class="card" href="stoic/">
-        <div class="card-name">stoic</div>
-        <div class="card-title">前進専用エディタ</div>
+      <a class="item" href="stoic/">
+        <div class="item-text">
+          <h2>stoic</h2>
+          <div class="accent-line" aria-hidden="true"></div>
+          <p>前進専用エディタ。削除できない、戻れない。書くことだけに向き合うためのミニマルな執筆空間です。</p>
+        </div>
+        <div class="item-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g3" x1="8" y1="24" x2="40" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6c63ff"/><stop offset="1" stop-color="#48c9b0"/>
+              </linearGradient>
+            </defs>
+            <path d="M10 24h22" stroke="url(#g3)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M28 16l10 8-10 8" stroke="url(#g3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="8" y="10" width="30" height="28" rx="4" stroke="url(#g3)" stroke-width="2" fill="none" opacity="0.5"/>
+          </svg>
+        </div>
       </a>
-      <a class="card" href="tachometer/">
-        <div class="card-name">tachometer</div>
-        <div class="card-title">執筆速度計測エディタ</div>
+      <a class="item" href="tachometer/">
+        <div class="item-text">
+          <h2>tachometer</h2>
+          <div class="accent-line" aria-hidden="true"></div>
+          <p>執筆速度をリアルタイムで計測するエディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認できます。</p>
+        </div>
+        <div class="item-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g4" x1="10" y1="38" x2="38" y2="14" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#58a6ff"/><stop offset="1" stop-color="#7ee787"/>
+              </linearGradient>
+            </defs>
+            <path d="M24 38a14 14 0 1 0 0-28 14 14 0 0 0 0 28z" stroke="url(#g4)" stroke-width="2.5" fill="none"/>
+            <path d="M24 38L30 22" stroke="url(#g4)" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="24" cy="38" r="2.5" fill="url(#g4)"/>
+            <path d="M14 38h20" stroke="url(#g4)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          </svg>
+        </div>
       </a>
-      <a class="card card--wide" href="Interval/">
-        <div class="card-name">Interval</div>
-        <div class="card-title">立ち止まりたい人のための執筆エディタ</div>
+      <a class="item" href="Interval/">
+        <div class="item-text">
+          <h2>Interval</h2>
+          <div class="accent-line" aria-hidden="true"></div>
+          <p>立ち止まりたい人のための執筆エディタ。入力ペースを制限し、言葉が冷めるのを待ってから次の一行を書きます。</p>
+        </div>
+        <div class="item-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g5" x1="12" y1="8" x2="36" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#c9a96e"/><stop offset="1" stop-color="#8b6914"/>
+              </linearGradient>
+            </defs>
+            <rect x="14" y="8" width="6" height="18" rx="2" fill="url(#g5)"/>
+            <rect x="28" y="22" width="6" height="18" rx="2" fill="url(#g5)" opacity="0.7"/>
+            <path d="M17 28v8M31 14v8" stroke="url(#g5)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="17" cy="38" r="3" fill="url(#g5)" opacity="0.5"/>
+            <circle cx="31" cy="12" r="3" fill="url(#g5)" opacity="0.5"/>
+          </svg>
+        </div>
       </a>
     </nav>
     <footer>tools.tadeku.net</footer>
