@@ -1,12 +1,15 @@
 (function () {
-    const words = window.WORDFALL_CONFIG?.words;
-    if (!words?.length) {
+    const config = window.WORDFALL_CONFIG;
+    const state = { words: config?.words || [] };
+    const gasUrl = config?.gasUrl;
+
+    if (!state.words.length) {
         console.error('WORDFALL_CONFIG.words is required');
         return;
     }
 
     function pickWord() {
-        return words[Math.floor(Math.random() * words.length)];
+        return state.words[Math.floor(Math.random() * state.words.length)];
     }
 
     function createWord(wordObj) {
@@ -22,7 +25,25 @@
         setTimeout(() => a.remove(), duration * 1000);
     }
 
-    const initialCount = Math.min(5, words.length);
+    function refreshFromGas() {
+        if (!gasUrl || !navigator.onLine) return;
+
+        fetch(gasUrl)
+            .then((response) => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then((fresh) => {
+                if (fresh?.length) state.words = fresh;
+            })
+            .catch((e) => {
+                console.warn('GAS からの取得に失敗したため、同梱データを使います:', e);
+            });
+    }
+
+    refreshFromGas();
+
+    const initialCount = Math.min(5, state.words.length);
     for (let i = 0; i < initialCount; i++) {
         createWord(pickWord());
     }
