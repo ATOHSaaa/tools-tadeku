@@ -38,6 +38,24 @@
       line-height: 1;
       margin-bottom: 2.75rem;
     }
+    .category + .category {
+      margin-top: 3.5rem;
+    }
+    .category-title {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 1.75rem;
+    }
+    .category-title::after {
+      content: "";
+      display: block;
+      width: 2.5rem;
+      height: 3px;
+      background: var(--accent-line);
+      margin-top: 0.5rem;
+    }
     .grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -65,7 +83,7 @@
       flex: 1;
       min-width: 0;
     }
-    .item-text h2 {
+    .item-text h3 {
       font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.01em;
@@ -110,10 +128,13 @@
 <body>
   <div class="wrap">
     <h1>tadeku-tools</h1>
-    <nav class="grid" aria-label="ツール一覧">
+    <nav aria-label="ツール一覧">
+      <section class="category">
+        <h2 class="category-title">語彙</h2>
+        <div class="grid">
       <a class="item" href="pedantryfall/">
         <div class="item-text">
-          <h2>PedantryFall</h2>
+          <h3>PedantryFall</h3>
           <div class="accent-line" aria-hidden="true"></div>
           <p>語彙が画面上から降ってくるビジュアル。衒学の滝を眺めながら、難しい言葉との出会いを楽しめます。</p>
         </div>
@@ -132,7 +153,7 @@
       </a>
       <a class="item" href="WordFall/">
         <div class="item-text">
-          <h2>WordFall</h2>
+          <h3>WordFall</h3>
           <div class="accent-line" aria-hidden="true"></div>
           <p>物書きのための語彙辞典に収録されている語彙が降ってきます。執筆のひらめきを刺激する語彙の滝です。</p>
         </div>
@@ -149,9 +170,14 @@
           </svg>
         </div>
       </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">執筆エディタ</h2>
+        <div class="grid">
       <a class="item" href="stoic/">
         <div class="item-text">
-          <h2>stoic</h2>
+          <h3>stoic</h3>
           <div class="accent-line" aria-hidden="true"></div>
           <p>前進専用エディタ。削除できない、戻れない。書くことだけに向き合うためのミニマルな執筆空間です。</p>
         </div>
@@ -170,7 +196,7 @@
       </a>
       <a class="item" href="tachometer/">
         <div class="item-text">
-          <h2>tachometer</h2>
+          <h3>tachometer</h3>
           <div class="accent-line" aria-hidden="true"></div>
           <p>執筆速度をリアルタイムで計測するエディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認できます。</p>
         </div>
@@ -190,7 +216,7 @@
       </a>
       <a class="item" href="Interval/">
         <div class="item-text">
-          <h2>Interval</h2>
+          <h3>Interval</h3>
           <div class="accent-line" aria-hidden="true"></div>
           <p>立ち止まりたい人のための執筆エディタ。入力ペースを制限し、言葉が冷めるのを待ってから次の一行を書きます。</p>
         </div>
@@ -209,6 +235,8 @@
           </svg>
         </div>
       </a>
+        </div>
+      </section>
     </nav>
     <footer>tools.tadeku.net</footer>
   </div>
