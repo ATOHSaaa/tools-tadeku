@@ -1,254 +1,370 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tachometer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+    }
 
-      gtag('config', 'G-HN5C12BJ0W');
-    </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tachometer</title>
-    <style>
-        :root {
-            --bg-color: #0d1117;
-            --accent-color: #58a6ff;
-            --low-speed-color: #f85149;
-            --high-speed-color: #7ee787;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            margin: 0;
-            background-color: var(--bg-color);
-            color: #c9d1d9;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            overflow: hidden;
-            transition: box-shadow 0.4s ease;
-        }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
 
-        /* 速度低下時の演出 */
-        body.slow-down {
-            box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
-        }
+    body.slow-down .editor-wrap {
+      opacity: 0.35;
+      transition: opacity 0.4s;
+    }
 
-        #container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-        /* ダッシュボード */
-        .dashboard {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            background: #161b22;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+    .header {
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0;
+    }
 
-        .metric { text-align: center; }
-        .metric-label {
-            font-size: 0.75rem;
-            color: #8b949e;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 4px;
-        }
-        .metric-value {
-            font-size: 1.6rem;
-            font-weight: 600;
-            color: var(--accent-color);
-        }
-        .goal-input {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 4px;
-            color: var(--accent-color);
-            width: 80px;
-            text-align: center;
-            font-size: 1.2rem;
-            outline: none;
-        }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+    }
 
-        /* エディタ */
-        #editor {
-            flex-grow: 1;
-            background: transparent;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            color: #e6edf3;
-            font-size: 1.25rem;
-            line-height: 1.7;
-            padding: 25px;
-            resize: none;
-            outline: none;
-            caret-color: var(--accent-color);
-        }
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
 
-        /* 高速執筆時の発光エフェクト */
-        @keyframes flow {
-            from { border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
-            to { border-color: var(--high-speed-color); box-shadow: 0 0 20px var(--high-speed-color); }
-        }
-        .high-speed-active {
-            animation: flow 0.5s infinite alternate;
-        }
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
 
-        .footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 12px;
-            font-size: 0.8rem;
-            color: #484f58;
-        }
+    .btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
 
-        .clear-btn {
-            background: transparent;
-            border: 1px solid #30363d;
-            color: #8b949e;
-            cursor: pointer;
-            padding: 4px 12px;
-            border-radius: 4px;
-        }
-        .clear-btn:hover { background: #f85149; color: white; border-color: #f85149; }
-    </style>
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 2px solid var(--border);
+    }
+
+    .metric {
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      border-right: 2px solid var(--border);
+    }
+
+    .metric:last-child {
+      border-right: none;
+    }
+
+    .metric-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.35rem;
+    }
+
+    .metric-value {
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .metric-unit {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .goal-input {
+      width: 4.5rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 0.15rem 0.25rem;
+      outline: none;
+    }
+
+    .goal-input:focus {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      transition: opacity 0.4s;
+    }
+
+    .editor-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      opacity: var(--glow-level, 0);
+      transition: opacity 0.25s linear;
+      animation:
+        rainbow-hue var(--hue-duration, 4s) linear infinite,
+        rainbow-pulse var(--pulse-duration, 2s) ease-in-out infinite;
+    }
+
+    @keyframes rainbow-hue {
+      to { filter: hue-rotate(360deg); }
+    }
+
+    @keyframes rainbow-pulse {
+      0%, 100% {
+        box-shadow:
+          inset 0 0 0 var(--border-lo, 1px) hsl(0, 100%, 55%),
+          inset 0 0 var(--glow-in-lo, 6px) hsla(0, 100%, 55%, var(--alpha-lo, 0.15)),
+          0 0 var(--glow-out-lo, 8px) hsla(0, 100%, 55%, var(--alpha-lo, 0.1));
+      }
+      50% {
+        box-shadow:
+          inset 0 0 0 var(--border-hi, 3px) hsl(0, 100%, 55%),
+          inset 0 0 var(--glow-in-hi, 24px) hsla(0, 100%, 55%, var(--alpha-hi, 0.55)),
+          0 0 var(--glow-out-hi, 40px) hsla(0, 100%, 55%, var(--alpha-hi, 0.4));
+      }
+    }
+
+    #editor {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+    }
+
+    .footer {
+      flex-shrink: 0;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .dashboard {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .metric:nth-child(2) {
+        border-right: none;
+      }
+
+      .metric:nth-child(1),
+      .metric:nth-child(2) {
+        border-bottom: 2px solid var(--border);
+      }
+    }
+  </style>
 </head>
 <body id="body">
-    <div id="container">
-        <div class="dashboard">
-            <div class="metric">
-                <div class="metric-label">目標</div>
-                <input type="number" id="goal-chars" class="goal-input" value="1000">
-            </div>
-            <div class="metric">
-                <div class="metric-label">執筆速度</div>
-                <div class="metric-value"><span id="speed">0</span> <small style="font-size: 0.7rem;">文字/分</small></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">ゴールまで</div>
-                <div class="metric-value"><span id="eta">--</span> <small style="font-size: 0.7rem;">分</small></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">進捗</div>
-                <div class="metric-value"><span id="progress">0</span>%</div>
-            </div>
+  <div class="layout">
+    <header class="header">
+      <div class="header-top">
+        <div class="brand">tachometer</div>
+        <button id="clear-btn" class="btn" type="button">リセット</button>
+      </div>
+      <div class="dashboard">
+        <div class="metric">
+          <div class="metric-label">目標</div>
+          <input type="number" id="goal-chars" class="goal-input" value="1000">
         </div>
-
-        <textarea id="editor" placeholder="執筆を開始してください。自由に削除や編集が可能です。"></textarea>
-        
-        <div class="footer">
-            <span>オートセーブ有効</span>
-            <button id="clear-btn" class="clear-btn">リセット</button>
+        <div class="metric">
+          <div class="metric-label">執筆速度</div>
+          <div class="metric-value"><span id="speed">0</span><span class="metric-unit"> 字/分</span></div>
         </div>
+        <div class="metric">
+          <div class="metric-label">ゴールまで</div>
+          <div class="metric-value"><span id="eta">--</span><span class="metric-unit"> 分</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">進捗</div>
+          <div class="metric-value"><span id="progress">0</span><span class="metric-unit"> %</span></div>
+        </div>
+      </div>
+    </header>
+    <div class="editor-wrap" id="editor-wrap">
+      <textarea id="editor" spellcheck="false"></textarea>
     </div>
+    <div class="footer">自動保存</div>
+  </div>
 
-    <script>
-        const editor = document.getElementById('editor');
-        const body = document.getElementById('body');
-        const speedDisplay = document.getElementById('speed');
-        const etaDisplay = document.getElementById('eta');
-        const progressDisplay = document.getElementById('progress');
-        const goalInput = document.getElementById('goal-chars');
-        const clearBtn = document.getElementById('clear-btn');
+  <script>
+    const editor = document.getElementById('editor');
+    const editorWrap = document.getElementById('editor-wrap');
+    const body = document.getElementById('body');
+    const speedDisplay = document.getElementById('speed');
+    const etaDisplay = document.getElementById('eta');
+    const progressDisplay = document.getElementById('progress');
+    const goalInput = document.getElementById('goal-chars');
+    const clearBtn = document.getElementById('clear-btn');
 
-        let charHistory = []; 
-        let lastInputTime = Date.now();
+    let charHistory = [];
+    let lastInputTime = Date.now();
 
-        // ロード時にデータを復元
-        const savedData = localStorage.getItem('speed-gauge-content');
-        if (savedData) {
-            editor.value = savedData;
-            setTimeout(() => updateDashboard(), 100);
-        }
+    const savedData = localStorage.getItem('speed-gauge-content');
+    if (savedData) {
+      editor.value = savedData;
+      setTimeout(updateDashboard, 100);
+    }
 
-        // 入力時の処理（削除は自由）
-        editor.addEventListener('input', () => {
-            const now = Date.now();
-            const currentLength = editor.value.length;
-            
-            lastInputTime = now;
-            // 削除された場合も履歴として記録（速度低下として反映される）
-            charHistory.push({ time: now, count: currentLength });
-            
-            localStorage.setItem('speed-gauge-content', editor.value);
-            updateDashboard();
-        });
+    editor.addEventListener('input', () => {
+      const now = Date.now();
+      lastInputTime = now;
+      charHistory.push({ time: now, count: editor.value.length });
+      localStorage.setItem('speed-gauge-content', editor.value);
+      updateDashboard();
+    });
 
-        // 1秒ごとに「今の速度」を再計算
-        setInterval(() => {
-            updateDashboard();
-        }, 1000);
+    setInterval(updateDashboard, 1000);
 
-        function updateDashboard() {
-            const now = Date.now();
-            const currentLength = editor.value.length;
-            const goal = parseInt(goalInput.value) || 1;
-            
-            // 直近5分間のデータで平均を出す
-            const fiveMinutesAgo = now - 300000;
-            charHistory = charHistory.filter(entry => entry.time > fiveMinutesAgo);
+    const SPEED_REF = 250;
 
-            // 進捗
-            const progress = Math.min(100, Math.floor((currentLength / goal) * 100));
-            progressDisplay.textContent = progress;
+    function smoothstep(t) {
+      t = Math.max(0, Math.min(1, t));
+      return t * t * (3 - 2 * t);
+    }
 
-            // 速度計算
-            let speed = 0;
-            if (charHistory.length > 1) {
-                const firstEntry = charHistory[0];
-                const timeDiffMin = (now - firstEntry.time) / 60000;
-                const charDiff = currentLength - firstEntry.count;
-                // マイナス（削除しすぎ）にならないよう調整
-                speed = timeDiffMin > 0 ? Math.max(0, Math.floor(charDiff / timeDiffMin)) : 0;
-            }
-            speedDisplay.textContent = speed;
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
 
-            // ETA
-            const remaining = goal - currentLength;
-            if (remaining > 0 && speed > 0) {
-                etaDisplay.textContent = Math.ceil(remaining / speed);
-            } else if (remaining <= 0 && currentLength > 0) {
-                etaDisplay.textContent = "GOAL";
-            } else {
-                etaDisplay.textContent = "--";
-            }
+    function setGlowVar(name, value) {
+      editorWrap.style.setProperty(name, value);
+    }
 
-            // 演出：放置時間
-            const idleSeconds = (now - lastInputTime) / 1000;
-            if (idleSeconds > 10 || (speed < 20 && charHistory.length > 5)) {
-                body.classList.add('slow-down');
-            } else {
-                body.classList.remove('slow-down');
-            }
+    function applyRainbowGlow(speed, idleSeconds) {
+      const speedT = smoothstep(Math.pow(Math.min(speed, SPEED_REF) / SPEED_REF, 0.55));
+      const idleT = Math.max(0, 1 - idleSeconds / 4);
+      const intensity = speedT * idleT;
 
-            // 演出：高速
-            if (speed > 100 && idleSeconds < 2) {
-                editor.classList.add('high-speed-active');
-            } else {
-                editor.classList.remove('high-speed-active');
-            }
-        }
+      if (intensity < 0.01) {
+        setGlowVar('--glow-level', '0');
+        return;
+      }
 
-        // リセットボタン
-        clearBtn.addEventListener('click', () => {
-            if (confirm("内容をすべて消去しますか？")) {
-                editor.value = '';
-                localStorage.removeItem('speed-gauge-content');
-                charHistory = [];
-                lastInputTime = Date.now();
-                updateDashboard();
-            }
-        });
-    </script>
+      setGlowVar('--glow-level', intensity.toFixed(3));
+      setGlowVar('--pulse-duration', lerp(2.8, 0.12, intensity).toFixed(3) + 's');
+      setGlowVar('--hue-duration', lerp(5, 0.25, intensity).toFixed(3) + 's');
+      setGlowVar('--border-lo', lerp(1, 2, intensity).toFixed(2) + 'px');
+      setGlowVar('--border-hi', lerp(2, 7, intensity).toFixed(2) + 'px');
+      setGlowVar('--glow-in-lo', lerp(4, 20, intensity).toFixed(1) + 'px');
+      setGlowVar('--glow-in-hi', lerp(12, 55, intensity).toFixed(1) + 'px');
+      setGlowVar('--glow-out-lo', lerp(6, 25, intensity).toFixed(1) + 'px');
+      setGlowVar('--glow-out-hi', lerp(16, 70, intensity).toFixed(1) + 'px');
+      setGlowVar('--alpha-lo', lerp(0.08, 0.35, intensity).toFixed(3));
+      setGlowVar('--alpha-hi', lerp(0.25, 1, intensity).toFixed(3));
+    }
+
+    function updateDashboard() {
+      const now = Date.now();
+      const currentLength = editor.value.length;
+      const goal = parseInt(goalInput.value, 10) || 1;
+
+      const fiveMinutesAgo = now - 300000;
+      charHistory = charHistory.filter(entry => entry.time > fiveMinutesAgo);
+
+      progressDisplay.textContent = Math.min(100, Math.floor((currentLength / goal) * 100));
+
+      let speed = 0;
+      if (charHistory.length > 1) {
+        const firstEntry = charHistory[0];
+        const timeDiffMin = (now - firstEntry.time) / 60000;
+        const charDiff = currentLength - firstEntry.count;
+        speed = timeDiffMin > 0 ? Math.max(0, Math.floor(charDiff / timeDiffMin)) : 0;
+      }
+      speedDisplay.textContent = speed;
+
+      const remaining = goal - currentLength;
+      if (remaining > 0 && speed > 0) {
+        etaDisplay.textContent = String(Math.ceil(remaining / speed)).padStart(2, '0');
+      } else if (remaining <= 0 && currentLength > 0) {
+        etaDisplay.textContent = 'OK';
+      } else {
+        etaDisplay.textContent = '--';
+      }
+
+      const idleSeconds = (now - lastInputTime) / 1000;
+      body.classList.toggle('slow-down', idleSeconds > 10 || (speed < 20 && charHistory.length > 5));
+      applyRainbowGlow(speed, idleSeconds);
+    }
+
+    clearBtn.addEventListener('click', () => {
+      if (!confirm('内容をすべて消去しますか？')) return;
+      editor.value = '';
+      localStorage.removeItem('speed-gauge-content');
+      charHistory = [];
+      lastInputTime = Date.now();
+      updateDashboard();
+    });
+
+    editor.focus();
+  </script>
 </body>
 </html>

@@ -1,179 +1,246 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interval</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+    }
 
-      gtag('config', 'G-HN5C12BJ0W');
-    </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interval</title>
-    <style>
-        :root {
-            --bg-color: #fdfcf0; /* 和紙のような落ち着いた色 */
-            --text-color: #333;
-            --limit-color: #d9534f;
-            --safe-color: #5b7e91;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            margin: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: "Sawarabi Mincho", "Hiragino Mincho ProN", serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
+    }
 
-        #container {
-            width: 80%;
-            max-width: 700px;
-            height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
+    body.limit {
+      background: var(--invert);
+      color: #fff;
+    }
 
-        /* 制限インジケーター */
-        .gauge-container {
-            margin-bottom: 20px;
-            text-align: center;
-        }
+    body.limit .header,
+    body.limit .notice {
+      border-color: #fff;
+    }
 
-        .gauge-text {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: var(--safe-color);
-            transition: color 0.3s;
-        }
+    body.limit .gauge-text {
+      color: #fff;
+    }
 
-        .gauge-text.limit {
-            color: var(--limit-color);
-            font-weight: bold;
-        }
+    body.limit .bar-bg {
+      border-color: #fff;
+      background: transparent;
+    }
 
-        .bar-bg {
-            width: 100%;
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            overflow: hidden;
-        }
+    body.limit #bar-fill {
+      background: #fff;
+    }
 
-        #bar-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--safe-color);
-            transition: width 0.2s linear, background-color 0.3s;
-        }
+    body.limit #editor {
+      color: #fff;
+      caret-color: #fff;
+    }
 
-        #bar-fill.limit {
-            background-color: var(--limit-color);
-        }
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 720px;
+      margin: 0 auto;
+    }
 
-        /* エディタ */
-        #editor {
-            flex-grow: 1;
-            background: transparent;
-            border: none;
-            border-left: 1px solid #ccc;
-            padding: 0 20px;
-            font-size: 1.25rem;
-            line-height: 2;
-            color: var(--text-color);
-            outline: none;
-            resize: none;
-            transition: opacity 0.3s;
-        }
+    .header {
+      padding: 0.85rem 1.25rem;
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0;
+    }
 
-        #editor:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
 
-        .notice {
-            margin-top: 15px;
-            font-size: 0.8rem;
-            color: #999;
-            text-align: right;
-        }
-    </style>
+    .gauge-text {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    .bar-bg {
+      width: 100%;
+      height: 8px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+    }
+
+    #bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--ink);
+      transition: width 0.2s linear;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+      transition: opacity 0.3s;
+    }
+
+    #editor:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .notice {
+      flex-shrink: 0;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+      line-height: 1.6;
+    }
+  </style>
 </head>
-<body>
-
-<div id="container">
-    <div class="gauge-container">
-        <div id="gauge-label" class="gauge-text">10秒間の負荷: <span id="current-count">0</span> / 30</div>
-        <div class="bar-bg">
-            <div id="bar-fill"></div>
-        </div>
+<body id="body">
+  <div class="layout">
+    <header class="header">
+      <div class="brand">Interval</div>
+      <div id="gauge-label" class="gauge-text">10秒間の負荷: <span id="current-count">00</span> / 25</div>
+      <div class="bar-bg">
+        <div id="bar-fill"></div>
+      </div>
+    </header>
+    <div class="editor-wrap">
+      <textarea id="editor" spellcheck="false"></textarea>
     </div>
+    <div class="notice">10秒間に25文字を超えると、言葉が冷めるまで入力できません</div>
+  </div>
 
-    <textarea id="editor" placeholder="静かに、言葉を置いてください..."></textarea>
-    
-    <div class="notice">
-        ※10秒間に30文字を超えると、言葉が冷めるまで入力できません。
-    </div>
-</div>
-
-<script>
+  <script>
+    const body = document.getElementById('body');
     const editor = document.getElementById('editor');
     const barFill = document.getElementById('bar-fill');
     const currentCountLabel = document.getElementById('current-count');
     const gaugeLabel = document.getElementById('gauge-label');
 
-    let inputHistory = []; // 入力されたタイムスタンプを記録
-    const LIMIT_CHARS = 30;
-    const TIME_WINDOW = 10000; // 10秒
+    let inputHistory = [];
+    let committedLength = 0;
+    let isComposing = false;
+    let cooldownUntil = 0;
+    const LIMIT_CHARS = 25;
+    const TIME_WINDOW = 10000;
+    const COOLDOWN_MS = 3000;
 
-    // 監視タイマー
     setInterval(updateStatus, 100);
 
-    editor.addEventListener('input', (e) => {
-        // 文字が増えた場合のみカウント（削除は制限しない）
-        const now = Date.now();
-        inputHistory.push(now);
-        updateStatus();
+    editor.addEventListener('compositionstart', () => {
+      isComposing = true;
     });
 
-    function updateStatus() {
+    editor.addEventListener('compositionend', () => {
+      isComposing = false;
+      recordCommittedInput();
+    });
+
+    editor.addEventListener('input', (e) => {
+      if (e.isComposing || isComposing) return;
+      recordCommittedInput();
+    });
+
+    function recordCommittedInput() {
+      const newLen = editor.value.length;
+      const delta = newLen - committedLength;
+      if (delta > 0) {
         const now = Date.now();
-        
-        // 10秒より前の履歴を削除
-        inputHistory = inputHistory.filter(time => now - time < TIME_WINDOW);
-        
-        const count = inputHistory.length;
-        currentCountLabel.textContent = count;
-
-        // ゲージの反映
-        const percentage = Math.min(100, (count / LIMIT_CHARS) * 100);
-        barFill.style.width = percentage + "%";
-
-        // 制限チェック
-        if (count >= LIMIT_CHARS) {
-            editor.disabled = true;
-            barFill.classList.add('limit');
-            gaugeLabel.classList.add('limit');
-            gaugeLabel.childNodes[0].textContent = "言葉が溢れました。少し待ってください: ";
-            
-            // 余裕ができるまでフォーカスを外す
-            editor.blur();
-        } else {
-            if (editor.disabled) {
-                editor.disabled = false;
-                editor.focus();
-            }
-            barFill.classList.remove('limit');
-            gaugeLabel.classList.remove('limit');
-            gaugeLabel.childNodes[0].textContent = "10秒間の負荷: ";
-        }
+        for (let i = 0; i < delta; i++) inputHistory.push(now);
+      }
+      committedLength = newLen;
+      updateStatus();
     }
-</script>
+
+    function updateStatus() {
+      const now = Date.now();
+      inputHistory = inputHistory.filter(time => now - time < TIME_WINDOW);
+
+      const count = inputHistory.length;
+      currentCountLabel.textContent = String(count).padStart(2, '0');
+      barFill.style.width = Math.min(100, (count / LIMIT_CHARS) * 100) + '%';
+
+      if (count > LIMIT_CHARS && cooldownUntil <= now) {
+        cooldownUntil = now + COOLDOWN_MS;
+      }
+
+      const inCooldown = now < cooldownUntil;
+      const limited = inCooldown || count > LIMIT_CHARS;
+      body.classList.toggle('limit', limited);
+
+      if (limited) {
+        editor.disabled = true;
+        if (inCooldown) {
+          const remain = Math.ceil((cooldownUntil - now) / 1000);
+          gaugeLabel.childNodes[0].textContent = `言葉が溢れました。あと ${String(remain).padStart(2, '0')} 秒: `;
+        } else {
+          gaugeLabel.childNodes[0].textContent = '言葉が溢れました。少し待ってください: ';
+        }
+        editor.blur();
+      } else {
+        cooldownUntil = 0;
+        if (editor.disabled) {
+          editor.disabled = false;
+          editor.focus();
+        }
+        gaugeLabel.childNodes[0].textContent = '10秒間の負荷: ';
+      }
+    }
+
+    editor.focus();
+  </script>
 </body>
 </html>

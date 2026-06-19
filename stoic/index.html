@@ -1,205 +1,233 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>stoic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+    }
 
-      gtag('config', 'G-HN5C12BJ0W');
-    </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>前進専用エディタ - Stoic</title>
-    <style>
-        body {
-            margin: 0;
-            background-color: #1a1a1a;
-            color: #e0e0e0;
-            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-            overflow: hidden;
-            transition: background-color 0.5s ease;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        #container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
+    }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-        }
+    body.warning {
+      background: var(--invert);
+      color: #fff;
+    }
 
-        .status-group {
-            display: flex;
-            gap: 20px;
-        }
+    body.warning .header {
+      border-color: #fff;
+    }
 
-        .status {
-            font-size: 0.9rem;
-            color: #888;
-        }
+    body.warning #editor {
+      color: #fff;
+      caret-color: #fff;
+    }
 
-        #editor {
-            flex-grow: 1;
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 1.2rem;
-            line-height: 1.8;
-            resize: none;
-            outline: none;
-            padding: 20px 0;
-            caret-color: #00ff00;
-        }
+    body.warning .btn {
+      border-color: #fff;
+      color: #fff;
+      background: transparent;
+    }
 
-        /* 脱稿ボタンのスタイル */
-        .finish-btn {
-            background: transparent;
-            border: 1px solid #555;
-            color: #888;
-            padding: 5px 15px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
-        }
+    body.warning .btn:hover {
+      background: #fff;
+      color: #000;
+    }
 
-        .finish-btn:hover {
-            border-color: #fff;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.1);
-        }
+    body.warning .notice {
+      border-color: #fff;
+      color: #fff;
+    }
 
-        /* 警告時の背景色変化 */
-        body.warning {
-            background-color: #4a0000;
-        }
+    @keyframes flash {
+      0% { background-color: #fff; }
+      100% { background-color: #fff; }
+    }
 
-        /* 脱稿エフェクト */
-        @keyframes flash {
-            0% { background-color: #fff; }
-            100% { background-color: #1a1a1a; }
-        }
-        .flash-animation {
-            animation: flash 0.8s ease-out;
-        }
+    body.flash-animation {
+      animation: flash 0.8s ease-out;
+    }
 
-        .notice {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            pointer-events: none;
-        }
-    </style>
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+    }
+
+    .notice {
+      flex-shrink: 0;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+  </style>
 </head>
 <body id="body">
-    <div id="container">
-        <header>
-            <div class="status-group">
-                <div class="status">文字数: <span id="char-count">0</span></div>
-                <div class="status" id="timer-status">放置: <span id="idle-seconds">0</span>秒</div>
-            </div>
-            <button id="finish-btn" class="finish-btn">脱稿（全消去）</button>
-        </header>
-        <textarea id="editor" placeholder="ここには『前進』しかありません。止まらずに書き続けてください..."></textarea>
-        <div class="notice">Backspace / Delete は無効です</div>
+  <div class="layout">
+    <header class="header">
+      <div class="brand">stoic</div>
+      <div class="stats">
+        <span>文字数 <strong id="char-count">0</strong></span>
+        <span>放置 <strong id="idle-seconds">0</strong>秒</span>
+      </div>
+      <button id="finish-btn" class="btn" type="button">脱稿（全消去）</button>
+    </header>
+    <div class="editor-wrap">
+      <textarea id="editor" spellcheck="false"></textarea>
     </div>
+    <div class="notice">Backspace / Delete は無効です</div>
+  </div>
 
-    <script>
-        const editor = document.getElementById('editor');
-        const body = document.getElementById('body');
-        const charCount = document.getElementById('char-count');
-        const idleSecondsLabel = document.getElementById('idle-seconds');
-        const finishBtn = document.getElementById('finish-btn');
+  <script>
+    const editor = document.getElementById('editor');
+    const body = document.getElementById('body');
+    const charCount = document.getElementById('char-count');
+    const idleSecondsLabel = document.getElementById('idle-seconds');
+    const finishBtn = document.getElementById('finish-btn');
 
-        let lastInputTime = Date.now();
+    let lastInputTime = Date.now();
 
-        // 1. データの復元
-        const savedData = localStorage.getItem('forward-only-content');
-        if (savedData) {
-            editor.value = savedData;
-            charCount.textContent = savedData.length;
-        }
+    const savedData = localStorage.getItem('forward-only-content');
+    if (savedData) {
+      editor.value = savedData;
+      charCount.textContent = savedData.length;
+    }
 
-        // 2. 文字数カウント & 自動保存
-        editor.addEventListener('input', () => {
-            const content = editor.value;
-            localStorage.setItem('forward-only-content', content);
-            
-            charCount.textContent = content.length;
-            lastInputTime = Date.now();
-            body.classList.remove('warning');
-            body.style.backgroundColor = '';
-        });
+    editor.addEventListener('input', () => {
+      const content = editor.value;
+      localStorage.setItem('forward-only-content', content);
+      charCount.textContent = content.length;
+      lastInputTime = Date.now();
+      body.classList.remove('warning');
+    });
 
-        // 3. 削除キーの無効化
-        editor.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' || e.key === 'Delete') {
-                e.preventDefault();
-            }
-        });
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' || e.key === 'Delete') e.preventDefault();
+    });
 
-        // 4. 放置監視
-        setInterval(() => {
-            const now = Date.now();
-            const diff = Math.floor((now - lastInputTime) / 1000);
-            idleSecondsLabel.textContent = diff;
+    setInterval(() => {
+      const diff = Math.floor((Date.now() - lastInputTime) / 1000);
+      idleSecondsLabel.textContent = diff;
+      body.classList.toggle('warning', diff >= 30);
+    }, 1000);
 
-            if (diff >= 10 && diff < 30) {
-                body.style.backgroundColor = `rgb(${26 + (diff - 10) * 5}, 26, 26)`;
-            } else if (diff >= 30) {
-                body.classList.add('warning');
-            }
-        }, 1000);
+    finishBtn.addEventListener('click', () => {
+      if (!window.confirm('【最終確認】\nこれまでの執筆内容をすべて消去し、新しく書き始めますか？\n（この操作は取り消せません）')) return;
 
-        // 5. 脱稿処理（全消去）
-        finishBtn.addEventListener('click', () => {
-            // 確認ダイアログを表示
-            const message = "【最終確認】\nこれまでの執筆内容をすべて消去し、新しく書き始めますか？\n（この操作は取り消せません）";
-            
-            if (window.confirm(message)) {
-                // OKを押した場合のみ実行
-                body.classList.remove('warning');
-                body.classList.add('flash-animation');
-                
-                editor.value = '';
-                localStorage.removeItem('forward-only-content');
-                charCount.textContent = '0';
-                lastInputTime = Date.now();
+      body.classList.remove('warning');
+      body.classList.add('flash-animation');
+      editor.value = '';
+      localStorage.removeItem('forward-only-content');
+      charCount.textContent = '0';
+      lastInputTime = Date.now();
+      setTimeout(() => body.classList.remove('flash-animation'), 800);
+    });
 
-                setTimeout(() => {
-                    body.classList.remove('flash-animation');
-                }, 800);
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        localStorage.setItem('forward-only-content', editor.value);
+        charCount.textContent = editor.value.length;
+        lastInputTime = Date.now();
+      }, 0);
+    });
 
-                console.log("脱稿完了！");
-            } else {
-                // キャンセルした場合は何もしない
-                console.log("脱稿をキャンセルしました。執筆に戻ります。");
-            }
-        });
-
-        // ペースト対応
-        editor.addEventListener('paste', () => {
-            setTimeout(() => {
-                localStorage.setItem('forward-only-content', editor.value);
-                charCount.textContent = editor.value.length;
-                lastInputTime = Date.now();
-            }, 0);
-        });
-    </script>
+    editor.focus();
+  </script>
 </body>
 </html>
