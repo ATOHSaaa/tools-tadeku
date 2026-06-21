@@ -426,6 +426,8 @@
       inputEl.addEventListener('input', runConvert);
 
       document.getElementById('btn-clear').addEventListener('click', () => {
+        if (!inputEl.value && !outputEl.value) return;
+        if (!window.confirm('入力内容をすべて消去しますか？')) return;
         inputEl.value = '';
         outputEl.value = '';
         updateStats();

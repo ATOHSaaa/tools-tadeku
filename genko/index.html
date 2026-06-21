@@ -511,7 +511,6 @@
       <div class="brand">Genko</div>
       <div class="header-right">
         <div class="stats">
-          <span>文字数 <strong id="char-count">0</strong></span>
           <span class="save-indicator saved" id="save-indicator">保存済み</span>
         </div>
         <button class="btn" id="export-btn" type="button">書き出し</button>
@@ -528,8 +527,9 @@
         <div class="panel-value" id="page-count">0枚</div>
       </div>
       <div class="panel-block">
-        <div class="panel-label">総字数</div>
-        <div class="panel-value" id="total-chars">0字</div>
+        <div class="panel-label">総字数（空白含む）</div>
+        <div class="panel-value" id="total-chars-with-space">0字</div>
+        <div class="panel-sub" id="total-chars-no-space">空白除く 0字</div>
       </div>
       <div class="panel-block">
         <div class="panel-label">現在の1枚</div>
@@ -571,10 +571,10 @@
     const els = {
       pagesScroll: document.getElementById('pages-scroll'),
       editorWrap: document.getElementById('editor-wrap'),
-      charCount: document.getElementById('char-count'),
       saveIndicator: document.getElementById('save-indicator'),
       pageCount: document.getElementById('page-count'),
-      totalChars: document.getElementById('total-chars'),
+      totalCharsWithSpace: document.getElementById('total-chars-with-space'),
+      totalCharsNoSpace: document.getElementById('total-chars-no-space'),
       pageCurrent: document.getElementById('page-current'),
       pageBar: document.getElementById('page-bar'),
     };
@@ -1011,16 +1011,27 @@
       paintLayout(L, caret + g.length, [caret, caret + g.length], true);
     }
 
+    const WHITESPACE = new Set([' ', '\u3000', '\t']);
+
+    function countDocChars(includeWhitespace) {
+      return doc.reduce((n, c) => {
+        if (c === '\n') return n;
+        if (!includeWhitespace && WHITESPACE.has(c)) return n;
+        return n + 1;
+      }, 0);
+    }
+
     function updateStats(L) {
       const consumed = L.lastLinear + 1; // 先頭から最後の文字までに使ったマス数（改行で空いたマスも含む）
-      const chars = doc.reduce((n, c) => c === '\n' ? n : n + 1, 0);
+      const charsWithSpace = countDocChars(true);
+      const charsNoSpace = countDocChars(false);
       const full = Math.floor(consumed / PER_PAGE);
       const rem = consumed % PER_PAGE;
       const currentInPage = consumed === 0 ? 0 : (rem || PER_PAGE);
 
-      els.charCount.textContent = chars;
       els.pageCount.textContent = full + '枚';
-      els.totalChars.textContent = chars + '字';
+      els.totalCharsWithSpace.textContent = charsWithSpace + '字';
+      els.totalCharsNoSpace.textContent = '空白除く ' + charsNoSpace + '字';
       els.pageCurrent.textContent = String(currentInPage).padStart(3, '0') + ' / 400';
       els.pageBar.style.width = Math.min(100, (currentInPage / PER_PAGE) * 100) + '%';
     }
