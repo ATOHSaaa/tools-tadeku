@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shaper — 小説テキスト整形</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+      --accent: #e8913a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4.5rem;
+    }
+
+    .brand {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagline {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .editor-panel {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .btn:hover {
+      border-color: var(--ink);
+    }
+
+    .btn:active {
+      background: var(--bg);
+    }
+
+    .btn.copied {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .char-count {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      padding: 0.85rem 1rem;
+      resize: vertical;
+      transition: border-color 0.12s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    .section {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 600px) {
+      .action-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .action-btn {
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.5;
+      text-align: left;
+      padding: 0.7rem 0.85rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .action-btn:hover {
+      border-color: var(--ink);
+      background: var(--surface);
+    }
+
+    .action-btn:active {
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <h1 class="brand">shaper</h1>
+    <p class="tagline">小説原稿のテキストを、ボタンひとつで整形します。</p>
+
+    <div class="editor-panel">
+      <div class="editor-head">
+        <div class="editor-actions">
+          <button type="button" class="btn" id="btn-clear">クリア</button>
+          <button type="button" class="btn" id="btn-copy">コピー</button>
+        </div>
+        <span class="char-count" id="char-count" aria-live="polite">0文字</span>
+      </div>
+      <textarea id="editor" placeholder="ここに文章を入力…" spellcheck="false"></textarea>
+    </div>
+
+    <section class="section" aria-label="基本機能">
+      <h2 class="section-title">基本機能</h2>
+      <div class="action-grid">
+        <button type="button" class="action-btn" data-action="removeHalfSpaces">「半角スペース」を除去</button>
+        <button type="button" class="action-btn" data-action="removeFullSpaces">「全角スペース」を除去</button>
+        <button type="button" class="action-btn" data-action="removeTabs">「タブ（Tab）」を除去</button>
+        <button type="button" class="action-btn" data-action="removeLineBreaks">「改行」を除去</button>
+      </div>
+    </section>
+
+    <section class="section" aria-label="小説原稿向け機能">
+      <h2 class="section-title">小説原稿向け機能</h2>
+      <div class="action-grid">
+        <button type="button" class="action-btn" data-action="reduceBlankLines">「空白行」を段階的に除去</button>
+        <button type="button" class="action-btn" data-action="addBlankLines">「空白行」をすべてに追加</button>
+        <button type="button" class="action-btn" data-action="indentNonDialogue">会話文を除く「行頭」を一字下げ</button>
+        <button type="button" class="action-btn" data-action="romanToKanji">ローマ数字を「漢数字」に変換</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="../shared/site-link.js"></script>
+  <script>
+    (function () {
+      const ROMAN_RE = /\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/g;
+      const KANJI_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+      const ROMAN_VALUES = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+
+      function parseRoman(roman) {
+        let total = 0;
+        for (let i = 0; i < roman.length; i += 1) {
+          const current = ROMAN_VALUES[roman[i]];
+          const next = ROMAN_VALUES[roman[i + 1]];
+          if (next && current < next) {
+            total -= current;
+          } else {
+            total += current;
+          }
+        }
+        return total;
+      }
+
+      function numberToKanji(n) {
+        if (n <= 0 || n > 3999) return String(n);
+
+        let result = '';
+        let rest = n;
+
+        if (rest >= 1000) {
+          const thousands = Math.floor(rest / 1000);
+          result += (thousands === 1 ? '' : KANJI_DIGITS[thousands]) + '千';
+          rest %= 1000;
+        }
+        if (rest >= 100) {
+          const hundreds = Math.floor(rest / 100);
+          result += (hundreds === 1 ? '' : KANJI_DIGITS[hundreds]) + '百';
+          rest %= 100;
+        }
+        if (rest >= 10) {
+          const tens = Math.floor(rest / 10);
+          result += (tens === 1 ? '' : KANJI_DIGITS[tens]) + '十';
+          rest %= 10;
+        }
+        if (rest > 0) {
+          result += KANJI_DIGITS[rest];
+        }
+
+        return result;
+      }
+
+      function indentLine(line) {
+        if (!line.trim()) return line;
+        if (line.startsWith('「') || line.startsWith('『')) return line;
+        if (line.startsWith('　')) return line;
+        return '　' + line;
+      }
+
+      const transforms = {
+        removeHalfSpaces: (text) => text.replace(/ /g, ''),
+        removeFullSpaces: (text) => text.replace(/\u3000/g, ''),
+        removeTabs: (text) => text.replace(/\t/g, ''),
+        removeLineBreaks: (text) => text.replace(/\r\n|\r|\n/g, ''),
+        reduceBlankLines: (text) => text.replace(/\n{2,}/g, (match) => '\n'.repeat(match.length - 1)),
+        addBlankLines: (text) => text.split('\n').join('\n\n'),
+        indentNonDialogue: (text) => text.split('\n').map(indentLine).join('\n'),
+        romanToKanji: (text) => text.replace(ROMAN_RE, (match) => {
+          const value = parseRoman(match);
+          return value > 0 ? numberToKanji(value) : match;
+        })
+      };
+
+      const editorEl = document.getElementById('editor');
+      const charCountEl = document.getElementById('char-count');
+
+      function updateCharCount() {
+        charCountEl.textContent = `${editorEl.value.length.toLocaleString('ja-JP')}文字`;
+      }
+
+      function applyTransform(name) {
+        const fn = transforms[name];
+        if (!fn) return;
+        editorEl.value = fn(editorEl.value);
+        updateCharCount();
+        editorEl.focus();
+      }
+
+      document.querySelectorAll('[data-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          applyTransform(btn.dataset.action);
+        });
+      });
+
+      editorEl.addEventListener('input', updateCharCount);
+
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        editorEl.value = '';
+        updateCharCount();
+        editorEl.focus();
+      });
+
+      document.getElementById('btn-copy').addEventListener('click', async () => {
+        if (!editorEl.value) return;
+        const btn = document.getElementById('btn-copy');
+        try {
+          await navigator.clipboard.writeText(editorEl.value);
+          btn.textContent = 'コピーしました';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'コピー';
+            btn.classList.remove('copied');
+          }, 1400);
+        } catch {
+          editorEl.select();
+          document.execCommand('copy');
+        }
+      });
+
+      updateCharCount();
+    })();
+  </script>
+</body>
+</html>
