@@ -186,31 +186,35 @@
       font-size: calc(var(--cell-size) * 0.72);
     }
 
-    /* 文字＋句読点 */
+    /* 文字＋句読点: 本文の下段マス内に収める */
     .genko-cell.cell-hang-kutouten .slot-lower {
-      right: 0;
+      right: calc(var(--cell-size) * 0.20);
       bottom: 0;
       width: 44%;
-      height: 28%;
+      height: 30%;
       align-items: flex-end;
-      font-size: calc(var(--cell-size) * 0.46);
-      transform: translateY(calc(var(--cell-size) * 0.54));
+      justify-content: flex-end;
+      font-size: calc(var(--cell-size) * 0.62);
     }
 
     /* 文字＋句読点＋閉じ括弧: 句読点は閉じ括弧より上 */
     .genko-cell.cell-hang-both .slot-lower {
       right: calc(var(--cell-size) * 0.16);
-      bottom: calc(var(--cell-size) * -0.10);
+      bottom: calc(var(--cell-size) * 0.22);
       width: 46%;
       height: 28%;
       align-items: center;
-      font-size: calc(var(--cell-size) * 0.72);
-      transform: none;
+      justify-content: flex-end;
+      font-size: calc(var(--cell-size) * 0.46);
     }
     .genko-cell.cell-hang-both .slot-lower-deep {
       right: calc(var(--cell-size) * 0.06);
-      bottom: calc(var(--cell-size) * -0.36);
-      transform: none;
+      bottom: 0;
+      width: 54%;
+      height: 30%;
+      align-items: flex-end;
+      justify-content: flex-end;
+      font-size: calc(var(--cell-size) * 0.58);
     }
 
     /* 文字＋閉じ括弧 */
@@ -218,10 +222,10 @@
       right: calc(var(--cell-size) * 0.24);
       bottom: 0;
       width: 54%;
-      height: 38%;
+      height: 34%;
       align-items: flex-end;
+      justify-content: flex-end;
       font-size: calc(var(--cell-size) * 0.58);
-      transform: translateY(calc(var(--cell-size) * 0.24));
     }
 
     /* 約物どうし（句読点＋閉じ括弧）は、句読点を上・閉じ括弧を下へ固定配置 */
@@ -1314,20 +1318,20 @@
       } else if (cls === 'slot-main-raised') {
         y = cell.y + cell.size * 0.34;
       } else if (cls === 'slot-lower') {
-        x = cell.x + cell.size * 0.84;
-        y = cell.y + cell.size * 0.91;
+        x = cell.x + cell.size * 0.72;
+        y = cell.y + cell.size * 0.88;
       } else if (cls === 'slot-lower-both') {
         x = cell.x + cell.size * 0.80;
-        y = cell.y + cell.size * 0.86;
+        y = cell.y + cell.size * 0.74;
       } else if (cls === 'slot-lower-deep') {
         x = cell.x + cell.size * 0.72;
-        y = cell.y + cell.size * 0.95;
+        y = cell.y + cell.size * 0.88;
       } else if (cls === 'slot-lower-deep-both') {
         x = cell.x + cell.size * 0.76;
-        y = cell.y + cell.size * 1.02;
+        y = cell.y + cell.size * 0.88;
       }
 
-      if (cls === 'slot-lower' || cls === 'slot-lower-both') fontScale = 0.72;
+      if (cls === 'slot-lower' || cls === 'slot-lower-both') fontScale = 0.62;
       if (cls === 'slot-lower-deep' || cls === 'slot-lower-deep-both') fontScale = 0.58;
 
       ctx.font = `${Math.max(12, Math.round(cell.size * fontScale))}px "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif`;
