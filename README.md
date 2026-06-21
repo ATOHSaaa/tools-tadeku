@@ -20,8 +20,8 @@
 | `scene/` | Scene — シーン単位の構成エディタ |
 | `cue/` | Cue — 語彙表示型執筆エディタ |
 | `genko/` | Genko — 400字詰め原稿用紙エディタ |
-| `zenhan/` | zenhan — 全角半角変換ツール |
-| `shaper/` | shaper — 小説テキスト整形ツール |
+| `zenhan/` | Zenhan — 全角半角変換ツール |
+| `shaper/` | Shaper — 小説テキスト整形ツール |
 
 ルートの `index.html` から各ツールへのリンク一覧を表示します。`CNAME` でカスタムドメイン `tools.tadeku.net` を指定しています。
 
