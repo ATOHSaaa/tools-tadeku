@@ -189,6 +189,7 @@
     let inputHistory = [];
     let committedLength = 0;
     let isComposing = false;
+    let skipNextInputCount = false;
     let cooldownUntil = 0;
     const LIMIT_CHARS = 25;
     const TIME_WINDOW = 10000;
@@ -205,15 +206,23 @@
       recordCommittedInput();
     });
 
-    editor.addEventListener('input', (e) => {
-      if (e.isComposing || isComposing) return;
-      recordCommittedInput();
+    editor.addEventListener('paste', () => {
+      skipNextInputCount = true;
     });
 
-    function recordCommittedInput() {
+    editor.addEventListener('input', (e) => {
+      if (e.isComposing || isComposing) return;
+      const fromPaste = skipNextInputCount
+        || e.inputType === 'insertFromPaste'
+        || e.inputType === 'insertFromDrop';
+      skipNextInputCount = false;
+      recordCommittedInput(fromPaste);
+    });
+
+    function recordCommittedInput(skipCount) {
       const newLen = editor.value.length;
       const delta = newLen - committedLength;
-      if (delta > 0) {
+      if (delta > 0 && !skipCount) {
         const now = Date.now();
         for (let i = 0; i < delta; i++) inputHistory.push(now);
       }
