@@ -19,9 +19,9 @@
   <style>
     :root {
       --bg: #f6f4ef;
-      --ink: #1a1a1a;
+      --ink: #000000;
       --muted: #4a4a4a;
-      --border: #d4d0c8;
+      --border: #000000;
       --surface: #ffffff;
       --accent: #e8913a;
     }
@@ -99,15 +99,6 @@
       background: var(--bg);
     }
 
-    .btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-
-    .btn:disabled:hover {
-      border-color: var(--border);
-    }
-
     .btn.copied {
       border-color: var(--accent);
       color: var(--accent);
@@ -140,10 +131,23 @@
     }
 
     .actions-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .action-group {
       background: var(--surface);
       border: 2px solid var(--border);
       padding: 1.25rem;
-      margin-bottom: 1rem;
+    }
+
+    .group-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
     }
 
     .action-grid {
@@ -152,9 +156,9 @@
       gap: 0.5rem;
     }
 
-    @media (min-width: 600px) {
+    @media (min-width: 720px) {
       .action-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -166,7 +170,7 @@
       font-size: 0.82rem;
       font-weight: 700;
       line-height: 1.5;
-      text-align: left;
+      text-align: center;
       padding: 0.7rem 0.85rem;
       cursor: pointer;
       transition: border-color 0.12s, background 0.12s;
@@ -190,7 +194,6 @@
     <div class="editor-panel">
       <div class="editor-head">
         <div class="editor-actions">
-          <button type="button" class="btn" id="btn-undo" disabled>Undo</button>
           <button type="button" class="btn" id="btn-clear">クリア</button>
           <button type="button" class="btn" id="btn-copy">コピー</button>
         </div>
@@ -200,66 +203,45 @@
     </div>
 
     <div class="actions-panel" aria-label="整形操作">
-      <div class="action-grid">
-        <button type="button" class="action-btn" data-action="removeHalfSpaces">「半角スペース」を除去</button>
-        <button type="button" class="action-btn" data-action="removeFullSpaces">「全角スペース」を除去</button>
-        <button type="button" class="action-btn" data-action="removeTabs">「タブ（Tab）」を除去</button>
-        <button type="button" class="action-btn" data-action="removeLineBreaks">「改行」を除去</button>
-        <button type="button" class="action-btn" data-action="reduceBlankLines">「空白行」を段階的に除去</button>
-        <button type="button" class="action-btn" data-action="addBlankLines">「空白行」をすべてに追加</button>
-        <button type="button" class="action-btn" data-action="indentNonDialogue">会話文を除く「行頭」を一字下げ</button>
-        <button type="button" class="action-btn" data-action="romanToKanji">ローマ数字を「漢数字」に変換</button>
-      </div>
+      <section class="action-group" aria-label="除去">
+        <h2 class="group-title">除去</h2>
+        <div class="action-grid">
+          <button type="button" class="action-btn" data-action="removeHalfSpaces">半角スペース</button>
+          <button type="button" class="action-btn" data-action="removeFullSpaces">全角スペース</button>
+          <button type="button" class="action-btn" data-action="removeTabs">Tab</button>
+          <button type="button" class="action-btn" data-action="reduceBlankLines">空白行</button>
+          <button type="button" class="action-btn" data-action="removeLineBreaks">改行</button>
+          <button type="button" class="action-btn" data-action="unindentNonDialogue">一字下げ</button>
+        </div>
+      </section>
+
+      <section class="action-group" aria-label="追加">
+        <h2 class="group-title">追加</h2>
+        <div class="action-grid">
+          <button type="button" class="action-btn" data-action="indentNonDialogue">一字下げ</button>
+          <button type="button" class="action-btn" data-action="addBlankLines">空白行</button>
+        </div>
+      </section>
+
+      <section class="action-group" aria-label="変換">
+        <h2 class="group-title">変換</h2>
+        <div class="action-grid">
+          <button type="button" class="action-btn" data-action="digitsToKanji">数字 → 漢数字</button>
+        </div>
+      </section>
     </div>
   </div>
 
   <script src="../shared/site-link.js"></script>
   <script>
     (function () {
-      const ROMAN_RE = /\bM{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})\b/g;
-      const KANJI_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
-      const ROMAN_VALUES = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+      const KANJI_DIGITS = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+      const FW_DIGITS = '０１２３４５６７８９';
 
-      function parseRoman(roman) {
-        let total = 0;
-        for (let i = 0; i < roman.length; i += 1) {
-          const current = ROMAN_VALUES[roman[i]];
-          const next = ROMAN_VALUES[roman[i + 1]];
-          if (next && current < next) {
-            total -= current;
-          } else {
-            total += current;
-          }
-        }
-        return total;
-      }
-
-      function numberToKanji(n) {
-        if (n <= 0 || n > 3999) return String(n);
-
-        let result = '';
-        let rest = n;
-
-        if (rest >= 1000) {
-          const thousands = Math.floor(rest / 1000);
-          result += (thousands === 1 ? '' : KANJI_DIGITS[thousands]) + '千';
-          rest %= 1000;
-        }
-        if (rest >= 100) {
-          const hundreds = Math.floor(rest / 100);
-          result += (hundreds === 1 ? '' : KANJI_DIGITS[hundreds]) + '百';
-          rest %= 100;
-        }
-        if (rest >= 10) {
-          const tens = Math.floor(rest / 10);
-          result += (tens === 1 ? '' : KANJI_DIGITS[tens]) + '十';
-          rest %= 10;
-        }
-        if (rest > 0) {
-          result += KANJI_DIGITS[rest];
-        }
-
-        return result;
+      function digitToKanji(digit) {
+        if (digit >= '0' && digit <= '9') return KANJI_DIGITS[digit.charCodeAt(0) - 48];
+        const index = FW_DIGITS.indexOf(digit);
+        return index >= 0 ? KANJI_DIGITS[index] : digit;
       }
 
       function indentLine(line) {
@@ -267,6 +249,13 @@
         if (line.startsWith('「') || line.startsWith('『')) return line;
         if (line.startsWith('　')) return line;
         return '　' + line;
+      }
+
+      function unindentLine(line) {
+        if (!line.trim()) return line;
+        if (line.startsWith('「') || line.startsWith('『')) return line;
+        if (line.startsWith('　')) return line.slice(1);
+        return line;
       }
 
       const transforms = {
@@ -277,42 +266,25 @@
         reduceBlankLines: (text) => text.replace(/\n{2,}/g, (match) => '\n'.repeat(match.length - 1)),
         addBlankLines: (text) => text.split('\n').join('\n\n'),
         indentNonDialogue: (text) => text.split('\n').map(indentLine).join('\n'),
-        romanToKanji: (text) => text.replace(ROMAN_RE, (match) => {
-          const value = parseRoman(match);
-          return value > 0 ? numberToKanji(value) : match;
-        })
+        unindentNonDialogue: (text) => text.split('\n').map(unindentLine).join('\n'),
+        digitsToKanji: (text) => text.replace(/[0-9０-９]/g, digitToKanji)
       };
 
       const editorEl = document.getElementById('editor');
       const charCountEl = document.getElementById('char-count');
-      const undoBtn = document.getElementById('btn-undo');
-      const history = [];
-      const MAX_HISTORY = 50;
-      let restoring = false;
 
       function updateCharCount() {
         charCountEl.textContent = `${editorEl.value.length.toLocaleString('ja-JP')}文字`;
       }
 
-      function updateUndoButton() {
-        undoBtn.disabled = history.length === 0;
-      }
-
-      function pushHistory() {
-        if (restoring) return;
-        history.push(editorEl.value);
-        if (history.length > MAX_HISTORY) history.shift();
-        updateUndoButton();
-      }
-
-      function undo() {
-        if (history.length === 0) return;
-        restoring = true;
-        editorEl.value = history.pop();
-        restoring = false;
-        updateCharCount();
-        updateUndoButton();
+      function setEditorText(text) {
         editorEl.focus();
+        editorEl.setSelectionRange(0, editorEl.value.length);
+        const inserted = document.execCommand('insertText', false, text);
+        if (!inserted) {
+          editorEl.value = text;
+        }
+        updateCharCount();
       }
 
       function applyTransform(name) {
@@ -320,9 +292,7 @@
         if (!fn) return;
         const next = fn(editorEl.value);
         if (next === editorEl.value) return;
-        pushHistory();
-        editorEl.value = next;
-        updateCharCount();
+        setEditorText(next);
         editorEl.focus();
       }
 
@@ -334,14 +304,10 @@
 
       editorEl.addEventListener('input', updateCharCount);
 
-      undoBtn.addEventListener('click', undo);
-
       document.getElementById('btn-clear').addEventListener('click', () => {
         if (!editorEl.value) return;
         if (!window.confirm('入力内容をすべて消去しますか？')) return;
-        pushHistory();
-        editorEl.value = '';
-        updateCharCount();
+        setEditorText('');
         editorEl.focus();
       });
 
