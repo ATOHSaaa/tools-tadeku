@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>zenhan — 全角半角変換</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+      --accent: #e8913a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4.5rem;
+    }
+
+    .brand {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagline {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .panel-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .direction {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .direction-btn {
+      flex: 1;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 0.65rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+
+    .direction-btn:hover {
+      border-color: var(--ink);
+    }
+
+    .direction-btn.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--surface);
+    }
+
+    .targets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.75rem;
+    }
+
+    .target {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .target input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .panes {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    @media (min-width: 720px) {
+      .panes {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .pane-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .pane-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .btn:hover {
+      border-color: var(--ink);
+    }
+
+    .btn:active {
+      background: var(--bg);
+    }
+
+    .btn.copied {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      padding: 0.85rem 1rem;
+      resize: vertical;
+      transition: border-color 0.12s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    textarea[readonly] {
+      background: var(--bg);
+    }
+
+    .stats {
+      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <h1 class="brand">zenhan</h1>
+    <p class="tagline">英字・数字・記号・スペース・カタカナを選んで、全角と半角を相互変換します。</p>
+
+    <div class="panel">
+      <div class="panel-label">変換方向</div>
+      <div class="direction" role="group" aria-label="変換方向">
+        <button type="button" class="direction-btn active" data-direction="toHalf">全角 → 半角</button>
+        <button type="button" class="direction-btn" data-direction="toFull">半角 → 全角</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">変換対象</div>
+      <div class="targets">
+        <label class="target"><input type="checkbox" id="opt-letters" checked>英字</label>
+        <label class="target"><input type="checkbox" id="opt-numbers" checked>数字</label>
+        <label class="target"><input type="checkbox" id="opt-symbols">記号</label>
+        <label class="target"><input type="checkbox" id="opt-spaces">スペース</label>
+        <label class="target"><input type="checkbox" id="opt-katakana">カタカナ</label>
+      </div>
+    </div>
+
+    <div class="panes">
+      <section aria-label="入力">
+        <div class="pane-head">
+          <span class="pane-title">入力</span>
+          <button type="button" class="btn" id="btn-clear">クリア</button>
+        </div>
+        <textarea id="input" placeholder="ここに文章を入力…" spellcheck="false"></textarea>
+        <div class="stats" id="input-stats">0 文字</div>
+      </section>
+
+      <section aria-label="出力">
+        <div class="pane-head">
+          <span class="pane-title">出力</span>
+          <button type="button" class="btn" id="btn-copy">コピー</button>
+        </div>
+        <textarea id="output" readonly spellcheck="false" aria-live="polite"></textarea>
+        <div class="stats" id="output-stats">0 文字</div>
+      </section>
+    </div>
+  </div>
+
+  <script src="../shared/site-link.js"></script>
+  <script>
+    (function () {
+      const HW_KANA = '｡｢｣､･ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+      const FW_KANA = '。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
+
+      const H2Z_KATAKANA = Object.fromEntries(
+        [...HW_KANA].map((ch, i) => [ch, FW_KANA[i]])
+      );
+
+      const Z2H_KATAKANA_VOICED = {
+        'ガ': 'ｶﾞ', 'ギ': 'ｷﾞ', 'グ': 'ｸﾞ', 'ゲ': 'ｹﾞ', 'ゴ': 'ｺﾞ',
+        'ザ': 'ｻﾞ', 'ジ': 'ｼﾞ', 'ズ': 'ｽﾞ', 'ゼ': 'ｾﾞ', 'ゾ': 'ｿﾞ',
+        'ダ': 'ﾀﾞ', 'ヂ': 'ﾁﾞ', 'ヅ': 'ﾂﾞ', 'デ': 'ﾃﾞ', 'ド': 'ﾄﾞ',
+        'バ': 'ﾊﾞ', 'ビ': 'ﾋﾞ', 'ブ': 'ﾌﾞ', 'ベ': 'ﾍﾞ', 'ボ': 'ﾎﾞ',
+        'パ': 'ﾊﾟ', 'ピ': 'ﾋﾟ', 'プ': 'ﾌﾟ', 'ペ': 'ﾍﾟ', 'ポ': 'ﾎﾟ',
+        'ヴ': 'ｳﾞ', 'ヷ': 'ﾜﾞ', 'ヺ': 'ｦﾞ'
+      };
+
+      const H2Z_KATAKANA_VOICED = Object.fromEntries(
+        Object.entries(Z2H_KATAKANA_VOICED).map(([z, h]) => [h, z])
+      );
+
+      const Z2H_KATAKANA = { ...Object.fromEntries(
+        [...FW_KANA].map((ch, i) => [ch, HW_KANA[i]])
+      ) };
+
+      const inputEl = document.getElementById('input');
+      const outputEl = document.getElementById('output');
+      const inputStatsEl = document.getElementById('input-stats');
+      const outputStatsEl = document.getElementById('output-stats');
+      const directionBtns = document.querySelectorAll('.direction-btn');
+      const optionEls = {
+        letters: document.getElementById('opt-letters'),
+        numbers: document.getElementById('opt-numbers'),
+        symbols: document.getElementById('opt-symbols'),
+        spaces: document.getElementById('opt-spaces'),
+        katakana: document.getElementById('opt-katakana')
+      };
+
+      let direction = 'toHalf';
+
+      function getOptions() {
+        return {
+          letters: optionEls.letters.checked,
+          numbers: optionEls.numbers.checked,
+          symbols: optionEls.symbols.checked,
+          spaces: optionEls.spaces.checked,
+          katakana: optionEls.katakana.checked
+        };
+      }
+
+      function convertAsciiChar(ch, dir, options) {
+        const cp = ch.codePointAt(0);
+
+        if (options.letters) {
+          if (dir === 'toHalf') {
+            if (cp >= 0xFF21 && cp <= 0xFF3A) return String.fromCodePoint(cp - 0xFEE0);
+            if (cp >= 0xFF41 && cp <= 0xFF5A) return String.fromCodePoint(cp - 0xFEE0);
+          } else {
+            if (cp >= 0x41 && cp <= 0x5A) return String.fromCodePoint(cp + 0xFEE0);
+            if (cp >= 0x61 && cp <= 0x7A) return String.fromCodePoint(cp + 0xFEE0);
+          }
+        }
+
+        if (options.numbers) {
+          if (dir === 'toHalf' && cp >= 0xFF10 && cp <= 0xFF19) {
+            return String.fromCodePoint(cp - 0xFEE0);
+          }
+          if (dir === 'toFull' && cp >= 0x30 && cp <= 0x39) {
+            return String.fromCodePoint(cp + 0xFEE0);
+          }
+        }
+
+        if (options.symbols) {
+          if (dir === 'toHalf') {
+            if (cp >= 0xFF01 && cp <= 0xFF5E) return String.fromCodePoint(cp - 0xFEE0);
+            if (cp === 0xFFE5) return '¥';
+            if (cp === 0xFFE0) return '¢';
+            if (cp === 0xFFE1) return '£';
+            if (cp === 0xFFE2) return '¬';
+          } else {
+            if (cp >= 0x21 && cp <= 0x7E) return String.fromCodePoint(cp + 0xFEE0);
+            if (ch === '¥') return '￥';
+            if (ch === '¢') return '￠';
+            if (ch === '£') return '￡';
+            if (ch === '¬') return '￢';
+          }
+        }
+
+        if (options.spaces) {
+          if (dir === 'toHalf' && cp === 0x3000) return ' ';
+          if (dir === 'toFull' && cp === 0x20) return '　';
+        }
+
+        return ch;
+      }
+
+      function convertText(text, dir, options) {
+        let result = '';
+        let i = 0;
+
+        while (i < text.length) {
+          const ch = text[i];
+
+          if (options.katakana) {
+            if (dir === 'toFull' && i + 1 < text.length) {
+              const pair = ch + text[i + 1];
+              const voiced = H2Z_KATAKANA_VOICED[pair];
+              if (voiced) {
+                result += voiced;
+                i += 2;
+                continue;
+              }
+            }
+
+            if (dir === 'toHalf') {
+              const voiced = Z2H_KATAKANA_VOICED[ch];
+              if (voiced) {
+                result += voiced;
+                i += 1;
+                continue;
+              }
+              const hw = Z2H_KATAKANA[ch];
+              if (hw) {
+                result += hw;
+                i += 1;
+                continue;
+              }
+            } else {
+              const fw = H2Z_KATAKANA[ch];
+              if (fw) {
+                result += fw;
+                i += 1;
+                continue;
+              }
+            }
+          }
+
+          result += convertAsciiChar(ch, dir, options);
+          i += 1;
+        }
+
+        return result;
+      }
+
+      function updateStats() {
+        inputStatsEl.textContent = `${inputEl.value.length.toLocaleString('ja-JP')} 文字`;
+        outputStatsEl.textContent = `${outputEl.value.length.toLocaleString('ja-JP')} 文字`;
+      }
+
+      function runConvert() {
+        outputEl.value = convertText(inputEl.value, direction, getOptions());
+        updateStats();
+      }
+
+      directionBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          direction = btn.dataset.direction;
+          directionBtns.forEach((b) => b.classList.toggle('active', b === btn));
+          runConvert();
+        });
+      });
+
+      Object.values(optionEls).forEach((el) => {
+        el.addEventListener('change', runConvert);
+      });
+
+      inputEl.addEventListener('input', runConvert);
+
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        inputEl.value = '';
+        outputEl.value = '';
+        updateStats();
+        inputEl.focus();
+      });
+
+      document.getElementById('btn-copy').addEventListener('click', async () => {
+        if (!outputEl.value) return;
+        const btn = document.getElementById('btn-copy');
+        try {
+          await navigator.clipboard.writeText(outputEl.value);
+          btn.textContent = 'コピーしました';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'コピー';
+            btn.classList.remove('copied');
+          }, 1400);
+        } catch {
+          outputEl.select();
+          document.execCommand('copy');
+        }
+      });
+
+      updateStats();
+    })();
+  </script>
+</body>
+</html>
