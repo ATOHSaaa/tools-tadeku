@@ -1,0 +1,23 @@
+.format-group { display: flex; }
+
+.format-btn {
+  flex: 1;
+  border: 2px solid var(--border);
+  border-left: none;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  padding: 0.55rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.format-btn:first-child { border-left: 2px solid var(--border); }
+
+.format-btn:hover {
+  background: var(--invert);
+  color: #fff;
+}

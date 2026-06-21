@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/export.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -251,12 +252,6 @@
       margin-bottom: 1.25rem;
     }
 
-    .modal-filename {
-      font-size: 0.82rem;
-      font-weight: 500;
-      margin-bottom: 1.25rem;
-    }
-
     .format-options {
       border: none;
       margin-bottom: 1rem;
@@ -272,42 +267,6 @@
 
     .format-group {
       display: flex;
-    }
-
-    .format-option {
-      flex: 1;
-      cursor: pointer;
-    }
-
-    .format-option input {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .format-option span {
-      display: block;
-      border: 2px solid var(--border);
-      padding: 0.55rem;
-      text-align: center;
-      font-size: 0.85rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .format-option + .format-option span {
-      border-left: none;
-    }
-
-    .format-option input:checked + span {
-      background: var(--invert);
-      color: #fff;
-    }
-
-    .format-option input:focus-visible + span {
-      outline: 2px solid var(--ink);
-      outline-offset: 2px;
     }
 
     .modal-actions {
@@ -393,26 +352,19 @@
       <p class="modal-title" id="export-modal-title">書き出し</p>
       <p class="modal-message" id="export-modal-message"></p>
       <fieldset class="format-options">
-        <legend class="format-label">形式</legend>
+        <legend class="format-label">形式を選ぶと書き出します</legend>
         <div class="format-group">
-          <label class="format-option">
-            <input type="radio" name="export-format" value="txt" checked>
-            <span>.txt</span>
-          </label>
-          <label class="format-option">
-            <input type="radio" name="export-format" value="md">
-            <span>.md</span>
-          </label>
+          <button class="format-btn" type="button" data-format="txt">.txt</button>
+          <button class="format-btn" type="button" data-format="md">.md</button>
         </div>
       </fieldset>
-      <p class="modal-filename"><strong id="export-filename"></strong></p>
       <div class="modal-actions">
         <button class="btn btn-inline" id="export-modal-cancel" type="button">キャンセル</button>
-        <button class="btn btn-inline" id="export-modal-confirm" type="button">書き出す</button>
       </div>
     </div>
   </div>
 
+  <script src="../shared/export.js"></script>
   <script src="../shared/wordfall-words.js"></script>
   <script>
     const wordfallWords = window.WORDFALL_CONFIG?.words || [];
@@ -536,64 +488,29 @@
 
     els.wordNext.addEventListener('click', injectWords);
 
+    function exportSourceText() {
+      return els.editor.value;
+    }
+
     function showExportModal() {
-      return new Promise(resolve => {
-        const overlay = document.getElementById('export-modal');
-        const formatInputs = overlay.querySelectorAll('input[name="export-format"]');
-        const filenameEl = document.getElementById('export-filename');
-        const chars = els.editor.value.length;
-
-        document.getElementById('export-modal-message').textContent =
-          chars ? `${chars} 字を書き出します` : '（空の原稿）を書き出します';
-
-        function selectedFormat() {
-          return overlay.querySelector('input[name="export-format"]:checked').value;
-        }
-
-        function updateFilename() {
-          filenameEl.textContent = `無題.${selectedFormat()}`;
-        }
-
-        formatInputs.forEach(input => { input.onchange = updateFilename; });
-        formatInputs[0].checked = true;
-        updateFilename();
-
-        overlay.hidden = false;
-
-        function close(result) {
-          overlay.hidden = true;
-          document.removeEventListener('keydown', onKey);
-          formatInputs.forEach(input => { input.onchange = null; });
-          resolve(result);
-        }
-
-        function onKey(e) {
-          if (e.key === 'Escape') close(null);
-        }
-
-        document.getElementById('export-modal-cancel').onclick = () => close(null);
-        document.getElementById('export-modal-confirm').onclick = () => close(selectedFormat());
-        overlay.onclick = e => { if (e.target === overlay) close(null); };
-        document.addEventListener('keydown', onKey);
-        document.getElementById('export-modal-confirm').focus();
-      });
+      const chars = els.editor.value.length;
+      const message = chars ? `${chars} 字` : '（空の原稿）';
+      return ExportUtils.showExportFormatModal(message, els.editor);
     }
 
     function buildExportContent(format) {
       const text = els.editor.value;
-      if (format === 'md') return text ? `# 無題\n\n${text}` : '# 無題\n';
+      const title = ExportUtils.exportBasenameFromText(exportSourceText());
+      if (format === 'md') return text ? `# ${title}\n\n${text}` : `# ${title}\n`;
       return text;
     }
 
     function exportFile(format) {
+      const filename = ExportUtils.exportFilename(exportSourceText(), format);
       const content = buildExportContent(format);
       const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
       const blob = new Blob([content], { type: mime });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `無題.${format}`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      ExportUtils.downloadBlob(blob, filename);
     }
 
     document.getElementById('export-btn').addEventListener('click', async () => {

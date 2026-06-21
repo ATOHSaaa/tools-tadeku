@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genko</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="stylesheet" href="../shared/export.css">
+  <script src="../shared/export.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+      --cell-size: 28px;
+      --grid-line: rgba(0, 0, 0, 0.16);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .save-indicator {
+      opacity: 0.35;
+      transition: opacity 0.3s;
+    }
+
+    .save-indicator.saved { opacity: 1; }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .editor-wrap {
+      min-height: 0;
+      min-width: 0;
+      overflow: auto;
+      border-right: 2px solid var(--border);
+      background: var(--bg);
+    }
+
+    .pages-scroll {
+      display: flex;
+      direction: rtl;
+      align-items: flex-start;
+      gap: 2rem;
+      padding: 1.5rem 2rem;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .page {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(20, var(--cell-size));
+      grid-template-rows: repeat(20, var(--cell-size));
+      grid-auto-flow: column;
+      direction: rtl;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      flex: none;
+    }
+
+    .genko-cell {
+      position: relative;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif;
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--grid-line);
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: calc(var(--cell-size) * 0.72);
+      line-height: var(--cell-size);
+      text-align: center;
+      user-select: none;
+      cursor: text;
+    }
+
+    .genko-cell.selected {
+      background-color: rgba(0, 0, 0, 0.14);
+    }
+
+    /* セル内スロット: レイアウト計算済みの kind/slot に従って描画する */
+    .genko-cell .cell-main,
+    .genko-cell .cell-mark {
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    /* 文字を含む同居セル: 本文は縮めず、記号のために上へ逃がす */
+    .genko-cell.cell-hang-kutouten .slot-main-raised,
+    .genko-cell.cell-hang-close .slot-main-raised,
+    .genko-cell.cell-hang-both .slot-main-raised {
+      top: calc(var(--cell-size) * 0.03);
+      left: 0;
+      width: 100%;
+      height: 70%;
+      align-items: center;
+      font-size: calc(var(--cell-size) * 0.72);
+    }
+
+    /* 文字＋句読点 */
+    .genko-cell.cell-hang-kutouten .slot-lower {
+      right: 0;
+      bottom: 0;
+      width: 44%;
+      height: 28%;
+      align-items: flex-end;
+      font-size: calc(var(--cell-size) * 0.46);
+      transform: translateY(calc(var(--cell-size) * 0.54));
+    }
+
+    /* 文字＋句読点＋閉じ括弧: 句読点は閉じ括弧より上 */
+    .genko-cell.cell-hang-both .slot-lower {
+      right: calc(var(--cell-size) * 0.16);
+      bottom: calc(var(--cell-size) * -0.10);
+      width: 46%;
+      height: 28%;
+      align-items: center;
+      font-size: calc(var(--cell-size) * 0.72);
+      transform: none;
+    }
+    .genko-cell.cell-hang-both .slot-lower-deep {
+      right: calc(var(--cell-size) * 0.06);
+      bottom: calc(var(--cell-size) * -0.36);
+      transform: none;
+    }
+
+    /* 文字＋閉じ括弧 */
+    .genko-cell.cell-hang-close .slot-lower-deep {
+      right: calc(var(--cell-size) * 0.24);
+      bottom: 0;
+      width: 54%;
+      height: 38%;
+      align-items: flex-end;
+      font-size: calc(var(--cell-size) * 0.58);
+      transform: translateY(calc(var(--cell-size) * 0.24));
+    }
+
+    /* 約物どうし（句読点＋閉じ括弧）は、句読点を上・閉じ括弧を下へ固定配置 */
+    .genko-cell.cell-pair .slot-upper {
+      top: calc(var(--cell-size) * 0.20);
+      left: 0;
+      width: 100%;
+      height: 34%;
+      align-items: center;
+      font-size: calc(var(--cell-size) * 0.72);
+    }
+
+    .genko-cell.cell-pair .slot-lower-deep {
+      right: calc(var(--cell-size) * 0.24);
+      bottom: calc(var(--cell-size) * 0.12);
+      width: 54%;
+      height: 42%;
+      align-items: flex-end;
+      font-size: calc(var(--cell-size) * 0.58);
+      transform: none;
+    }
+
+    @keyframes caret-blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .genko-cell.composing-cell {
+      color: var(--ink);
+    }
+
+    .caret {
+      position: absolute;
+      height: 2px;
+      background: var(--ink);
+      pointer-events: none;
+      animation: caret-blink 1.06s steps(1, start) infinite;
+      z-index: 5;
+    }
+
+    /* 入力の受け口。常に透明で、変換中の文字はマス目側に描画する */
+    .capture {
+      position: absolute;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      direction: ltr;
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif;
+      font-size: calc(var(--cell-size) * 0.72);
+      line-height: var(--cell-size);
+      border: none;
+      outline: none;
+      resize: none;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      color: transparent;
+      caret-color: transparent;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .panel-block {
+      padding: 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .panel-block:last-child {
+      border-bottom: none;
+      flex: 1;
+    }
+
+    .panel-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel-value {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+    }
+
+    .panel-sub {
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 0.35rem;
+      line-height: 1.5;
+    }
+
+    .page-bar-bg {
+      width: 100%;
+      height: 8px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      margin-top: 0.65rem;
+    }
+
+    .page-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--ink);
+      transition: width 0.15s linear;
+    }
+
+    .footer {
+      grid-column: 1 / -1;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .modal-overlay[hidden] { display: none; }
+
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-message {
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-filename {
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+    }
+
+    .format-options {
+      border: none;
+      margin-bottom: 1rem;
+    }
+
+    .format-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .format-group { display: flex; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .modal-actions .btn { width: auto; }
+
+    @media (max-width: 640px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto auto;
+      }
+
+      .editor-wrap {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .panel {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .panel-block {
+        flex: 1 1 50%;
+        border-bottom: none;
+        border-right: 2px solid var(--border);
+      }
+
+      .panel-block:last-child {
+        flex: 1 1 100%;
+        border-right: none;
+        border-top: 2px solid var(--border);
+      }
+
+      .footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="brand">Genko</div>
+      <div class="header-right">
+        <div class="stats">
+          <span>文字数 <strong id="char-count">0</strong></span>
+          <span class="save-indicator saved" id="save-indicator">保存済み</span>
+        </div>
+        <button class="btn" id="export-btn" type="button">書き出し</button>
+      </div>
+    </header>
+
+    <div class="editor-wrap" id="editor-wrap">
+      <div class="pages-scroll" id="pages-scroll"></div>
+    </div>
+
+    <aside class="panel">
+      <div class="panel-block">
+        <div class="panel-label">原稿用紙</div>
+        <div class="panel-value" id="page-count">0枚</div>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">総字数</div>
+        <div class="panel-value" id="total-chars">0字</div>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">現在の1枚</div>
+        <div class="panel-value" id="page-current">000 / 400</div>
+        <div class="page-bar-bg">
+          <div class="page-bar-fill" id="page-bar"></div>
+        </div>
+      </div>
+    </aside>
+
+    <footer class="footer">400字詰め · 1マス1文字 · 縦書き · 自動保存</footer>
+  </div>
+
+  <div class="modal-overlay" id="export-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+      <p class="modal-title" id="export-modal-title">書き出し</p>
+      <p class="modal-message" id="export-modal-message"></p>
+      <fieldset class="format-options">
+        <legend class="format-label">形式を選ぶと書き出します</legend>
+        <div class="format-group">
+          <button class="format-btn" type="button" data-format="txt">.txt</button>
+          <button class="format-btn" type="button" data-format="md">.md</button>
+          <button class="format-btn" type="button" data-format="jpg">.jpg</button>
+        </div>
+      </fieldset>
+      <div class="modal-actions">
+        <button class="btn" id="export-modal-cancel" type="button">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'genko-draft-v1';
+    const ROWS = 20;             // 1列あたりのマス数
+    const COLS = 20;             // 1枚あたりの列数
+    const PER_PAGE = ROWS * COLS; // 400
+    let CELL_PX = 28;             // マス1辺(px)。画面サイズに合わせて動的に決まる
+
+    const els = {
+      pagesScroll: document.getElementById('pages-scroll'),
+      editorWrap: document.getElementById('editor-wrap'),
+      charCount: document.getElementById('char-count'),
+      saveIndicator: document.getElementById('save-indicator'),
+      pageCount: document.getElementById('page-count'),
+      totalChars: document.getElementById('total-chars'),
+      pageCurrent: document.getElementById('page-current'),
+      pageBar: document.getElementById('page-bar'),
+    };
+
+    // 文字データモデル: 1要素 = 1書記素。'\n' は改行（段落）トークン。
+    let doc = [];
+    let caret = 0;        // 0..doc.length（doc[caret] の手前に挿入）
+    let anchor = null;    // 選択の起点（null なら選択なし）。範囲 = [min(anchor,caret), max(anchor,caret))
+    let composing = false;
+    let dragging = false;
+    let lastLayout = null;
+    let saveTimer = null;
+
+    const pageEls = [];   // .page 要素の配列
+    const cellEls = [];   // ページごとの 400 マス span 配列
+
+    // 原稿用紙1枚(20×20)がエディタ領域いっぱいに収まるようマスの大きさを決める
+    function updateCellSize() {
+      const header = document.querySelector('.header');
+      const footer = document.querySelector('.footer');
+      const headerH = header ? header.offsetHeight : 56;
+      const footerH = (footer && getComputedStyle(footer).display !== 'none') ? footer.offsetHeight : 0;
+      const availH = window.innerHeight - headerH - footerH - 48 /* 上下padding */ - 4 /* 枠 */;
+      const availW = els.editorWrap.clientWidth - 64 /* 左右padding */ - 4 /* 枠 */;
+      const cellH = Math.floor(availH / ROWS);
+      const cellW = Math.floor(availW / COLS);
+      const cell = Math.max(16, Math.min(60, cellH, cellW));
+      CELL_PX = cell;
+      document.documentElement.style.setProperty('--cell-size', cell + 'px');
+    }
+
+    const segmenter = (typeof Intl !== 'undefined' && Intl.Segmenter)
+      ? new Intl.Segmenter('ja', { granularity: 'grapheme' })
+      : null;
+
+    function graphemes(str) {
+      if (!str) return [];
+      if (segmenter) return [...segmenter.segment(str)].map(s => s.segment);
+      return [...str];
+    }
+
+    // --- 入力受け取り用の透明 textarea（縦書き・IME 表示） ---
+    const capture = document.createElement('textarea');
+    capture.className = 'capture';
+    capture.setAttribute('spellcheck', 'false');
+    capture.setAttribute('autocapitalize', 'off');
+    capture.setAttribute('autocomplete', 'off');
+    capture.setAttribute('autocorrect', 'off');
+    capture.rows = 1;
+
+    const caretEl = document.createElement('div');
+    caretEl.className = 'caret';
+
+    // --- 禁則処理 ---
+    // 句読点: 行末であふれるときは直前の文字と同じマスに同居させる（ぶら下げ）
+    const KUTOUTEN = new Set([...'、。，．,.']);
+    // 閉じ括弧: 句読点と同様に行末ぶら下げの対象
+    const KINSOKU_CLOSE = new Set([...')）]］｝}〕〉》」』】〙〗｠»']);
+    // 行末禁則: 列の末尾に来てはいけない文字（開き括弧）→ 次列へ追い出し
+    const KINSOKU_END = new Set([...'(（[［｛{〔〈《「『【〘〖｟«']);
+
+    function isKutouten(ch) { return ch !== undefined && KUTOUTEN.has(ch); }
+    function isClose(ch) { return ch !== undefined && KINSOKU_CLOSE.has(ch); }
+    function canHang(ch) { return isKutouten(ch) || isClose(ch); }
+    function isEndForbidden(ch) { return ch !== undefined && KINSOKU_END.has(ch); }
+    function tokenRole(ch) {
+      if (isKutouten(ch)) return 'kutouten';
+      if (isClose(ch)) return 'close';
+      if (isEndForbidden(ch)) return 'open';
+      return 'text';
+    }
+
+    // 縦書き用の表示形への置き換え（括弧類はフォント／回転任せにせず縦組み字形を明示）
+    const VERT_FORMS = {
+      '「': '﹁', '」': '﹂', '『': '﹃', '』': '﹄',
+      '（': '︵', '）': '︶', '(': '︵', ')': '︶',
+      '〔': '︹', '〕': '︺', '［': '︻', '］': '︼', '[': '︻', ']': '︼',
+      '｛': '︷', '｝': '︸', '{': '︷', '}': '︸',
+      '【': '︻', '】': '︼', '〖': '︗', '〗': '︘',
+      '〈': '︿', '〉': '﹀', '《': '︽', '》': '︾',
+    };
+    function vForm(ch) { return VERT_FORMS[ch] || ch; }
+    function vFormStr(s) { let o = ''; for (const c of s) o += vForm(c); return o; }
+
+    function markFor(docArr, token, slot) {
+      return { token, char: docArr[token], role: tokenRole(docArr[token]), slot };
+    }
+
+    function makeNormalCell(docArr, token) {
+      return {
+        kind: 'normal',
+        main: token,
+        mainChar: docArr[token],
+        marks: [],
+        tokens: [token],
+        role: tokenRole(docArr[token]),
+      };
+    }
+
+    function makeYakumonoPairCell(docArr, firstToken, secondToken) {
+      const marks = [markFor(docArr, firstToken, 'auto'), markFor(docArr, secondToken, 'auto')];
+      return {
+        kind: 'yakumonoPair',
+        main: null,
+        marks,
+        tokens: [firstToken, secondToken],
+      };
+    }
+
+    function normalizeCellKind(cell) {
+      const hasKutouten = cell.marks.some(m => m.role === 'kutouten');
+      const hasClose = cell.marks.some(m => m.role === 'close');
+      if (cell.main === null) {
+        if (hasKutouten && hasClose) cell.kind = 'yakumonoPair';
+        else cell.kind = 'normal';
+        return;
+      }
+      if (hasKutouten && hasClose) cell.kind = 'hangBoth';
+      else if (hasKutouten) cell.kind = 'hangKutouten';
+      else if (hasClose) cell.kind = 'hangClose';
+      else if (cell.marks.length > 0) cell.kind = 'hang';
+      else cell.kind = 'normal';
+    }
+
+    function addMarkToCell(cell, docArr, token) {
+      cell.marks.push(markFor(docArr, token, 'auto'));
+      cell.tokens.push(token);
+      normalizeCellKind(cell);
+    }
+
+    // docArr を縦書きの列（=行）に割り付ける。
+    //  - セルは kind/main/marks/tokens を持ち、描画側が文字種を推測しなくてよい形にする
+    //  - 句読点・閉じ括弧 … 通常は1マス。ただし列が満杯のときは行末のマスに同居（ぶら下げ）
+    //  - 句読点＋閉じ括弧 … 入力順に依存せず同じマスにまとめる
+    //  - 行末禁則（開き括弧）… 列末に来るなら次列へ追い出し
+    // 返り値: 各列 { cells: [{ kind, main, marks, tokens }], nl }
+    function computeColumns(docArr) {
+      const lines = [];
+      let cur = [];
+      const flush = (nl) => { lines.push({ cells: cur, nl }); cur = []; };
+      for (let i = 0; i < docArr.length; i++) {
+        const ch = docArr[i];
+        if (ch === '\n') { flush(i); continue; }
+
+        // 約物の結合: 句読点の直後の閉じ括弧（。」 など）は同じマスに入れる
+        if (isClose(ch) && cur.length > 0) {
+          const lastCell = cur[cur.length - 1];
+          if (lastCell.kind === 'normal' && isKutouten(docArr[lastCell.main])) {
+            cur[cur.length - 1] = makeYakumonoPairCell(docArr, lastCell.main, i);
+            continue;
+          }
+          if (lastCell.main !== null && lastCell.marks.some(m => m.role === 'kutouten')) {
+            addMarkToCell(lastCell, docArr, i);
+            continue;
+          }
+        }
+
+        // 約物の結合: 閉じ括弧の直後の句読点（」。 など）も同じマスに入れる
+        if (isKutouten(ch) && cur.length > 0) {
+          const lastCell = cur[cur.length - 1];
+          if (lastCell.kind === 'normal' && isClose(docArr[lastCell.main])) {
+            cur[cur.length - 1] = makeYakumonoPairCell(docArr, i, lastCell.main);
+            continue;
+          }
+          if (lastCell.main !== null && lastCell.marks.some(m => m.role === 'close')) {
+            addMarkToCell(lastCell, docArr, i);
+            continue;
+          }
+        }
+
+        if (cur.length >= ROWS) {
+          if (canHang(ch)) {
+            // 行末ぶら下げ: あふれた句読点・閉じ括弧は最後のマスに同居させる
+            const lastCell = cur[cur.length - 1];
+            if (lastCell.kind === 'normal' && lastCell.role === 'close' && isKutouten(ch)) {
+              cur[cur.length - 1] = makeYakumonoPairCell(docArr, i, lastCell.main);
+            } else {
+              addMarkToCell(lastCell, docArr, i);
+            }
+            continue;
+          }
+          if (isEndForbidden(docArr[cur[cur.length - 1].main])) {
+            // 行末禁則: 最後のマスが開き括弧なら次列へ送る（追い出し）
+            const moved = cur.splice(cur.length - 1);
+            flush(null);
+            cur = moved;
+          } else {
+            flush(null);
+          }
+        }
+        cur.push(makeNormalCell(docArr, i));
+      }
+      if (cur.length > 0) flush(null);
+      return lines;
+    }
+
+    // --- レイアウト計算 ---
+    // 任意の文字配列を縦書きグリッドに割り付け、各マスの文字・キャレット座標・必要枚数を返す。
+    function computeLayout(docArr, caretPos) {
+      if (docArr === undefined) docArr = doc;
+      if (caretPos === undefined) caretPos = caret;
+      const cellViewAt = new Map();   // "page:cellIndex" -> セル表示モデル
+      const cellToken = new Map();     // "page:cellIndex" -> 代表 doc index
+      const cellTokensAt = new Map();  // "page:cellIndex" -> このマスに含まれる doc index[]
+      const slots = new Array(docArr.length + 1); // キャレット位置 i の {col,row}
+      let maxCol = 0, lastLinear = -1;
+
+      const lines = computeColumns(docArr);
+      let colNum = 0;
+      for (const line of lines) {
+        for (let r = 0; r < line.cells.length; r++) {
+          const cellObj = line.cells[r];
+          const ti = cellObj.tokens[0];
+          const col = colNum, row = r;
+          const page = Math.floor(col / COLS);
+          const colInPage = col % COLS;
+          const cell = colInPage * ROWS + row;
+          const key = page + ':' + cell;
+          cellViewAt.set(key, cellObj);
+          cellToken.set(key, ti);
+          cellTokensAt.set(key, cellObj.tokens);
+          for (const token of cellObj.tokens) {
+            slots[token] = { col, row };
+          }
+          lastLinear = col * ROWS + row;
+          maxCol = Math.max(maxCol, col);
+        }
+        if (line.nl !== null) {
+          slots[line.nl] = { col: colNum, row: line.cells.length };
+        }
+        colNum++;
+      }
+
+      // 文末（caret == docArr.length）の座標
+      let endCol = 0, endRow = 0;
+      if (lines.length > 0) {
+        const last = lines[lines.length - 1];
+        if (last.nl !== null) {
+          endCol = colNum; endRow = 0;             // 改行で終わる → 次の空列の先頭
+        } else if (last.cells.length >= ROWS) {
+          endCol = colNum; endRow = 0;             // 満杯の列で終わる → 次列の先頭
+        } else {
+          endCol = colNum - 1; endRow = last.cells.length;
+        }
+      }
+      slots[docArr.length] = { col: endCol, row: endRow };
+      maxCol = Math.max(maxCol, endCol);
+
+      const cs = slots[Math.max(0, Math.min(caretPos, slots.length - 1))] || { col: 0, row: 0 };
+      const caretPage = Math.floor(cs.col / COLS);
+      const pageCount = Math.max(1, Math.floor(maxCol / COLS) + 1, caretPage + 1);
+
+      return { cellViewAt, cellToken, cellTokensAt, slots, lastLinear, pageCount };
+    }
+
+    // --- DOM 構築 ---
+    function buildPage(pageIdx) {
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.dataset.page = pageIdx;
+      const cells = [];
+      for (let ci = 0; ci < PER_PAGE; ci++) {
+        const cell = document.createElement('div');
+        cell.className = 'genko-cell';
+        cell.dataset.page = pageIdx;
+        cell.dataset.cell = ci;
+        page.appendChild(cell);
+        cells.push(cell);
+      }
+      return { page, cells };
+    }
+
+    function ensurePages(n) {
+      while (pageEls.length < n) {
+        const { page, cells } = buildPage(pageEls.length);
+        els.pagesScroll.appendChild(page);
+        pageEls.push(page);
+        cellEls.push(cells);
+      }
+      while (pageEls.length > n) {
+        const page = pageEls.pop();
+        cellEls.pop();
+        page.remove();
+      }
+    }
+
+    // 通し列番号・行からページ内のピクセル座標を返す（縦書き=右の列から左へ）
+    function cellGeometry(coord) {
+      const page = Math.floor(coord.col / COLS);
+      const colInPage = coord.col % COLS;
+      const x = (COLS - 1 - colInPage) * CELL_PX;
+      const y = coord.row * CELL_PX;
+      return { page, x, y };
+    }
+
+    function positionCaretBar(coord) {
+      const g = cellGeometry(coord);
+      const pageEl = pageEls[g.page];
+      if (!pageEl) return;
+      pageEl.appendChild(caretEl);
+      caretEl.style.left = g.x + 'px';
+      caretEl.style.top = (g.y - 1) + 'px';
+      caretEl.style.width = CELL_PX + 'px';
+    }
+
+    function positionCapture(coord) {
+      const g = cellGeometry(coord);
+      const pageEl = pageEls[g.page];
+      if (!pageEl) return;
+      pageEl.appendChild(capture);
+      capture.style.left = g.x + 'px';
+      capture.style.top = g.y + 'px';
+      capture.style.width = CELL_PX + 'px';
+      const remaining = Math.max(2, ROWS - coord.row);
+      capture.style.height = (remaining * CELL_PX) + 'px';
+    }
+
+    function appendCellSpan(cell, className, text) {
+      const span = document.createElement('span');
+      span.className = className;
+      span.textContent = text;
+      cell.appendChild(span);
+    }
+
+    function markText(cellView, role) {
+      return cellView.marks
+        .filter(mark => mark.role === role)
+        .map(mark => vForm(mark.char))
+        .join('');
+    }
+
+    function paintCellContent(cell, cellView) {
+      cell.classList.remove(
+        'cell-normal',
+        'cell-hang-kutouten',
+        'cell-hang-close',
+        'cell-hang-both',
+        'cell-pair'
+      );
+      cell.textContent = '';
+      if (!cellView) return;
+
+      if (cellView.kind === 'normal') {
+        cell.classList.add('cell-normal');
+        cell.textContent = vForm(cellView.mainChar);
+        return;
+      }
+
+      if (cellView.kind === 'yakumonoPair') {
+        cell.classList.add('cell-pair');
+        appendCellSpan(cell, 'cell-mark slot-upper', markText(cellView, 'kutouten'));
+        appendCellSpan(cell, 'cell-mark slot-lower-deep', markText(cellView, 'close'));
+        return;
+      }
+
+      if (cellView.kind === 'hangKutouten' || cellView.kind === 'hangClose' || cellView.kind === 'hangBoth') {
+        const kutouten = markText(cellView, 'kutouten');
+        const close = markText(cellView, 'close');
+        if (cellView.kind === 'hangKutouten') cell.classList.add('cell-hang-kutouten');
+        else if (cellView.kind === 'hangClose') cell.classList.add('cell-hang-close');
+        else cell.classList.add('cell-hang-both');
+        appendCellSpan(cell, 'cell-main slot-main-raised', vForm(cellView.mainChar));
+        if (kutouten) appendCellSpan(cell, 'cell-mark slot-lower', kutouten);
+        if (close) appendCellSpan(cell, 'cell-mark slot-lower-deep', close);
+        return;
+      }
+
+      cell.classList.add('cell-normal');
+      cell.textContent = vForm(cellView.mainChar || '');
+    }
+
+    // L のレイアウトでマス目を描画する。
+    // composingRange: 変換中(未確定)のトークン範囲 [start,end)。keepCapture: 入力欄を動かさない（変換中用）。
+    function paintLayout(L, caretPos, composingRange, keepCapture) {
+      const wasFocused = document.activeElement === capture;
+      const range = selRange();
+
+      caretEl.remove();
+      if (!keepCapture) capture.remove();
+
+      ensurePages(L.pageCount);
+
+      const inRange = (t, r) => r && t !== undefined && t >= r[0] && t < r[1];
+
+      for (let p = 0; p < L.pageCount; p++) {
+        const cells = cellEls[p];
+        for (let ci = 0; ci < PER_PAGE; ci++) {
+          const key = p + ':' + ci;
+          const cellView = L.cellViewAt.get(key);
+          const cell = cells[ci];
+
+          paintCellContent(cell, cellView);
+
+          let sel = false;
+          let comp = false;
+          const toks = L.cellTokensAt.get(key);
+          if (toks) {
+            for (const t of toks) {
+              if (inRange(t, range)) sel = true;
+              if (inRange(t, composingRange)) comp = true;
+            }
+          }
+          cell.classList.toggle('selected', !!sel);
+          cell.classList.toggle('composing-cell', !!comp);
+        }
+      }
+
+      positionCaretBar(L.slots[Math.max(0, Math.min(caretPos, L.slots.length - 1))]);
+      if (!keepCapture) positionCapture(L.slots[Math.max(0, Math.min(caretPos, L.slots.length - 1))]);
+      if (wasFocused) capture.focus();
+    }
+
+    function render() {
+      if (composing) return;
+      caret = Math.max(0, Math.min(caret, doc.length));
+      const L = computeLayout(doc, caret);
+      lastLayout = L;
+      paintLayout(L, caret, null, false);
+      updateStats(L);
+    }
+
+    // 変換中: 未確定文字を実際のマス目にプレビュー描画する（入力欄は動かさない）
+    function renderPreview() {
+      const g = graphemes(capture.value);
+      const display = doc.slice(0, caret).concat(g, doc.slice(caret));
+      const L = computeLayout(display, caret + g.length);
+      paintLayout(L, caret + g.length, [caret, caret + g.length], true);
+    }
+
+    function updateStats(L) {
+      const consumed = L.lastLinear + 1; // 先頭から最後の文字までに使ったマス数（改行で空いたマスも含む）
+      const chars = doc.reduce((n, c) => c === '\n' ? n : n + 1, 0);
+      const full = Math.floor(consumed / PER_PAGE);
+      const rem = consumed % PER_PAGE;
+      const currentInPage = consumed === 0 ? 0 : (rem || PER_PAGE);
+
+      els.charCount.textContent = chars;
+      els.pageCount.textContent = full + '枚';
+      els.totalChars.textContent = chars + '字';
+      els.pageCurrent.textContent = String(currentInPage).padStart(3, '0') + ' / 400';
+      els.pageBar.style.width = Math.min(100, (currentInPage / PER_PAGE) * 100) + '%';
+    }
+
+    // --- 選択 ---
+    function selRange() {
+      if (anchor === null || anchor === caret) return null;
+      return [Math.min(anchor, caret), Math.max(anchor, caret)];
+    }
+
+    function deleteSelection() {
+      const r = selRange();
+      if (!r) return false;
+      doc.splice(r[0], r[1] - r[0]);
+      caret = r[0];
+      anchor = null;
+      return true;
+    }
+
+    function selectedText() {
+      const r = selRange();
+      return r ? doc.slice(r[0], r[1]).join('') : '';
+    }
+
+    function moveCaret(next, extend) {
+      next = Math.max(0, Math.min(next, doc.length));
+      if (extend) {
+        if (anchor === null) anchor = caret;
+      } else {
+        anchor = null;
+      }
+      caret = next;
+      render();
+    }
+
+    // --- 編集操作 ---
+    function insertText(str) {
+      const g = graphemes((str || '').replace(/\r\n?/g, '\n'));
+      if (!g.length) return;
+      deleteSelection();
+      doc.splice(caret, 0, ...g);
+      caret += g.length;
+      anchor = null;
+    }
+
+    // 縦書きで dir 列ぶん移動した先のキャレット位置を返す（同じ行に最も近いマス）
+    function columnTarget(dir) {
+      const L = lastLayout || computeLayout();
+      const cur = L.slots[Math.min(caret, L.slots.length - 1)];
+      const target = cur.col + dir;
+      if (target < 0) return null;
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < L.slots.length; i++) {
+        if (L.slots[i].col === target) {
+          const d = Math.abs(L.slots[i].row - cur.row);
+          if (d < bestDiff) { bestDiff = d; best = i; }
+        }
+      }
+      return best >= 0 ? best : null;
+    }
+
+    function flushCapture() {
+      if (capture.value) {
+        insertText(capture.value);
+        capture.value = '';
+        render();
+        scheduleSave();
+      }
+    }
+
+    capture.addEventListener('compositionstart', () => {
+      if (selRange()) { deleteSelection(); render(); }
+      composing = true;
+      renderPreview();
+    });
+    capture.addEventListener('compositionupdate', () => {
+      if (composing) renderPreview();
+    });
+    capture.addEventListener('compositionend', () => {
+      composing = false;
+      flushCapture();
+    });
+    capture.addEventListener('input', (e) => {
+      if (e.isComposing || composing) { renderPreview(); return; }
+      flushCapture();
+    });
+
+    capture.addEventListener('keydown', (e) => {
+      if (e.isComposing || composing) return;
+
+      // Cmd/Ctrl + A で全選択
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        if (doc.length) { anchor = 0; caret = doc.length; render(); }
+        return;
+      }
+      // コピー/カットは copy/cut イベントで処理するのでここでは触らない
+      if ((e.metaKey || e.ctrlKey) && ['c', 'C', 'x', 'X', 'v', 'V'].includes(e.key)) {
+        return;
+      }
+
+      const extend = e.shiftKey;
+
+      switch (e.key) {
+        case 'Backspace':
+          e.preventDefault();
+          if (deleteSelection()) { render(); scheduleSave(); }
+          else if (caret > 0) { doc.splice(caret - 1, 1); caret--; render(); scheduleSave(); }
+          break;
+        case 'Delete':
+          e.preventDefault();
+          if (deleteSelection()) { render(); scheduleSave(); }
+          else if (caret < doc.length) { doc.splice(caret, 1); render(); scheduleSave(); }
+          break;
+        case 'Enter':
+          e.preventDefault();
+          deleteSelection();
+          doc.splice(caret, 0, '\n'); caret++; anchor = null; render(); scheduleSave();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          moveCaret(caret + 1, extend);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          moveCaret(caret - 1, extend);
+          break;
+        case 'ArrowLeft': {
+          e.preventDefault();
+          const t = columnTarget(1);
+          if (t !== null) moveCaret(t, extend);
+          break;
+        }
+        case 'ArrowRight': {
+          e.preventDefault();
+          const t = columnTarget(-1);
+          if (t !== null) moveCaret(t, extend);
+          break;
+        }
+        case 'Tab':
+          e.preventDefault();
+          moveCaret(caret + (e.shiftKey ? -1 : 1), false);
+          break;
+        default:
+          break;
+      }
+    });
+
+    capture.addEventListener('copy', (e) => {
+      const text = selectedText();
+      if (!text) return;
+      e.preventDefault();
+      e.clipboardData.setData('text/plain', text);
+    });
+
+    capture.addEventListener('cut', (e) => {
+      const text = selectedText();
+      if (!text) return;
+      e.preventDefault();
+      e.clipboardData.setData('text/plain', text);
+      deleteSelection();
+      render();
+      scheduleSave();
+    });
+
+    capture.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const t = (e.clipboardData && e.clipboardData.getData('text')) || '';
+      insertText(t);
+      render();
+      scheduleSave();
+    });
+
+    // ポインタ位置からキャレット位置（0..doc.length）を求める。
+    // マスの上半分なら手前、下半分なら次の位置（縦書きの流れ＝上→下）。
+    function indexFromPoint(clientX, clientY, target) {
+      let cell = target && target.closest ? target.closest('.genko-cell') : null;
+      if (!cell) {
+        const el = document.elementFromPoint(clientX, clientY);
+        cell = el && el.closest ? el.closest('.genko-cell') : null;
+      }
+      if (!cell) return null;
+      const p = +cell.dataset.page;
+      const ci = +cell.dataset.cell;
+      const L = lastLayout || computeLayout();
+      const toks = L.cellTokensAt.get(p + ':' + ci);
+      if (!toks || toks.length === 0) return doc.length;
+      const rect = cell.getBoundingClientRect();
+      if (toks.length === 1) {
+        return clientY > rect.top + rect.height / 2 ? toks[0] + 1 : toks[0];
+      }
+      const ratio = Math.max(0, Math.min(0.999, (clientY - rect.top) / rect.height));
+      const idx = Math.floor(ratio * (toks.length + 1));
+      if (idx <= 0) return toks[0];
+      if (idx >= toks.length) return toks[toks.length - 1] + 1;
+      return toks[idx];
+    }
+
+    els.pagesScroll.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      const pos = indexFromPoint(e.clientX, e.clientY, e.target);
+      if (pos === null) { setTimeout(() => capture.focus(), 0); return; }
+      e.preventDefault();
+      anchor = pos;
+      caret = pos;
+      dragging = true;
+      render();
+      setTimeout(() => capture.focus(), 0);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const pos = indexFromPoint(e.clientX, e.clientY, e.target);
+      if (pos === null || pos === caret) return;
+      caret = pos;
+      render();
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      if (anchor === caret) anchor = null;
+    });
+
+    // --- 保存 ---
+    function serialize() {
+      return doc.join('');
+    }
+
+    function loadFromText(text) {
+      doc = graphemes((text || '').replace(/\r\n?/g, '\n'));
+      caret = doc.length;
+    }
+
+    function scheduleSave() {
+      els.saveIndicator.textContent = '保存中…';
+      els.saveIndicator.classList.remove('saved');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        try { localStorage.setItem(STORAGE_KEY, serialize()); } catch (_) {}
+        els.saveIndicator.textContent = '保存済み';
+        els.saveIndicator.classList.add('saved');
+      }, 400);
+    }
+
+    // --- 書き出し ---
+    function pageStats(consumed) {
+      return { full: Math.floor(consumed / PER_PAGE), rem: consumed % PER_PAGE };
+    }
+
+    function exportSourceText() {
+      return serialize();
+    }
+
+    function showExportModal() {
+      const L = computeLayout();
+      const consumed = L.lastLinear + 1;
+      const chars = doc.reduce((n, c) => c === '\n' ? n : n + 1, 0);
+      const { full, rem } = pageStats(consumed);
+      const message = chars
+        ? `${chars} 字（${full}枚${rem ? '+' + rem + 'マス' : ''}）`
+        : '（空の原稿）';
+      return ExportUtils.showExportFormatModal(message, capture);
+    }
+
+    function buildExportContent(format) {
+      const text = serialize();
+      const L = computeLayout();
+      const consumed = L.lastLinear + 1;
+      const chars = doc.reduce((n, c) => c === '\n' ? n : n + 1, 0);
+      const { full, rem } = pageStats(consumed);
+      const meta = `${chars}字 · ${full}枚${rem ? '+' + rem + 'マス' : ''}`;
+      const title = ExportUtils.exportBasenameFromText(exportSourceText());
+      if (format === 'md') {
+        return `# ${title}\n\n<!-- ${meta} -->\n\n${text}`;
+      }
+      return meta + '\n\n' + text;
+    }
+
+    function drawCellText(ctx, cell, text, cls) {
+      if (!text) return;
+      ctx.save();
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      const centerX = cell.x + cell.size * 0.5;
+      const centerY = cell.y + cell.size * 0.5;
+      let x = centerX;
+      let y = centerY;
+      let fontScale = 0.72;
+
+      if (cls === 'slot-upper') {
+        y = cell.y + cell.size * 0.37;
+      } else if (cls === 'slot-main-raised') {
+        y = cell.y + cell.size * 0.34;
+      } else if (cls === 'slot-lower') {
+        x = cell.x + cell.size * 0.84;
+        y = cell.y + cell.size * 0.91;
+      } else if (cls === 'slot-lower-both') {
+        x = cell.x + cell.size * 0.80;
+        y = cell.y + cell.size * 0.86;
+      } else if (cls === 'slot-lower-deep') {
+        x = cell.x + cell.size * 0.72;
+        y = cell.y + cell.size * 0.95;
+      } else if (cls === 'slot-lower-deep-both') {
+        x = cell.x + cell.size * 0.76;
+        y = cell.y + cell.size * 1.02;
+      }
+
+      if (cls === 'slot-lower' || cls === 'slot-lower-both') fontScale = 0.72;
+      if (cls === 'slot-lower-deep' || cls === 'slot-lower-deep-both') fontScale = 0.58;
+
+      ctx.font = `${Math.max(12, Math.round(cell.size * fontScale))}px "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif`;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function cellGeometryInPage(ci, cellSize, pageX, pageY) {
+      const row = ci % ROWS;
+      const colInPage = Math.floor(ci / ROWS);
+      const x = pageX + (COLS - 1 - colInPage) * cellSize;
+      const y = pageY + row * cellSize;
+      return { x, y, size: cellSize };
+    }
+
+    function drawExportPageCells(ctx, L, pageIndex, cellSize, pageX, pageY) {
+      const pageW = COLS * cellSize;
+      const pageH = ROWS * cellSize;
+
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(pageX, pageY, pageW, pageH);
+
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.16)';
+      ctx.lineWidth = 1;
+      for (let c = 0; c < COLS; c++) {
+        const x = pageX + c * cellSize;
+        ctx.beginPath();
+        ctx.moveTo(x, pageY);
+        ctx.lineTo(x, pageY + pageH);
+        ctx.stroke();
+      }
+      for (let r = 0; r < ROWS; r++) {
+        const y = pageY + r * cellSize;
+        ctx.beginPath();
+        ctx.moveTo(pageX, y);
+        ctx.lineTo(pageX + pageW, y);
+        ctx.stroke();
+      }
+
+      for (let ci = 0; ci < PER_PAGE; ci++) {
+        const key = pageIndex + ':' + ci;
+        const cellView = L.cellViewAt.get(key);
+        if (!cellView) continue;
+        const cell = cellGeometryInPage(ci, cellSize, pageX, pageY);
+        if (cellView.kind === 'normal') {
+          drawCellText(ctx, cell, vForm(cellView.mainChar), 'normal');
+          continue;
+        }
+        if (cellView.kind === 'yakumonoPair') {
+          drawCellText(ctx, cell, markText(cellView, 'kutouten'), 'slot-upper');
+          drawCellText(ctx, cell, markText(cellView, 'close'), 'slot-lower-deep');
+          continue;
+        }
+        if (cellView.kind === 'hangKutouten') {
+          drawCellText(ctx, cell, vForm(cellView.mainChar), 'slot-main-raised');
+          drawCellText(ctx, cell, markText(cellView, 'kutouten'), 'slot-lower');
+          continue;
+        }
+        if (cellView.kind === 'hangClose') {
+          drawCellText(ctx, cell, vForm(cellView.mainChar), 'slot-main-raised');
+          drawCellText(ctx, cell, markText(cellView, 'close'), 'slot-lower-deep');
+          continue;
+        }
+        if (cellView.kind === 'hangBoth') {
+          drawCellText(ctx, cell, vForm(cellView.mainChar), 'slot-main-raised');
+          drawCellText(ctx, cell, markText(cellView, 'kutouten'), 'slot-lower-both');
+          drawCellText(ctx, cell, markText(cellView, 'close'), 'slot-lower-deep-both');
+        }
+      }
+    }
+
+    function canvasToJpgBlob(canvas) {
+      return new Promise(resolve => {
+        canvas.toBlob(b => resolve(b), 'image/jpeg', 0.94);
+      });
+    }
+
+    function renderExportPageCanvas(L, pageIndex, cellSize) {
+      const pageW = COLS * cellSize;
+      const pageH = ROWS * cellSize;
+      const canvas = document.createElement('canvas');
+      canvas.width = pageW;
+      canvas.height = pageH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, pageW, pageH);
+      drawExportPageCells(ctx, L, pageIndex, cellSize, 0, 0);
+      return canvas;
+    }
+
+    async function buildExportJpgZipBlob() {
+      const L = computeLayout();
+      const pages = Math.max(1, L.pageCount);
+      const cellSize = Math.max(18, CELL_PX);
+      const zip = new JSZip();
+
+      for (let p = 0; p < pages; p++) {
+        const canvas = renderExportPageCanvas(L, p, cellSize);
+        const blob = await canvasToJpgBlob(canvas);
+        if (blob) zip.file(String(p + 1).padStart(3, '0') + '.jpg', blob);
+      }
+
+      return zip.generateAsync({ type: 'blob' });
+    }
+
+    async function exportFile(format) {
+      const filename = ExportUtils.exportFilename(exportSourceText(), format);
+      if (format === 'jpg') {
+        const blob = await buildExportJpgZipBlob();
+        if (blob) ExportUtils.downloadBlob(blob, filename);
+        return;
+      }
+
+      const content = buildExportContent(format);
+      const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+      const blob = new Blob([content], { type: mime });
+      ExportUtils.downloadBlob(blob, filename);
+    }
+
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      const format = await showExportModal();
+      if (format) await exportFile(format);
+    });
+
+    els.editorWrap.addEventListener('mousedown', (e) => {
+      if (e.target === els.editorWrap || e.target === els.pagesScroll) {
+        setTimeout(() => capture.focus(), 0);
+      }
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        updateCellSize();
+        if (!composing) render();
+      }, 120);
+    });
+
+    // --- 初期化 ---
+    try {
+      loadFromText(localStorage.getItem(STORAGE_KEY) || '');
+    } catch (_) {
+      loadFromText('');
+    }
+
+    updateCellSize();
+    render();
+    capture.focus();
+  </script>
+</body>
+</html>
