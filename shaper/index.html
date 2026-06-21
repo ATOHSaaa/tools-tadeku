@@ -99,6 +99,15 @@
       background: var(--bg);
     }
 
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn:disabled:hover {
+      border-color: var(--border);
+    }
+
     .btn.copied {
       border-color: var(--accent);
       color: var(--accent);
@@ -130,20 +139,11 @@
       border-color: var(--ink);
     }
 
-    .section {
+    .actions-panel {
       background: var(--surface);
       border: 2px solid var(--border);
       padding: 1.25rem;
       margin-bottom: 1rem;
-    }
-
-    .section-title {
-      font-size: 0.95rem;
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.85rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--border);
     }
 
     .action-grid {
@@ -190,6 +190,7 @@
     <div class="editor-panel">
       <div class="editor-head">
         <div class="editor-actions">
+          <button type="button" class="btn" id="btn-undo" disabled>Undo</button>
           <button type="button" class="btn" id="btn-clear">クリア</button>
           <button type="button" class="btn" id="btn-copy">コピー</button>
         </div>
@@ -198,25 +199,18 @@
       <textarea id="editor" placeholder="ここに文章を入力…" spellcheck="false"></textarea>
     </div>
 
-    <section class="section" aria-label="基本機能">
-      <h2 class="section-title">基本機能</h2>
+    <div class="actions-panel" aria-label="整形操作">
       <div class="action-grid">
         <button type="button" class="action-btn" data-action="removeHalfSpaces">「半角スペース」を除去</button>
         <button type="button" class="action-btn" data-action="removeFullSpaces">「全角スペース」を除去</button>
         <button type="button" class="action-btn" data-action="removeTabs">「タブ（Tab）」を除去</button>
         <button type="button" class="action-btn" data-action="removeLineBreaks">「改行」を除去</button>
-      </div>
-    </section>
-
-    <section class="section" aria-label="小説原稿向け機能">
-      <h2 class="section-title">小説原稿向け機能</h2>
-      <div class="action-grid">
         <button type="button" class="action-btn" data-action="reduceBlankLines">「空白行」を段階的に除去</button>
         <button type="button" class="action-btn" data-action="addBlankLines">「空白行」をすべてに追加</button>
         <button type="button" class="action-btn" data-action="indentNonDialogue">会話文を除く「行頭」を一字下げ</button>
         <button type="button" class="action-btn" data-action="romanToKanji">ローマ数字を「漢数字」に変換</button>
       </div>
-    </section>
+    </div>
   </div>
 
   <script src="../shared/site-link.js"></script>
@@ -291,15 +285,43 @@
 
       const editorEl = document.getElementById('editor');
       const charCountEl = document.getElementById('char-count');
+      const undoBtn = document.getElementById('btn-undo');
+      const history = [];
+      const MAX_HISTORY = 50;
+      let restoring = false;
 
       function updateCharCount() {
         charCountEl.textContent = `${editorEl.value.length.toLocaleString('ja-JP')}文字`;
       }
 
+      function updateUndoButton() {
+        undoBtn.disabled = history.length === 0;
+      }
+
+      function pushHistory() {
+        if (restoring) return;
+        history.push(editorEl.value);
+        if (history.length > MAX_HISTORY) history.shift();
+        updateUndoButton();
+      }
+
+      function undo() {
+        if (history.length === 0) return;
+        restoring = true;
+        editorEl.value = history.pop();
+        restoring = false;
+        updateCharCount();
+        updateUndoButton();
+        editorEl.focus();
+      }
+
       function applyTransform(name) {
         const fn = transforms[name];
         if (!fn) return;
-        editorEl.value = fn(editorEl.value);
+        const next = fn(editorEl.value);
+        if (next === editorEl.value) return;
+        pushHistory();
+        editorEl.value = next;
         updateCharCount();
         editorEl.focus();
       }
@@ -312,7 +334,12 @@
 
       editorEl.addEventListener('input', updateCharCount);
 
+      undoBtn.addEventListener('click', undo);
+
       document.getElementById('btn-clear').addEventListener('click', () => {
+        if (!editorEl.value) return;
+        if (!window.confirm('入力内容をすべて消去しますか？')) return;
+        pushHistory();
         editorEl.value = '';
         updateCharCount();
         editorEl.focus();
