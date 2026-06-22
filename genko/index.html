@@ -728,17 +728,65 @@
     function vForm(ch) { return VERT_FORMS[ch] || ch; }
     function vFormStr(s) { let o = ''; for (const c of s) o += vForm(c); return o; }
 
-    // canvas fillText は横書きのため、縦組みでは CSS が回転させる長音などを自前で回す
-    const CANVAS_VERTICAL_ROTATE = new Set('ーｰ〜～―─‐‑–—');
+    // 長音・各種ダッシュは canvas の fillText（横書き）だと向きや字形が崩れる。
+    // 回転で合わせるとフォント依存で左右反転・上下逆になるため、SVG の縦組みテキストを
+    // 画像化して描画し、ブラウザ（=画面表示）と同じ縦組み字形をそのまま書き出す。
+    const CANVAS_VERTICAL_ROTATE = new Set('ーｰ〜～―─‐‑–—－−');
     function needsCanvasVerticalRotate(ch) {
       return ch !== undefined && CANVAS_VERTICAL_ROTATE.has(ch);
     }
 
-    function fillVerticalCellText(ctx, x, y, text) {
-      if (text.length === 1 && needsCanvasVerticalRotate(text)) {
-        ctx.translate(x, y);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(text, 0, 0);
+    const EXPORT_FONT_FAMILY = 'Yu Mincho, Hiragino Mincho ProN, YuMincho, serif';
+    const vGlyphCache = new Map();   // key: px|ch -> { img, size, ready:Promise }
+
+    function vGlyphKey(px, ch) { return px + '|' + ch; }
+
+    function buildVerticalGlyphImage(px, ch) {
+      const size = px * 2;
+      const svg =
+        `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>` +
+        `<text x='${size / 2}' y='${size / 2}' font-family='${EXPORT_FONT_FAMILY}' ` +
+        `font-size='${px}' fill='black' text-anchor='middle' dominant-baseline='central' ` +
+        `writing-mode='vertical-rl' style='text-orientation:mixed'>${ch}</text></svg>`;
+      const img = new Image();
+      const ready = new Promise((res) => { img.onload = () => res(); img.onerror = () => res(); });
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      return { img, size, ready };
+    }
+
+    // 書き出し前に、文書に含まれる縦組み対象文字を指定サイズで先読みしておく。
+    async function preloadVerticalGlyphs(pxList, chars) {
+      const ps = [];
+      for (const px of pxList) {
+        for (const ch of chars) {
+          const key = vGlyphKey(px, ch);
+          if (!vGlyphCache.has(key)) {
+            const g = buildVerticalGlyphImage(px, ch);
+            vGlyphCache.set(key, g);
+            ps.push(g.ready);
+          }
+        }
+      }
+      await Promise.all(ps);
+    }
+
+    function fontPxFromCtx(ctx) {
+      const m = /(\d+(?:\.\d+)?)px/.exec(ctx.font || '');
+      return m ? Math.round(parseFloat(m[1])) : 0;
+    }
+
+    function fillVerticalCellText(ctx, x, y, text, cellSize) {
+      const chars = [...text];
+      if (chars.length === 1 && needsCanvasVerticalRotate(chars[0])) {
+        const ch = chars[0];
+        const px = fontPxFromCtx(ctx);
+        const g = vGlyphCache.get(vGlyphKey(px, ch));
+        if (g && g.img.complete && g.img.naturalWidth) {
+          ctx.drawImage(g.img, x - g.size / 2, y - g.size / 2, g.size, g.size);
+          return;
+        }
+        // 先読みできていない場合のフォールバック（簡易な縦線）
+        ctx.fillText(ch, x, y);
         return;
       }
       ctx.fillText(text, x, y);
@@ -1457,7 +1505,7 @@
       if (cls === 'slot-lower-deep' || cls === 'slot-lower-deep-both') fontScale = 0.58;
 
       ctx.font = `${Math.max(12, Math.round(cell.size * fontScale))}px "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif`;
-      fillVerticalCellText(ctx, x, y, text);
+      fillVerticalCellText(ctx, x, y, text, cell.size);
       ctx.restore();
     }
 
@@ -1545,16 +1593,26 @@
       return canvas;
     }
 
-    async function buildExportJpgZipBlob() {
+    async function buildExportJpgZipBlob(folderName) {
       const L = computeLayout();
       const pages = Math.max(1, L.pageCount);
       const cellSize = Math.max(18, CELL_PX);
+
+      // 縦組み専用字形（長音・ダッシュ等）を SVG 画像として先読み
+      const vChars = new Set();
+      for (const ch of doc) { if (needsCanvasVerticalRotate(ch)) vChars.add(ch); }
+      if (vChars.size) {
+        const pxList = [0.72, 0.62, 0.58].map((s) => Math.max(12, Math.round(cellSize * s)));
+        await preloadVerticalGlyphs([...new Set(pxList)], [...vChars]);
+      }
+
       const zip = new JSZip();
+      const folder = zip.folder(folderName || 'genko');
 
       for (let p = 0; p < pages; p++) {
         const canvas = renderExportPageCanvas(L, p, cellSize);
         const blob = await canvasToJpgBlob(canvas);
-        if (blob) zip.file(String(p + 1).padStart(3, '0') + '.jpg', blob);
+        if (blob) folder.file(String(p + 1).padStart(3, '0') + '.jpg', blob);
       }
 
       return zip.generateAsync({ type: 'blob' });
@@ -1564,7 +1622,7 @@
       const base = TadekuEditorDraft.basenameFromDraft(els.workTitle.value, exportSourceText());
       const filename = format === 'jpg' ? base + '.zip' : base + '.' + format;
       if (format === 'jpg') {
-        const blob = await buildExportJpgZipBlob();
+        const blob = await buildExportJpgZipBlob(base);
         if (blob) ExportUtils.downloadBlob(blob, filename);
         return;
       }

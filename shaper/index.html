@@ -104,6 +104,22 @@
       color: var(--accent);
     }
 
+    .btn-danger {
+      background: #b23b3b;
+      border-color: #b23b3b;
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #962f2f;
+      border-color: #962f2f;
+      color: #fff;
+    }
+
+    .btn-danger:active {
+      background: #7a2626;
+    }
+
     .char-count {
       font-size: 0.72rem;
       font-weight: 700;
@@ -167,7 +183,7 @@
 
     .action-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, 1fr);
       gap: 0.5rem;
     }
 
@@ -209,7 +225,7 @@
     <div class="editor-panel">
       <div class="editor-head">
         <div class="editor-actions">
-          <button type="button" class="btn" id="btn-clear">クリア</button>
+          <button type="button" class="btn btn-danger" id="btn-clear">クリア</button>
           <button type="button" class="btn" id="btn-copy">コピー</button>
         </div>
         <div class="editor-meta">

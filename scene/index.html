@@ -140,27 +140,11 @@
     }
 
     .scene-card.dragging {
-      opacity: 0.45;
-    }
-
-    .scene-card.drag-over {
-      background: var(--invert);
-      color: #fff;
-    }
-
-    .scene-card.drag-over .scene-title,
-    .scene-card.drag-over .scene-text,
-    .scene-card.drag-over .char-count {
-      color: #fff;
-    }
-
-    .scene-card.drag-over .scene-title::placeholder,
-    .scene-card.drag-over .scene-text::placeholder {
-      color: #aaa;
-    }
-
-    .scene-card.drag-over .scene-title {
-      border-color: #fff;
+      opacity: 0.85;
+      border-color: var(--ink);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+      position: relative;
+      z-index: 5;
     }
 
     .scene-side {
@@ -184,6 +168,10 @@
       background: transparent;
       color: #fff;
       transition: opacity 0.15s;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .drag-handle:hover { opacity: 0.65; }
@@ -459,11 +447,15 @@
       gap: 0.5rem;
     }
 
+    .scene-list.is-dragging {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
     @media (max-width: 520px) {
       .header-top { flex-direction: column; }
       .header-actions { padding-top: 0; }
       .scene-side { padding: 0.5rem 0.35rem; }
-      .move-btns { display: none; }
     }
   </style>
 </head>
@@ -524,7 +516,6 @@
 
     let data = { title: '', scenes: [] };
     let saveTimer = null;
-    let dragId = null;
 
     function sceneCharCount() {
       return data.scenes.reduce((s, sc) => s + sc.body.length, 0);
@@ -585,6 +576,48 @@
       return '';
     }
 
+    function startPointerDrag(e, card, handle, list) {
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      card.classList.add('dragging');
+      list.classList.add('is-dragging');
+
+      const onMove = ev => {
+        const y = ev.clientY;
+        const others = [...list.querySelectorAll('.scene-card:not(.dragging)')];
+        let next = null;
+        for (const other of others) {
+          const rect = other.getBoundingClientRect();
+          if (y < rect.top + rect.height / 2) { next = other; break; }
+        }
+        if (next) {
+          if (card.nextElementSibling !== next) list.insertBefore(card, next);
+        } else if (list.lastElementChild !== card) {
+          list.appendChild(card);
+        }
+      };
+
+      const finish = () => {
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', finish);
+        handle.removeEventListener('pointercancel', finish);
+        card.classList.remove('dragging');
+        list.classList.remove('is-dragging');
+
+        const order = [...list.querySelectorAll('.scene-card')].map(c => c.dataset.id);
+        const changed = data.scenes.some((s, i) => s.id !== order[i]);
+        if (changed) {
+          data.scenes.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+          render();
+          scheduleSave();
+        }
+      };
+
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', finish);
+      handle.addEventListener('pointercancel', finish);
+    }
+
     function render() {
       const list = document.getElementById('scene-list');
       list.innerHTML = '';
@@ -593,7 +626,6 @@
         const card = document.createElement('article');
         card.className = 'scene-card';
         card.dataset.id = scene.id;
-        card.draggable = true;
 
         const len = scene.body.length;
 
@@ -667,39 +699,9 @@
           });
         });
 
-        card.addEventListener('dragstart', e => {
-          dragId = scene.id;
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-        });
-
-        card.addEventListener('dragend', () => {
-          dragId = null;
-          card.classList.remove('dragging');
-          list.querySelectorAll('.scene-card').forEach(c => c.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('dragover', e => {
-          e.preventDefault();
-          if (scene.id !== dragId) card.classList.add('drag-over');
-        });
-
-        card.addEventListener('dragleave', () => {
-          card.classList.remove('drag-over');
-        });
-
-        card.addEventListener('drop', e => {
-          e.preventDefault();
-          card.classList.remove('drag-over');
-          if (!dragId || dragId === scene.id) return;
-          const from = data.scenes.findIndex(s => s.id === dragId);
-          const to = data.scenes.findIndex(s => s.id === scene.id);
-          if (from < 0 || to < 0) return;
-          const [moved] = data.scenes.splice(from, 1);
-          data.scenes.splice(to, 0, moved);
-          render();
-          scheduleSave();
-        });
+        const handle = card.querySelector('.drag-handle');
+        handle.removeAttribute('tabindex');
+        handle.addEventListener('pointerdown', e => startPointerDrag(e, card, handle, list));
 
         list.appendChild(card);
       });
