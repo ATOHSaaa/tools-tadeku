@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock — アイデアストック執筆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --muted: #666666;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .view-tabs {
+      display: flex;
+      border: 2px solid var(--border);
+    }
+
+    .view-tab {
+      border: none;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .view-tab + .view-tab {
+      border-left: 2px solid var(--border);
+    }
+
+    .view-tab.active,
+    .view-tab:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .save-indicator {
+      opacity: 0.35;
+      transition: opacity 0.3s;
+    }
+
+    .save-indicator.saved { opacity: 1; }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-block {
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+
+    .main {
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Write view */
+    .write-layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      grid-template-rows: 1fr;
+      height: 100%;
+    }
+
+    .editor-wrap {
+      min-height: 0;
+      border-right: 2px solid var(--border);
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+    }
+
+    .idea-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--surface);
+    }
+
+    .idea-panel-head {
+      padding: 1rem 1.1rem 0.75rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .idea-panel-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.35rem;
+    }
+
+    .idea-count {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .idea-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 1.25rem 1.1rem;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .idea-text {
+      font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+      font-weight: 700;
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .idea-empty {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .idea-panel-foot {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.85rem 1.1rem;
+      border-top: 2px solid var(--border);
+    }
+
+    /* Ideas management view */
+    .ideas-view {
+      height: 100%;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem 2.5rem;
+    }
+
+    .ideas-intro {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+      max-width: 640px;
+    }
+
+    .add-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      max-width: 720px;
+    }
+
+    .add-input {
+      flex: 1;
+      min-width: 0;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 0.65rem 0.85rem;
+      outline: none;
+    }
+
+    .add-input:focus {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-tab {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+    }
+
+    .filter-tab.active {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .idea-list {
+      list-style: none;
+      max-width: 720px;
+      border: 2px solid var(--border);
+    }
+
+    .idea-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .idea-item:last-child {
+      border-bottom: none;
+    }
+
+    .idea-item.used .idea-item-text {
+      color: var(--muted);
+    }
+
+    .idea-item-text {
+      font-size: 0.92rem;
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .idea-item-meta {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      letter-spacing: 0.03em;
+    }
+
+    .idea-item-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .btn-sm {
+      font-size: 0.62rem;
+      padding: 0.3rem 0.5rem;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #000;
+      color: #fff;
+    }
+
+    .list-empty {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border: 2px solid var(--border);
+      max-width: 720px;
+    }
+
+    .data-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      max-width: 720px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 720px) {
+      .write-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+
+      .editor-wrap {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .idea-panel {
+        max-height: 42vh;
+      }
+
+      .header {
+        flex-wrap: wrap;
+      }
+
+      .stats {
+        order: 3;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <div class="brand">Stock</div>
+        <div class="view-tabs" role="tablist">
+          <button type="button" class="view-tab active" data-view="write" role="tab" aria-selected="true">執筆</button>
+          <button type="button" class="view-tab" data-view="ideas" role="tab" aria-selected="false">アイデア管理</button>
+        </div>
+      </div>
+      <div class="stats">
+        <span>文字数 <strong id="char-count">0</strong></span>
+        <span class="save-indicator" id="save-indicator">—</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn" id="export-draft-btn">本文を保存</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="write-layout" id="write-view" aria-label="執筆">
+        <div class="editor-wrap">
+          <textarea id="editor" spellcheck="false" placeholder="本文を書く…"></textarea>
+        </div>
+        <aside class="idea-panel" aria-label="アイデア">
+          <div class="idea-panel-head">
+            <div class="idea-panel-label">今日の種</div>
+            <div class="idea-count" id="pool-count">未使用 0 件</div>
+          </div>
+          <div class="idea-card" id="idea-card">
+            <p class="idea-empty" id="idea-empty">アイデアがありません。「アイデア管理」から追加してください。</p>
+            <p class="idea-text hidden" id="idea-text"></p>
+          </div>
+          <div class="idea-panel-foot">
+            <button type="button" class="btn btn-block" id="draw-btn" disabled>別のを引く</button>
+            <button type="button" class="btn btn-block" id="use-btn" disabled>使用済みにする</button>
+          </div>
+        </aside>
+      </section>
+
+      <section class="ideas-view hidden" id="ideas-view" aria-label="アイデア管理">
+        <p class="ideas-intro">執筆アイデアを登録しておき、執筆画面のサイドバーからランダムに表示します。使用済みにしたアイデアは今後ランダム表示されません。</p>
+        <form class="add-form" id="add-form">
+          <input type="text" class="add-input" id="add-input" placeholder="アイデアを入力…" autocomplete="off" maxlength="2000">
+          <button type="submit" class="btn">追加</button>
+        </form>
+        <div class="filter-tabs" role="tablist">
+          <button type="button" class="filter-tab active" data-filter="active">未使用</button>
+          <button type="button" class="filter-tab" data-filter="used">使用済み</button>
+          <button type="button" class="filter-tab" data-filter="all">すべて</button>
+        </div>
+        <ul class="idea-list hidden" id="idea-list"></ul>
+        <p class="list-empty hidden" id="list-empty">該当するアイデアはありません。</p>
+        <div class="data-actions">
+          <button type="button" class="btn" id="export-ideas-btn">アイデアをエクスポート</button>
+          <button type="button" class="btn" id="import-ideas-btn">アイデアをインポート</button>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const DB_NAME = 'stock';
+    const DB_VERSION = 1;
+    const IDEAS_STORE = 'ideas';
+    const DRAFT_STORE = 'draft';
+    const DRAFT_ID = 'current';
+
+    const els = {
+      editor: document.getElementById('editor'),
+      charCount: document.getElementById('char-count'),
+      saveIndicator: document.getElementById('save-indicator'),
+      writeView: document.getElementById('write-view'),
+      ideasView: document.getElementById('ideas-view'),
+      viewTabs: document.querySelectorAll('.view-tab'),
+      poolCount: document.getElementById('pool-count'),
+      ideaEmpty: document.getElementById('idea-empty'),
+      ideaText: document.getElementById('idea-text'),
+      drawBtn: document.getElementById('draw-btn'),
+      useBtn: document.getElementById('use-btn'),
+      addForm: document.getElementById('add-form'),
+      addInput: document.getElementById('add-input'),
+      filterTabs: document.querySelectorAll('.filter-tab'),
+      ideaList: document.getElementById('idea-list'),
+      listEmpty: document.getElementById('list-empty'),
+      exportDraftBtn: document.getElementById('export-draft-btn'),
+      exportIdeasBtn: document.getElementById('export-ideas-btn'),
+      importIdeasBtn: document.getElementById('import-ideas-btn'),
+      importFile: document.getElementById('import-file'),
+    };
+
+    const state = {
+      db: null,
+      view: 'write',
+      filter: 'active',
+      currentIdeaId: null,
+      saveTimer: null,
+    };
+
+    function uuid() {
+      if (crypto.randomUUID) return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDEAS_STORE)) {
+            const store = db.createObjectStore(IDEAS_STORE, { keyPath: 'id' });
+            store.createIndex('status', 'status', { unique: false });
+            store.createIndex('createdAt', 'createdAt', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(DRAFT_STORE)) {
+            db.createObjectStore(DRAFT_STORE, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function tx(storeNames, mode) {
+      return state.db.transaction(storeNames, mode);
+    }
+
+    function promisifyRequest(req) {
+      return new Promise((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function getAllIdeas() {
+      const store = tx([IDEAS_STORE], 'readonly').objectStore(IDEAS_STORE);
+      return promisifyRequest(store.getAll());
+    }
+
+    async function putIdea(idea) {
+      const store = tx([IDEAS_STORE], 'readwrite').objectStore(IDEAS_STORE);
+      return promisifyRequest(store.put(idea));
+    }
+
+    async function deleteIdea(id) {
+      const store = tx([IDEAS_STORE], 'readwrite').objectStore(IDEAS_STORE);
+      return promisifyRequest(store.delete(id));
+    }
+
+    async function getDraft() {
+      const store = tx([DRAFT_STORE], 'readonly').objectStore(DRAFT_STORE);
+      return promisifyRequest(store.get(DRAFT_ID));
+    }
+
+    async function saveDraft(body) {
+      const store = tx([DRAFT_STORE], 'readwrite').objectStore(DRAFT_STORE);
+      return promisifyRequest(store.put({
+        id: DRAFT_ID,
+        body,
+        updatedAt: Date.now(),
+      }));
+    }
+
+    async function getActiveIdeas() {
+      const all = await getAllIdeas();
+      return all.filter(i => i.status === 'active');
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function pickRandom(list, avoidId) {
+      if (!list.length) return null;
+      if (list.length === 1) return list[0];
+      let item;
+      let guard = 0;
+      do {
+        item = list[Math.floor(Math.random() * list.length)];
+        guard += 1;
+      } while (item.id === avoidId && guard < 20);
+      return item;
+    }
+
+    function setView(view) {
+      state.view = view;
+      els.viewTabs.forEach(tab => {
+        const active = tab.dataset.view === view;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      els.writeView.classList.toggle('hidden', view !== 'write');
+      els.ideasView.classList.toggle('hidden', view !== 'ideas');
+      if (view === 'write') {
+        els.editor.focus();
+      } else {
+        renderIdeaList();
+      }
+    }
+
+    function showCurrentIdea(idea) {
+      state.currentIdeaId = idea ? idea.id : null;
+      if (!idea) {
+        els.ideaEmpty.classList.remove('hidden');
+        els.ideaText.classList.add('hidden');
+        els.ideaText.textContent = '';
+        els.drawBtn.disabled = true;
+        els.useBtn.disabled = true;
+        return;
+      }
+      els.ideaEmpty.classList.add('hidden');
+      els.ideaText.classList.remove('hidden');
+      els.ideaText.textContent = idea.text;
+      els.drawBtn.disabled = false;
+      els.useBtn.disabled = false;
+    }
+
+    async function refreshSidebar() {
+      const active = await getActiveIdeas();
+      els.poolCount.textContent = `未使用 ${active.length} 件`;
+      els.drawBtn.disabled = active.length === 0;
+
+      if (!active.length) {
+        showCurrentIdea(null);
+        return;
+      }
+
+      const currentStillActive = active.find(i => i.id === state.currentIdeaId);
+      if (currentStillActive) {
+        showCurrentIdea(currentStillActive);
+      } else {
+        showCurrentIdea(pickRandom(active, null));
+      }
+    }
+
+    async function drawAnother() {
+      const active = await getActiveIdeas();
+      if (!active.length) {
+        showCurrentIdea(null);
+        return;
+      }
+      showCurrentIdea(pickRandom(active, state.currentIdeaId));
+    }
+
+    async function markCurrentUsed() {
+      if (!state.currentIdeaId) return;
+      const store = tx([IDEAS_STORE], 'readwrite').objectStore(IDEAS_STORE);
+      const idea = await promisifyRequest(store.get(state.currentIdeaId));
+      if (!idea || idea.status !== 'active') return;
+      idea.status = 'used';
+      idea.usedAt = Date.now();
+      await putIdea(idea);
+      state.currentIdeaId = null;
+      await refreshSidebar();
+      if (state.view === 'ideas') renderIdeaList();
+    }
+
+    function scheduleSave() {
+      els.saveIndicator.textContent = '保存中…';
+      els.saveIndicator.classList.remove('saved');
+      clearTimeout(state.saveTimer);
+      state.saveTimer = setTimeout(async () => {
+        try {
+          await saveDraft(els.editor.value);
+          els.saveIndicator.textContent = '保存済み';
+          els.saveIndicator.classList.add('saved');
+        } catch (_) {
+          els.saveIndicator.textContent = '保存失敗';
+        }
+      }, 400);
+    }
+
+    function downloadJSON(filename, data) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportBasename(text) {
+      const firstLine = (text || '').split('\n')[0].trim();
+      const head = [...firstLine].slice(0, 20).join('');
+      const safe = head.replace(/[\\/:*?"<>|\x00-\x1f]/g, '').replace(/^[\s、。．，,.]+|[\s、。．，,.]+$/g, '');
+      return safe || '無題';
+    }
+
+    async function renderIdeaList() {
+      const all = await getAllIdeas();
+      all.sort((a, b) => b.createdAt - a.createdAt);
+
+      const filtered = all.filter(idea => {
+        if (state.filter === 'all') return true;
+        return idea.status === state.filter;
+      });
+
+      els.ideaList.innerHTML = '';
+
+      if (!filtered.length) {
+        els.ideaList.classList.add('hidden');
+        els.listEmpty.classList.remove('hidden');
+        return;
+      }
+
+      els.ideaList.classList.remove('hidden');
+      els.listEmpty.classList.add('hidden');
+
+      filtered.forEach(idea => {
+        const li = document.createElement('li');
+        li.className = 'idea-item' + (idea.status === 'used' ? ' used' : '');
+
+        const body = document.createElement('div');
+        const text = document.createElement('div');
+        text.className = 'idea-item-text';
+        text.textContent = idea.text;
+
+        const meta = document.createElement('div');
+        meta.className = 'idea-item-meta';
+        meta.textContent = idea.status === 'used'
+          ? `使用済み · ${formatDate(idea.usedAt)}`
+          : `登録 ${formatDate(idea.createdAt)}`;
+
+        body.appendChild(text);
+        body.appendChild(meta);
+
+        const actions = document.createElement('div');
+        actions.className = 'idea-item-actions';
+
+        if (idea.status === 'used') {
+          const restoreBtn = document.createElement('button');
+          restoreBtn.type = 'button';
+          restoreBtn.className = 'btn btn-sm';
+          restoreBtn.textContent = '未使用に戻す';
+          restoreBtn.addEventListener('click', async () => {
+            idea.status = 'active';
+            idea.usedAt = null;
+            await putIdea(idea);
+            await refreshSidebar();
+            renderIdeaList();
+          });
+          actions.appendChild(restoreBtn);
+        } else {
+          const useBtn = document.createElement('button');
+          useBtn.type = 'button';
+          useBtn.className = 'btn btn-sm';
+          useBtn.textContent = '使用済み';
+          useBtn.addEventListener('click', async () => {
+            idea.status = 'used';
+            idea.usedAt = Date.now();
+            await putIdea(idea);
+            if (state.currentIdeaId === idea.id) state.currentIdeaId = null;
+            await refreshSidebar();
+            renderIdeaList();
+          });
+          actions.appendChild(useBtn);
+        }
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn btn-sm btn-danger';
+        delBtn.textContent = '削除';
+        delBtn.addEventListener('click', async () => {
+          if (!window.confirm('このアイデアを削除しますか？')) return;
+          await deleteIdea(idea.id);
+          if (state.currentIdeaId === idea.id) state.currentIdeaId = null;
+          await refreshSidebar();
+          renderIdeaList();
+        });
+        actions.appendChild(delBtn);
+
+        li.appendChild(body);
+        li.appendChild(actions);
+        els.ideaList.appendChild(li);
+      });
+    }
+
+    els.viewTabs.forEach(tab => {
+      tab.addEventListener('click', () => setView(tab.dataset.view));
+    });
+
+    els.filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        state.filter = tab.dataset.filter;
+        els.filterTabs.forEach(t => t.classList.toggle('active', t === tab));
+        renderIdeaList();
+      });
+    });
+
+    els.addForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const text = els.addInput.value.trim();
+      if (!text) return;
+      await putIdea({
+        id: uuid(),
+        text,
+        status: 'active',
+        createdAt: Date.now(),
+        usedAt: null,
+      });
+      els.addInput.value = '';
+      await refreshSidebar();
+      if (state.view === 'ideas') renderIdeaList();
+      els.addInput.focus();
+    });
+
+    els.editor.addEventListener('input', () => {
+      els.charCount.textContent = els.editor.value.length;
+      scheduleSave();
+    });
+
+    els.drawBtn.addEventListener('click', drawAnother);
+    els.useBtn.addEventListener('click', markCurrentUsed);
+
+    els.exportDraftBtn.addEventListener('click', () => {
+      const text = els.editor.value;
+      downloadText(exportBasename(text) + '.txt', text);
+    });
+
+    els.exportIdeasBtn.addEventListener('click', async () => {
+      const ideas = await getAllIdeas();
+      downloadJSON('stock-ideas-' + formatDate(Date.now()).replace(/\//g, '') + '.json', { version: 1, ideas });
+    });
+
+    els.importIdeasBtn.addEventListener('click', () => els.importFile.click());
+
+    els.importFile.addEventListener('change', async () => {
+      const file = els.importFile.files[0];
+      els.importFile.value = '';
+      if (!file) return;
+
+      try {
+        const raw = await file.text();
+        const data = JSON.parse(raw);
+        const incoming = Array.isArray(data) ? data : data.ideas;
+        if (!Array.isArray(incoming)) throw new Error('invalid');
+
+        let count = 0;
+        for (const item of incoming) {
+          const text = typeof item.text === 'string' ? item.text.trim() : '';
+          if (!text) continue;
+          await putIdea({
+            id: uuid(),
+            text,
+            status: item.status === 'used' ? 'used' : 'active',
+            createdAt: item.createdAt || Date.now(),
+            usedAt: item.status === 'used' ? (item.usedAt || Date.now()) : null,
+          });
+          count += 1;
+        }
+
+        await refreshSidebar();
+        if (state.view === 'ideas') renderIdeaList();
+        window.alert(`${count} 件のアイデアをインポートしました。`);
+      } catch (_) {
+        window.alert('インポートに失敗しました。JSON 形式を確認してください。');
+      }
+    });
+
+    async function init() {
+      if (!window.indexedDB) {
+        window.alert('このブラウザは IndexedDB に対応していないため、Stock を利用できません。');
+        return;
+      }
+
+      state.db = await openDB();
+
+      const draft = await getDraft();
+      if (draft && typeof draft.body === 'string') {
+        els.editor.value = draft.body;
+        els.charCount.textContent = draft.body.length;
+        els.saveIndicator.textContent = '保存済み';
+        els.saveIndicator.classList.add('saved');
+      }
+
+      await refreshSidebar();
+      els.editor.focus();
+    }
+
+    init().catch(err => {
+      console.error(err);
+      window.alert('データベースの初期化に失敗しました。');
+    });
+  </script>
+</body>
+</html>

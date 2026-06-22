@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Library | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+      --invert: #1a1a1a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+    h1 {
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .intro {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.65rem;
+      margin-bottom: 1.5rem;
+    }
+    .import-btn,
+    .bulk-export-btn {
+      display: inline-block;
+      padding: 0.85rem 1.25rem;
+      border: 2px solid var(--ink);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: opacity 0.15s, background 0.15s, color 0.15s;
+    }
+    .import-btn {
+      background: var(--surface);
+      color: var(--ink);
+    }
+    .import-btn:hover { background: var(--ink); color: #fff; }
+    .bulk-export-btn {
+      background: var(--ink);
+      color: #fff;
+    }
+    .bulk-export-btn:hover:not(:disabled) { opacity: 0.85; }
+    .bulk-export-btn[hidden] { display: none; }
+    #import-input { display: none; }
+    .empty {
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .table-wrap {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    thead th {
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.75rem 1rem;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    tbody tr:hover { background: #faf8f4; }
+    tbody td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    .col-title { min-width: 10rem; }
+    .doc-title {
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+    }
+    .num, .date { white-space: nowrap; color: var(--muted); font-size: 0.82rem; font-weight: 500; }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      min-width: 14rem;
+    }
+    .actions select {
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 0.35rem 0.45rem;
+      cursor: pointer;
+      max-width: 8.5rem;
+      margin-right: auto;
+    }
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.38rem 0.6rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .btn:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .btn-danger {
+      background: #b23b3b;
+      border-color: #b23b3b;
+      color: #fff;
+    }
+    .btn-danger:hover { background: #962f2f; border-color: #962f2f; color: #fff; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(246, 244, 239, 0.92);
+    }
+    .modal-overlay[hidden] { display: none; }
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+    }
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+    .modal-message {
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+    }
+    .format-options { border: none; margin-bottom: 1rem; }
+    .format-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/export.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>Library</h1>
+    <p class="intro">Plain / Stoic / Tachometer / Interval / Cue / Genko で書いたテキストが、入力とともに自動保存されます。</p>
+    <div class="toolbar">
+      <input type="file" id="import-input" accept=".txt,.md,text/plain" multiple>
+      <button class="import-btn" id="import-btn" type="button">インポート</button>
+      <button class="bulk-export-btn" id="bulk-export-btn" type="button" hidden>一括書き出し</button>
+    </div>
+    <div id="list" aria-live="polite"></div>
+  </div>
+
+  <div class="modal-overlay" id="export-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+      <p class="modal-title" id="export-modal-title">書き出し</p>
+      <p class="modal-message" id="export-modal-message"></p>
+      <fieldset class="format-options">
+        <legend class="format-label">形式を選ぶと書き出します</legend>
+        <div class="format-group">
+          <button class="format-btn" type="button" data-format="txt">.txt</button>
+          <button class="format-btn" type="button" data-format="md">.md</button>
+        </div>
+      </fieldset>
+      <div class="modal-actions">
+        <button class="btn" id="export-modal-cancel" type="button">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="../shared/export.js"></script>
+  <script src="../shared/editor-draft.js"></script>
+  <script src="../shared/editor-prefs.js"></script>
+  <script>
+    const P = window.TadekuEditorPrefs;
+    const listEl = document.getElementById('list');
+    const bulkExportBtn = document.getElementById('bulk-export-btn');
+    const importBtn = document.getElementById('import-btn');
+    const importInput = document.getElementById('import-input');
+
+    function setBulkExportEnabled(enabled) {
+      bulkExportBtn.hidden = !enabled;
+    }
+
+    function titleFromFilename(filename) {
+      return filename.replace(/^.*[\\/]/, '').replace(/\.(txt|md)$/i, '').trim();
+    }
+
+    function parseMdImport(text) {
+      const normalized = text.replace(/^\uFEFF/, '');
+      const match = normalized.match(/^#\s+([^\r\n]+)\r?\n(\r?\n)?/);
+      if (!match) return { title: '', body: normalized };
+      return {
+        title: match[1].trim(),
+        body: normalized.slice(match[0].length),
+      };
+    }
+
+    function parseImportedFile(text, filename) {
+      const isMd = /\.md$/i.test(filename);
+      const parsed = isMd ? parseMdImport(text) : { title: '', body: text.replace(/^\uFEFF/, '') };
+      const title = parsed.title || titleFromFilename(filename);
+      return { title, body: parsed.body || '' };
+    }
+
+    async function defaultImportEditorId() {
+      const prefs = await P.getPrefs();
+      if (prefs.lastEditor && P.LIBRARY_EDITORS.some((e) => e.id === prefs.lastEditor)) {
+        return prefs.lastEditor;
+      }
+      return P.LIBRARY_EDITORS[0]?.id || 'stoic';
+    }
+
+    async function importFile(file, editorId) {
+      const text = await file.text();
+      const { title, body } = parseImportedFile(text, file.name);
+      if (!title.trim() && !body.trim()) return false;
+
+      let storedTitle = '';
+      const userTitle = title.trim();
+      if (userTitle) {
+        storedTitle = await P.resolveUniqueTitle(userTitle, null);
+      }
+
+      await P.saveDocument({ editorId, title: storedTitle, body });
+      return true;
+    }
+
+    async function importFiles(files) {
+      const list = [...files].filter((f) => /\.(txt|md)$/i.test(f.name));
+      if (!list.length) {
+        window.alert('.txt または .md ファイルを選んでください。');
+        return;
+      }
+      const editorId = await defaultImportEditorId();
+      let count = 0;
+      for (const file of list) {
+        try {
+          if (await importFile(file, editorId)) count += 1;
+        } catch (err) {
+          console.error('Import failed:', file.name, err);
+        }
+      }
+      if (count) await render();
+      else window.alert('インポートできる内容がありませんでした。');
+    }
+
+    function exportBasename(doc) {
+      return TadekuEditorDraft.basenameFromDraft(doc.title, doc.body || '');
+    }
+
+    function buildExportContent(doc, format) {
+      const text = doc.body || '';
+      const title = displayTitle(doc);
+      if (format === 'md') return text ? `# ${title}\n\n${text}` : `# ${title}\n`;
+      return text;
+    }
+
+    function zipEntryName(doc, format, used) {
+      const ext = format === 'md' ? '.md' : '.txt';
+      const base = exportBasename(doc);
+      let name = base + ext;
+      if (!used.has(name)) {
+        used.add(name);
+        return name;
+      }
+      let n = 2;
+      while (used.has(`${base} (${n})${ext}`)) n += 1;
+      name = `${base} (${n})${ext}`;
+      used.add(name);
+      return name;
+    }
+
+    function bulkZipFilename() {
+      const d = new Date();
+      return `library-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}.zip`;
+    }
+
+    async function exportAllDocsAsZip(docs, format) {
+      if (!window.JSZip) {
+        window.alert('ZIP の作成に必要なライブラリを読み込めませんでした。');
+        return;
+      }
+      const zip = new JSZip();
+      const used = new Set();
+      for (const doc of docs) {
+        zip.file(zipEntryName(doc, format, used), buildExportContent(doc, format));
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      ExportUtils.downloadBlob(blob, bulkZipFilename());
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function displayTitle(doc) {
+      return P.documentDisplayTitle(doc);
+    }
+
+    async function showExportModal(doc) {
+      const chars = (doc.charCount || 0).toLocaleString();
+      const message = `${displayTitle(doc)} · ${chars} 字`;
+      return ExportUtils.showExportFormatModal(message, null);
+    }
+
+    function exportDoc(doc, format) {
+      const ext = format === 'md' ? '.md' : '.txt';
+      const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+      ExportUtils.downloadBlob(
+        new Blob([buildExportContent(doc, format)], { type: mime }),
+        exportBasename(doc) + ext,
+      );
+    }
+
+    function showEmpty() {
+      listEl.innerHTML = '';
+      setBulkExportEnabled(false);
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'まだ保存されたテキストはありません。対象エディタで書き始めると、ここに自動的に追加されます。';
+      listEl.appendChild(empty);
+    }
+
+    function showError(message) {
+      listEl.innerHTML = '';
+      setBulkExportEnabled(false);
+      const err = document.createElement('div');
+      err.className = 'empty';
+      err.textContent = message;
+      listEl.appendChild(err);
+    }
+
+    function buildEditorSelect(doc, defaultEditorId) {
+      const select = document.createElement('select');
+      select.setAttribute('aria-label', '開くエディタ');
+      for (const editor of P.LIBRARY_EDITORS) {
+        const opt = document.createElement('option');
+        opt.value = P.editorDocHref(editor.id, doc.id) || '';
+        opt.textContent = editor.name;
+        if (editor.id === defaultEditorId) opt.selected = true;
+        select.appendChild(opt);
+      }
+      select.addEventListener('mousedown', () => {
+        select.dataset.prevHref = select.value;
+      });
+      select.addEventListener('change', (e) => {
+        e.stopPropagation();
+        if (select.value) window.location.assign(select.value);
+      });
+      select.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (e.target.tagName !== 'OPTION') return;
+        const href = e.target.value;
+        // すでに選択中の項目を再クリックしても change は発火しない
+        if (href && href === select.dataset.prevHref) {
+          window.location.assign(href);
+        }
+      });
+      return select;
+    }
+
+    function renderTable(docs) {
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th class="col-title">タイトル</th>
+            <th>文字数</th>
+            <th>更新</th>
+            <th>開く</th>
+          </tr>
+        </thead>
+      `;
+
+      const tbody = document.createElement('tbody');
+
+      for (const doc of docs) {
+        const rowDefaultEditor =
+          (doc.editorId && P.LIBRARY_EDITORS.some((e) => e.id === doc.editorId) ? doc.editorId : null)
+          || P.LIBRARY_EDITORS[0]?.id;
+
+        const tr = document.createElement('tr');
+        tr.title = '「開く」で選んだエディタで開く';
+
+        const titleCell = document.createElement('td');
+        const titleEl = document.createElement('div');
+        titleEl.className = 'doc-title';
+        const label = displayTitle(doc);
+        titleEl.textContent = label;
+        titleCell.appendChild(titleEl);
+
+        const countCell = document.createElement('td');
+        countCell.className = 'num';
+        countCell.textContent = `${(doc.charCount || 0).toLocaleString()} 字`;
+
+        const dateCell = document.createElement('td');
+        dateCell.className = 'date';
+        dateCell.textContent = formatDate(doc.updatedAt);
+
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'actions';
+
+        const select = buildEditorSelect(doc, rowDefaultEditor);
+
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'btn';
+        exportBtn.type = 'button';
+        exportBtn.textContent = '書き出し';
+        exportBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const format = await showExportModal(doc);
+          if (format) exportDoc(doc, format);
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger';
+        deleteBtn.type = 'button';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!window.confirm('このテキストを削除しますか？')) return;
+          await P.deleteDocument(doc.id);
+          tr.remove();
+          if (!tbody.querySelector('tr')) showEmpty();
+        });
+        select.addEventListener('click', (e) => e.stopPropagation());
+        select.addEventListener('keydown', (e) => e.stopPropagation());
+
+        actionsCell.append(select, exportBtn, deleteBtn);
+        actionsCell.addEventListener('click', (e) => e.stopPropagation());
+
+        tr.append(titleCell, countCell, dateCell, actionsCell);
+
+        tr.addEventListener('click', () => {
+          if (select.value) window.location.assign(select.value);
+        });
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      return wrap;
+    }
+
+    async function render() {
+      if (!P || !window.indexedDB) {
+        showError('このブラウザでは IndexedDB が使えません。');
+        return;
+      }
+      try {
+        const docs = await P.getAllDocuments();
+        if (!docs.length) {
+          showEmpty();
+          return;
+        }
+        listEl.innerHTML = '';
+        listEl.appendChild(renderTable(docs));
+        setBulkExportEnabled(true);
+      } catch (err) {
+        console.error('Library load failed:', err);
+        showError('一覧の読み込みに失敗しました。ページを再読み込みしてください。');
+      }
+    }
+
+    bulkExportBtn.addEventListener('click', async () => {
+      const docs = await P.getAllDocuments();
+      if (!docs.length) return;
+      const format = await ExportUtils.showExportFormatModal(
+        `${docs.length} 件を ZIP で書き出します`,
+        null,
+      );
+      if (format) await exportAllDocsAsZip(docs, format);
+    });
+
+    importBtn.addEventListener('click', () => importInput.click());
+
+    importInput.addEventListener('change', async () => {
+      const files = importInput.files;
+      if (files?.length) await importFiles(files);
+      importInput.value = '';
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -17,6 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/export.css">
   <link rel="stylesheet" href="../shared/site-link.css">
+  <link rel="stylesheet" href="../shared/editor-title.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -66,31 +67,6 @@
       text-transform: uppercase;
       color: var(--muted);
       margin-bottom: 0.35rem;
-    }
-
-    .work-title {
-      width: 100%;
-      border: none;
-      border-bottom: 2px solid var(--border);
-      background: transparent;
-      font-family: inherit;
-      font-size: clamp(1.5rem, 5vw, 2rem);
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      color: var(--ink);
-      padding: 0.25rem 0;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    .work-title:focus {
-      border-color: var(--ink);
-    }
-
-    .work-title::placeholder {
-      color: #888;
-      font-weight: 700;
     }
 
     .header-actions {
@@ -497,7 +473,7 @@
       <div class="header-top">
         <div style="flex:1; min-width:0">
           <div class="brand">Scene — シーンエディタ</div>
-          <input type="text" class="work-title" id="work-title" placeholder="作品タイトル" maxlength="60" spellcheck="false">
+          <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
         </div>
         <div class="header-actions">
           <button class="btn" id="export-btn" title="テキストを書き出す">書き出し</button>
@@ -540,6 +516,7 @@
   </div>
 
   <script src="../shared/export.js"></script>
+  <script src="../shared/editor-prefs.js"></script>
   <script>
     const STORAGE_KEY = 'scene-scenes-v1';
     const LEGACY_STORAGE_KEY = 'beat-scenes-v1';
@@ -548,6 +525,17 @@
     let data = { title: '', scenes: [] };
     let saveTimer = null;
     let dragId = null;
+
+    function sceneCharCount() {
+      return data.scenes.reduce((s, sc) => s + sc.body.length, 0);
+    }
+
+    function syncMeta() {
+      TadekuEditorPrefs.syncDraftMeta('scene', {
+        charCount: sceneCharCount(),
+        title: (data.title || '').trim(),
+      });
+    }
 
     function uid() {
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -574,6 +562,7 @@
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        syncMeta();
         el.textContent = '保存済み';
         el.classList.add('saved');
       }, 400);
@@ -967,6 +956,7 @@
     });
 
     load();
+    syncMeta();
     render();
   </script>
   <script src="../shared/site-link.js"></script>

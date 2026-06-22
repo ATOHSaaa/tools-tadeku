@@ -11,17 +11,17 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stoic</title>
+  <title>Plain</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-title.css">
   <style>
     :root {
       --bg: #ffffff;
       --ink: #000000;
       --border: #000000;
       --surface: #ffffff;
-      --invert: #000000;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,26 +35,6 @@
       color: var(--ink);
       background: var(--bg);
       -webkit-font-smoothing: antialiased;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    body.warning {
-      background: var(--invert);
-      color: #fff;
-    }
-
-    body.warning .header {
-      border-color: #fff;
-    }
-
-    body.warning #editor {
-      color: #fff;
-      caret-color: #fff;
-    }
-
-    body.warning .notice {
-      border-color: #fff;
-      color: #fff;
     }
 
     .layout {
@@ -72,12 +52,11 @@
       flex-shrink: 0;
     }
 
-    body.warning .work-title {
-      color: #fff;
-    }
-
-    body.warning .work-title::placeholder {
-      color: rgba(255, 255, 255, 0.5);
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
 
     .brand {
@@ -133,16 +112,14 @@
     }
   </style>
   <link rel="stylesheet" href="../shared/site-link.css">
-  <link rel="stylesheet" href="../shared/editor-title.css">
 </head>
-<body id="body">
+<body>
   <div class="layout">
     <header class="header">
       <div class="header-row">
-        <div class="brand">Stoic</div>
+        <div class="brand">Plain</div>
         <div class="stats">
           <span>文字数 <strong id="char-count">0</strong></span>
-          <span>放置 <strong id="idle-seconds">0</strong>秒</span>
           <span class="save-indicator" id="save-indicator">Library</span>
         </div>
       </div>
@@ -151,7 +128,7 @@
     <div class="editor-wrap">
       <textarea id="editor" spellcheck="false"></textarea>
     </div>
-    <div class="notice">Backspace / Delete は無効 · Library に自動保存</div>
+    <div class="notice">Library に自動保存</div>
   </div>
 
   <script src="../shared/editor-prefs.js"></script>
@@ -159,24 +136,19 @@
   <script>
     const editor = document.getElementById('editor');
     const workTitle = document.getElementById('work-title');
-    const body = document.getElementById('body');
     const charCount = document.getElementById('char-count');
-    const idleSecondsLabel = document.getElementById('idle-seconds');
     const saveIndicator = document.getElementById('save-indicator');
 
-    let lastInputTime = Date.now();
-
-    TadekuEditorPrefs.trackEditor('stoic');
+    TadekuEditorPrefs.trackEditor('plain');
 
     const library = TadekuEditorLibrary.createLibrarySession(
-      'stoic',
+      'plain',
       () => ({ title: workTitle.value, body: editor.value }),
       {
         onLoad: ({ title, body }) => {
           workTitle.value = title || '';
           editor.value = body || '';
           charCount.textContent = editor.value.length;
-          lastInputTime = Date.now();
         },
         onTitleResolved: (uniqueTitle) => {
           if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
@@ -198,32 +170,23 @@
       library.scheduleSave();
     }
 
+    function updateCount() {
+      charCount.textContent = editor.value.length;
+    }
+
     workTitle.addEventListener('input', scheduleSave);
 
     editor.addEventListener('input', () => {
-      charCount.textContent = editor.value.length;
-      lastInputTime = Date.now();
-      body.classList.remove('warning');
+      updateCount();
       scheduleSave();
-    });
-
-    editor.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' || e.key === 'Delete') e.preventDefault();
     });
 
     editor.addEventListener('paste', () => {
       setTimeout(() => {
-        charCount.textContent = editor.value.length;
-        lastInputTime = Date.now();
+        updateCount();
         scheduleSave();
       }, 0);
     });
-
-    setInterval(() => {
-      const diff = Math.floor((Date.now() - lastInputTime) / 1000);
-      idleSecondsLabel.textContent = diff;
-      body.classList.toggle('warning', diff >= 30);
-    }, 1000);
 
     (async () => {
       const docId = new URLSearchParams(location.search).get('doc');

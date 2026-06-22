@@ -123,6 +123,21 @@
       letter-spacing: 0.06em;
       color: #999;
     }
+    .library-link {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.85rem 1.25rem;
+      background: var(--ink);
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: opacity 0.15s;
+    }
+    .library-link:hover {
+      opacity: 0.85;
+    }
   </style>
 </head>
 <body>
@@ -153,35 +168,46 @@
       <section class="category">
         <h2 class="category-title">テキストエディタ</h2>
         <div class="grid">
-          <a class="item" href="stoic/" target="_blank" rel="noopener noreferrer">
-            <h3>stoic</h3>
+          <a class="item" href="plain/">
+            <h3>Plain</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>タイトルと本文だけのシンプルなテキストエディタ。余計な機能なしで、普通に書いて普通に編集できます。</p>
+          </a>
+          <a class="item" href="stoic/">
+            <h3>Stoic</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>前進専用エディタ。削除できない、戻れない。書くことだけに向き合うためのミニマルな執筆空間です。</p>
           </a>
-          <a class="item" href="tachometer/" target="_blank" rel="noopener noreferrer">
-            <h3>tachometer</h3>
+          <a class="item" href="tachometer/">
+            <h3>Tachometer</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>執筆速度をリアルタイムで計測するエディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認できます。</p>
           </a>
-          <a class="item" href="Interval/" target="_blank" rel="noopener noreferrer">
+          <a class="item" href="Interval/">
             <h3>Interval</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>立ち止まりたい人のための執筆エディタ。入力ペースを制限し、言葉が冷めるのを待ってから次の一行を書きます。</p>
           </a>
-          <a class="item" href="scene/" target="_blank" rel="noopener noreferrer">
-            <h3>Scene</h3>
-            <div class="accent-line" aria-hidden="true"></div>
-            <p>シーン単位で物語の骨組みを組み立てるエディタ。1シーン300字以内。ドラッグで並べ替え、構成だけに集中できます。</p>
-          </a>
-          <a class="item" href="cue/" target="_blank" rel="noopener noreferrer">
+          <a class="item" href="cue/">
             <h3>Cue</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>執筆中、WordFall と PedantryFall の語が表示されるエディタ。用例を参照しながら書けます。</p>
           </a>
-          <a class="item" href="genko/" target="_blank" rel="noopener noreferrer">
+          <a class="item" href="genko/">
             <h3>Genko</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>400字詰め原稿用紙向けの縦書きエディタ。枚数換算と原稿用紙の進捗を確認しながら書けます。</p>
+          </a>
+        </div>
+        <a class="library-link" href="library/">保存したテキスト一覧</a>
+      </section>
+      <section class="category">
+        <h2 class="category-title">プロット</h2>
+        <div class="grid">
+          <a class="item" href="scene/" target="_blank" rel="noopener noreferrer">
+            <h3>Scene</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>シーン単位で物語の骨組みを組み立てるエディタ。1シーン300字以内。ドラッグで並べ替え、構成だけに集中できます。</p>
           </a>
         </div>
       </section>

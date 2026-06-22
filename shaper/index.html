@@ -111,6 +111,21 @@
       color: var(--muted);
     }
 
+    .editor-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn:disabled:hover {
+      border-color: var(--border);
+    }
+
     textarea {
       width: 100%;
       min-height: 320px;
@@ -197,7 +212,10 @@
           <button type="button" class="btn" id="btn-clear">クリア</button>
           <button type="button" class="btn" id="btn-copy">コピー</button>
         </div>
-        <span class="char-count" id="char-count" aria-live="polite">0文字</span>
+        <div class="editor-meta">
+          <button type="button" class="btn" id="btn-undo" disabled>操作を戻す</button>
+          <span class="char-count" id="char-count" aria-live="polite">0文字</span>
+        </div>
       </div>
       <textarea id="editor" placeholder="ここに文章を入力…" spellcheck="false"></textarea>
     </div>
@@ -272,12 +290,34 @@
 
       const editorEl = document.getElementById('editor');
       const charCountEl = document.getElementById('char-count');
+      const undoBtn = document.getElementById('btn-undo');
+      const undoStack = [];
+      const UNDO_LIMIT = 50;
+
+      function updateUndoButton() {
+        undoBtn.disabled = undoStack.length === 0;
+      }
+
+      function recordUndo() {
+        undoStack.push(editorEl.value);
+        if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+        updateUndoButton();
+      }
+
+      function undoLastAction() {
+        if (!undoStack.length) return;
+        editorEl.value = undoStack.pop();
+        updateCharCount();
+        updateUndoButton();
+        editorEl.focus();
+      }
 
       function updateCharCount() {
         charCountEl.textContent = `${editorEl.value.length.toLocaleString('ja-JP')}文字`;
       }
 
-      function setEditorText(text) {
+      function setEditorText(text, { record = true } = {}) {
+        if (record && text !== editorEl.value) recordUndo();
         editorEl.focus();
         editorEl.setSelectionRange(0, editorEl.value.length);
         const inserted = document.execCommand('insertText', false, text);
@@ -303,6 +343,8 @@
       });
 
       editorEl.addEventListener('input', updateCharCount);
+
+      document.getElementById('btn-undo').addEventListener('click', undoLastAction);
 
       document.getElementById('btn-clear').addEventListener('click', () => {
         if (!editorEl.value) return;

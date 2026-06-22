@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="../shared/export.css">
   <link rel="stylesheet" href="../shared/site-link.css">
   <script src="../shared/export.js"></script>
+  <link rel="stylesheet" href="../shared/editor-title.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -56,9 +57,8 @@
     .header {
       grid-column: 1 / -1;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
+      flex-direction: column;
+      gap: 0.65rem;
       padding: 0.85rem 1.25rem;
       border-bottom: 2px solid var(--border);
     }
@@ -508,13 +508,16 @@
 <body>
   <div class="layout">
     <header class="header">
-      <div class="brand">Genko</div>
-      <div class="header-right">
-        <div class="stats">
-          <span class="save-indicator saved" id="save-indicator">保存済み</span>
+      <div class="header-row">
+        <div class="brand">Genko</div>
+        <div class="header-right">
+          <div class="stats">
+            <span class="save-indicator" id="save-indicator">Library</span>
+          </div>
+          <button class="btn" id="export-btn" type="button">書き出し</button>
         </div>
-        <button class="btn" id="export-btn" type="button">書き出し</button>
       </div>
+      <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
     </header>
 
     <div class="editor-wrap" id="editor-wrap">
@@ -527,9 +530,9 @@
         <div class="panel-value" id="page-count">0枚</div>
       </div>
       <div class="panel-block">
-        <div class="panel-label">総字数（空白含む）</div>
-        <div class="panel-value" id="total-chars-with-space">0字</div>
-        <div class="panel-sub" id="total-chars-no-space">空白除く 0字</div>
+        <div class="panel-label">総字数</div>
+        <div class="panel-value" id="total-masu">0字</div>
+        <div class="panel-sub" id="total-no-whitespace">空白除く 0字</div>
       </div>
       <div class="panel-block">
         <div class="panel-label">現在の1枚</div>
@@ -540,7 +543,7 @@
       </div>
     </aside>
 
-    <footer class="footer">400字詰め · 1マス1文字 · 縦書き · 自動保存</footer>
+    <footer class="footer">400字詰め · 1マス1文字 · 縦書き · Library に自動保存</footer>
   </div>
 
   <div class="modal-overlay" id="export-modal" hidden>
@@ -561,8 +564,11 @@
     </div>
   </div>
 
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
+  <script src="../shared/editor-draft.js"></script>
+  <script src="../shared/editor-undo.js"></script>
   <script>
-    const STORAGE_KEY = 'genko-draft-v1';
     const ROWS = 20;             // 1列あたりのマス数
     const COLS = 20;             // 1枚あたりの列数
     const PER_PAGE = ROWS * COLS; // 400
@@ -572,9 +578,10 @@
       pagesScroll: document.getElementById('pages-scroll'),
       editorWrap: document.getElementById('editor-wrap'),
       saveIndicator: document.getElementById('save-indicator'),
+      workTitle: document.getElementById('work-title'),
       pageCount: document.getElementById('page-count'),
-      totalCharsWithSpace: document.getElementById('total-chars-with-space'),
-      totalCharsNoSpace: document.getElementById('total-chars-no-space'),
+      totalMasu: document.getElementById('total-masu'),
+      totalNoWhitespace: document.getElementById('total-no-whitespace'),
       pageCurrent: document.getElementById('page-current'),
       pageBar: document.getElementById('page-bar'),
     };
@@ -586,10 +593,65 @@
     let composing = false;
     let dragging = false;
     let lastLayout = null;
-    let saveTimer = null;
+
+    const undo = TadekuEditorUndo.createStack({ limit: 200 });
+
+    function editorState() {
+      return { doc: doc.slice(), caret, anchor };
+    }
+
+    function applyEditorState(state) {
+      doc = state.doc;
+      caret = state.caret;
+      anchor = state.anchor;
+      capture.value = '';
+      render();
+      scheduleSave();
+    }
+
+    function recordUndo() {
+      if (!undo.applying) undo.push(editorState);
+    }
 
     const pageEls = [];   // .page 要素の配列
     const cellEls = [];   // ページごとの 400 マス span 配列
+
+    TadekuEditorPrefs.trackEditor('genko');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'genko',
+      () => ({ title: els.workTitle.value, body: serialize() }),
+      {
+        onLoad: ({ title, body }) => {
+          els.workTitle.value = title || '';
+          loadFromText(body || '');
+          render();
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== els.workTitle) els.workTitle.value = uniqueTitle;
+        },
+        onSaved: () => {
+          syncMeta();
+          els.saveIndicator.textContent = '保存済み';
+          els.saveIndicator.classList.add('saved');
+        },
+        onError: () => {
+          els.saveIndicator.textContent = '保存エラー（他タブを閉じ再読込）';
+          els.saveIndicator.classList.remove('saved');
+        },
+      },
+    );
+
+    function genkoCharCount() {
+      return doc.reduce((n, c) => c === '\n' ? n : n + 1, 0);
+    }
+
+    function syncMeta() {
+      TadekuEditorPrefs.syncDraftMeta('genko', {
+        charCount: genkoCharCount(),
+        title: els.workTitle.value.trim(),
+      });
+    }
 
     // 原稿用紙1枚(20×20)がエディタ領域いっぱいに収まるようマスの大きさを決める
     function updateCellSize() {
@@ -665,6 +727,22 @@
     };
     function vForm(ch) { return VERT_FORMS[ch] || ch; }
     function vFormStr(s) { let o = ''; for (const c of s) o += vForm(c); return o; }
+
+    // canvas fillText は横書きのため、縦組みでは CSS が回転させる長音などを自前で回す
+    const CANVAS_VERTICAL_ROTATE = new Set('ーｰ〜～―─‐‑–—');
+    function needsCanvasVerticalRotate(ch) {
+      return ch !== undefined && CANVAS_VERTICAL_ROTATE.has(ch);
+    }
+
+    function fillVerticalCellText(ctx, x, y, text) {
+      if (text.length === 1 && needsCanvasVerticalRotate(text)) {
+        ctx.translate(x, y);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(text, 0, 0);
+        return;
+      }
+      ctx.fillText(text, x, y);
+    }
 
     function markFor(docArr, token, slot) {
       return { token, char: docArr[token], role: tokenRole(docArr[token]), slot };
@@ -832,9 +910,26 @@
 
       const cs = slots[Math.max(0, Math.min(caretPos, slots.length - 1))] || { col: 0, row: 0 };
       const caretPage = Math.floor(cs.col / COLS);
-      const pageCount = Math.max(1, Math.floor(maxCol / COLS) + 1, caretPage + 1);
+      const pageCount = Math.max(1, Math.ceil(lines.length / COLS), caretPage + 1);
 
-      return { cellViewAt, cellToken, cellTokensAt, slots, lastLinear, pageCount };
+      return { cellViewAt, cellToken, cellTokensAt, slots, lastLinear, pageCount, lines };
+    }
+
+    // 総字数: 文字の入ったマスのみを数え、改行（空白行）は含めない。
+    function countTotalChars(lines) {
+      let used = 0;
+      for (const line of lines) used += line.cells.length;
+      return used;
+    }
+
+    // 最後の文字のグリッド位置から、その枚で何マス目まで使っているかを返す。
+    // 改行で空いたマスも視覚どおり埋まっているものとして数える。
+    function currentPageUsedCells(lastLinear) {
+      if (lastLinear < 0) return 0;
+      const col = Math.floor(lastLinear / ROWS);
+      const row = lastLinear % ROWS;
+      const colInPage = col % COLS;
+      return colInPage * ROWS + row + 1;
     }
 
     // --- DOM 構築 ---
@@ -1013,25 +1108,18 @@
 
     const WHITESPACE = new Set([' ', '\u3000', '\t']);
 
-    function countDocChars(includeWhitespace) {
-      return doc.reduce((n, c) => {
-        if (c === '\n') return n;
-        if (!includeWhitespace && WHITESPACE.has(c)) return n;
-        return n + 1;
-      }, 0);
+    function countCharsExcludingWhitespaceOnly() {
+      return doc.reduce((n, c) => (WHITESPACE.has(c) ? n : n + 1), 0);
     }
 
     function updateStats(L) {
-      const consumed = L.lastLinear + 1; // 先頭から最後の文字までに使ったマス数（改行で空いたマスも含む）
-      const charsWithSpace = countDocChars(true);
-      const charsNoSpace = countDocChars(false);
-      const full = Math.floor(consumed / PER_PAGE);
-      const rem = consumed % PER_PAGE;
-      const currentInPage = consumed === 0 ? 0 : (rem || PER_PAGE);
+      const totalMasu = countTotalChars(L.lines);
+      const noWhitespace = countCharsExcludingWhitespaceOnly();
+      const currentInPage = currentPageUsedCells(L.lastLinear);
 
-      els.pageCount.textContent = full + '枚';
-      els.totalCharsWithSpace.textContent = charsWithSpace + '字';
-      els.totalCharsNoSpace.textContent = '空白除く ' + charsNoSpace + '字';
+      els.pageCount.textContent = L.pageCount + '枚';
+      els.totalMasu.textContent = totalMasu + '字';
+      els.totalNoWhitespace.textContent = '空白除く ' + noWhitespace + '字';
       els.pageCurrent.textContent = String(currentInPage).padStart(3, '0') + ' / 400';
       els.pageBar.style.width = Math.min(100, (currentInPage / PER_PAGE) * 100) + '%';
     }
@@ -1071,6 +1159,7 @@
     function insertText(str) {
       const g = graphemes((str || '').replace(/\r\n?/g, '\n'));
       if (!g.length) return;
+      recordUndo();
       deleteSelection();
       doc.splice(caret, 0, ...g);
       caret += g.length;
@@ -1103,7 +1192,11 @@
     }
 
     capture.addEventListener('compositionstart', () => {
-      if (selRange()) { deleteSelection(); render(); }
+      if (selRange()) {
+        recordUndo();
+        deleteSelection();
+        render();
+      }
       composing = true;
       renderPreview();
     });
@@ -1122,6 +1215,8 @@
     capture.addEventListener('keydown', (e) => {
       if (e.isComposing || composing) return;
 
+      if (TadekuEditorUndo.tryHandleKey(e, undo, editorState, applyEditorState)) return;
+
       // Cmd/Ctrl + A で全選択
       if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
         e.preventDefault();
@@ -1138,16 +1233,34 @@
       switch (e.key) {
         case 'Backspace':
           e.preventDefault();
-          if (deleteSelection()) { render(); scheduleSave(); }
-          else if (caret > 0) { doc.splice(caret - 1, 1); caret--; render(); scheduleSave(); }
+          if (deleteSelection()) {
+            recordUndo();
+            render();
+            scheduleSave();
+          } else if (caret > 0) {
+            recordUndo();
+            doc.splice(caret - 1, 1);
+            caret--;
+            render();
+            scheduleSave();
+          }
           break;
         case 'Delete':
           e.preventDefault();
-          if (deleteSelection()) { render(); scheduleSave(); }
-          else if (caret < doc.length) { doc.splice(caret, 1); render(); scheduleSave(); }
+          if (deleteSelection()) {
+            recordUndo();
+            render();
+            scheduleSave();
+          } else if (caret < doc.length) {
+            recordUndo();
+            doc.splice(caret, 1);
+            render();
+            scheduleSave();
+          }
           break;
         case 'Enter':
           e.preventDefault();
+          recordUndo();
           deleteSelection();
           doc.splice(caret, 0, '\n'); caret++; anchor = null; render(); scheduleSave();
           break;
@@ -1192,6 +1305,7 @@
       if (!text) return;
       e.preventDefault();
       e.clipboardData.setData('text/plain', text);
+      recordUndo();
       deleteSelection();
       render();
       scheduleSave();
@@ -1263,18 +1377,15 @@
 
     function loadFromText(text) {
       doc = graphemes((text || '').replace(/\r\n?/g, '\n'));
-      caret = doc.length;
+      caret = 0;
+      anchor = null;
+      undo.reset();
     }
 
     function scheduleSave() {
       els.saveIndicator.textContent = '保存中…';
       els.saveIndicator.classList.remove('saved');
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        try { localStorage.setItem(STORAGE_KEY, serialize()); } catch (_) {}
-        els.saveIndicator.textContent = '保存済み';
-        els.saveIndicator.classList.add('saved');
-      }, 400);
+      library.scheduleSave();
     }
 
     // --- 書き出し ---
@@ -1304,7 +1415,7 @@
       const chars = doc.reduce((n, c) => c === '\n' ? n : n + 1, 0);
       const { full, rem } = pageStats(consumed);
       const meta = `${chars}字 · ${full}枚${rem ? '+' + rem + 'マス' : ''}`;
-      const title = ExportUtils.exportBasenameFromText(exportSourceText());
+      const title = TadekuEditorDraft.basenameFromDraft(els.workTitle.value, text);
       if (format === 'md') {
         return `# ${title}\n\n<!-- ${meta} -->\n\n${text}`;
       }
@@ -1346,7 +1457,7 @@
       if (cls === 'slot-lower-deep' || cls === 'slot-lower-deep-both') fontScale = 0.58;
 
       ctx.font = `${Math.max(12, Math.round(cell.size * fontScale))}px "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif`;
-      ctx.fillText(text, x, y);
+      fillVerticalCellText(ctx, x, y, text);
       ctx.restore();
     }
 
@@ -1450,7 +1561,8 @@
     }
 
     async function exportFile(format) {
-      const filename = ExportUtils.exportFilename(exportSourceText(), format);
+      const base = TadekuEditorDraft.basenameFromDraft(els.workTitle.value, exportSourceText());
+      const filename = format === 'jpg' ? base + '.zip' : base + '.' + format;
       if (format === 'jpg') {
         const blob = await buildExportJpgZipBlob();
         if (blob) ExportUtils.downloadBlob(blob, filename);
@@ -1494,15 +1606,20 @@
     }
 
     // --- 初期化 ---
-    try {
-      loadFromText(localStorage.getItem(STORAGE_KEY) || '');
-    } catch (_) {
-      loadFromText('');
-    }
+    loadFromText('');
+
+    els.workTitle.addEventListener('input', scheduleSave);
+
+    syncMeta();
 
     updateCellSize();
     render();
-    capture.focus();
+    (async () => {
+      const docId = new URLSearchParams(location.search).get('doc');
+      if (docId) await library.openDocument(docId);
+      render();
+      capture.focus();
+    })();
   </script>
   <script src="../shared/site-link.js"></script>
 </body>

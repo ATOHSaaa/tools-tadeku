@@ -11,11 +11,12 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>interval</title>
+  <title>Interval</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/site-link.css">
+  <link rel="stylesheet" href="../shared/editor-title.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -68,6 +69,14 @@
       caret-color: #fff;
     }
 
+    body.limit .work-title {
+      color: #fff;
+    }
+
+    body.limit .work-title::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
     .layout {
       display: flex;
       flex-direction: column;
@@ -79,12 +88,44 @@
       flex-shrink: 0;
     }
 
-    .header-top {
+    .header-stack {
+      padding: 0.85rem 1.25rem 0.85rem;
+    }
+
+    .header-right {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 1rem;
-      padding: 0.85rem 1.25rem;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    body.limit .btn {
+      border-color: #fff;
+      color: #fff;
+      background: transparent;
+    }
+
+    body.limit .btn:hover {
+      background: #fff;
+      color: #000;
     }
 
     .brand {
@@ -160,12 +201,17 @@
 <body id="body">
   <div class="layout">
     <header class="header">
-      <div class="header-top">
-        <div class="brand">interval</div>
-        <div class="stats">
-          <span id="gauge-prefix">10秒間の負荷:</span>
-          <strong id="current-count">00</strong> / 25
+      <div class="header-stack">
+        <div class="header-row">
+          <div class="brand">Interval</div>
+          <div class="header-right">
+            <div class="stats">
+              <span id="gauge-prefix">10秒間の負荷:</span>
+              <strong id="current-count">00</strong> / 25
+            </div>
+          </div>
         </div>
+        <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
       </div>
       <div class="gauge-strip">
         <div class="bar-bg">
@@ -176,12 +222,15 @@
     <div class="editor-wrap">
       <textarea id="editor" spellcheck="false"></textarea>
     </div>
-    <div class="notice">10秒間に25文字を超えると、言葉が冷めるまで入力できません</div>
+    <div class="notice">10秒間に25文字を超えると、言葉が冷めるまで入力できません · Library に自動保存</div>
   </div>
 
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
   <script>
     const body = document.getElementById('body');
     const editor = document.getElementById('editor');
+    const workTitle = document.getElementById('work-title');
     const barFill = document.getElementById('bar-fill');
     const currentCountLabel = document.getElementById('current-count');
     const gaugePrefix = document.getElementById('gauge-prefix');
@@ -194,6 +243,30 @@
     const LIMIT_CHARS = 25;
     const TIME_WINDOW = 10000;
     const COOLDOWN_MS = 3000;
+
+    TadekuEditorPrefs.trackEditor('interval');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'interval',
+      () => ({ title: workTitle.value, body: editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          workTitle.value = title || '';
+          editor.value = body || '';
+          committedLength = editor.value.length;
+          inputHistory = [];
+          updateStatus();
+        },
+        onTitleResolved: (uniqueTitle) => {
+        if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
+      } },
+    );
+
+    function scheduleSave() {
+      library.scheduleSave();
+    }
+
+    workTitle.addEventListener('input', scheduleSave);
 
     setInterval(updateStatus, 100);
 
@@ -227,6 +300,7 @@
         for (let i = 0; i < delta; i++) inputHistory.push(now);
       }
       committedLength = newLen;
+      scheduleSave();
       updateStatus();
     }
 
@@ -265,7 +339,12 @@
       }
     }
 
-    editor.focus();
+    (async () => {
+      const docId = new URLSearchParams(location.search).get('doc');
+      if (docId) await library.openDocument(docId);
+      editor.focus();
+      editor.setSelectionRange(0, 0);
+    })();
   </script>
   <script src="../shared/site-link.js"></script>
 </body>

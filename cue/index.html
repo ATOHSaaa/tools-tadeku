@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../shared/export.css">
   <link rel="stylesheet" href="../shared/site-link.css">
+  <link rel="stylesheet" href="../shared/editor-title.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -49,9 +49,8 @@
     .header {
       grid-column: 1 / -1;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
+      flex-direction: column;
+      gap: 0.65rem;
       padding: 0.85rem 1.25rem;
       border-bottom: 2px solid var(--border);
     }
@@ -210,76 +209,6 @@
       padding: 0.35rem 0.5rem;
     }
 
-    .btn-inline {
-      width: auto;
-      flex-shrink: 0;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      background: rgba(255, 255, 255, 0.85);
-    }
-
-    .modal-overlay[hidden] {
-      display: none;
-    }
-
-    .modal {
-      width: 100%;
-      max-width: 400px;
-      background: var(--surface);
-      border: 2px solid var(--border);
-      padding: 1.5rem;
-    }
-
-    .modal-title {
-      font-size: 1rem;
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.75rem;
-    }
-
-    .modal-message {
-      font-size: 0.88rem;
-      font-weight: 500;
-      line-height: 1.75;
-      margin-bottom: 1.25rem;
-    }
-
-    .format-options {
-      border: none;
-      margin-bottom: 1rem;
-    }
-
-    .format-label {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      margin-bottom: 0.5rem;
-    }
-
-    .format-group {
-      display: flex;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-    }
-
-    .modal-actions .btn {
-      width: auto;
-    }
-
     @media (max-width: 640px) {
       .layout {
         grid-template-columns: 1fr;
@@ -316,12 +245,14 @@
 <body>
   <div class="layout">
     <header class="header">
-      <div class="brand">Cue</div>
-      <div class="stats">
-        <span>文字数 <strong id="char-count">0</strong></span>
-        <span class="save-indicator saved" id="save-indicator">保存済み</span>
-        <button class="btn btn-inline" id="export-btn" type="button">書き出し</button>
+      <div class="header-row">
+        <div class="brand">Cue</div>
+        <div class="stats">
+          <span>文字数 <strong id="char-count">0</strong></span>
+          <span class="save-indicator saved" id="save-indicator">Library</span>
+        </div>
       </div>
+      <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
     </header>
 
     <div class="editor-wrap">
@@ -348,36 +279,18 @@
     </aside>
   </div>
 
-  <div class="modal-overlay" id="export-modal" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
-      <p class="modal-title" id="export-modal-title">書き出し</p>
-      <p class="modal-message" id="export-modal-message"></p>
-      <fieldset class="format-options">
-        <legend class="format-label">形式を選ぶと書き出します</legend>
-        <div class="format-group">
-          <button class="format-btn" type="button" data-format="txt">.txt</button>
-          <button class="format-btn" type="button" data-format="md">.md</button>
-        </div>
-      </fieldset>
-      <div class="modal-actions">
-        <button class="btn btn-inline" id="export-modal-cancel" type="button">キャンセル</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="../shared/export.js"></script>
   <script src="../shared/wordfall-words.js"></script>
   <script>
     const wordfallWords = window.WORDFALL_CONFIG?.words || [];
     const wordfallGas = window.WORDFALL_CONFIG?.gasUrl;
   </script>
   <script src="../shared/pedantryfall-words.js"></script>
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
   <script>
     const pedantryWords = window.WORDFALL_CONFIG?.words || [];
     const pedantryGas = window.WORDFALL_CONFIG?.gasUrl;
 
-    const STORAGE_KEY = 'cue-draft-v1';
-    const LEGACY_STORAGE_KEY = 'infuse-draft-v1';
     const INTERVAL_SEC = 20;
 
     const state = {
@@ -386,11 +299,11 @@
       wordfallCurrent: null,
       pedantryCurrent: null,
       secondsLeft: INTERVAL_SEC,
-      saveTimer: null,
     };
 
     const els = {
       editor: document.getElementById('editor'),
+      workTitle: document.getElementById('work-title'),
       charCount: document.getElementById('char-count'),
       saveIndicator: document.getElementById('save-indicator'),
       wordfallText: document.getElementById('wordfall-text'),
@@ -400,6 +313,31 @@
       wordNext: document.getElementById('word-next'),
       wordTimer: document.getElementById('word-timer'),
     };
+
+    TadekuEditorPrefs.trackEditor('cue');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'cue',
+      () => ({ title: els.workTitle.value, body: els.editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          els.workTitle.value = title || '';
+          els.editor.value = body || '';
+          els.charCount.textContent = els.editor.value.length;
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== els.workTitle) els.workTitle.value = uniqueTitle;
+        },
+        onSaved: () => {
+          els.saveIndicator.textContent = '保存済み';
+          els.saveIndicator.classList.add('saved');
+        },
+        onError: () => {
+          els.saveIndicator.textContent = '保存エラー（他タブを閉じ再読込）';
+          els.saveIndicator.classList.remove('saved');
+        },
+      },
+    );
 
     function pickFrom(list, avoid) {
       if (!list.length) return null;
@@ -453,12 +391,7 @@
     function scheduleSave() {
       els.saveIndicator.textContent = '保存中…';
       els.saveIndicator.classList.remove('saved');
-      clearTimeout(state.saveTimer);
-      state.saveTimer = setTimeout(() => {
-        localStorage.setItem(STORAGE_KEY, els.editor.value);
-        els.saveIndicator.textContent = '保存済み';
-        els.saveIndicator.classList.add('saved');
-      }, 400);
+      library.scheduleSave();
     }
 
     function refreshWords() {
@@ -487,50 +420,18 @@
       scheduleSave();
     });
 
+    els.workTitle.addEventListener('input', scheduleSave);
+
     els.wordNext.addEventListener('click', injectWords);
-
-    function exportSourceText() {
-      return els.editor.value;
-    }
-
-    function showExportModal() {
-      const chars = els.editor.value.length;
-      const message = chars ? `${chars} 字` : '（空の原稿）';
-      return ExportUtils.showExportFormatModal(message, els.editor);
-    }
-
-    function buildExportContent(format) {
-      const text = els.editor.value;
-      const title = ExportUtils.exportBasenameFromText(exportSourceText());
-      if (format === 'md') return text ? `# ${title}\n\n${text}` : `# ${title}\n`;
-      return text;
-    }
-
-    function exportFile(format) {
-      const filename = ExportUtils.exportFilename(exportSourceText(), format);
-      const content = buildExportContent(format);
-      const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
-      const blob = new Blob([content], { type: mime });
-      ExportUtils.downloadBlob(blob, filename);
-    }
-
-    document.getElementById('export-btn').addEventListener('click', async () => {
-      const format = await showExportModal();
-      if (format) exportFile(format);
-    });
-
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-        || localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (saved) {
-        els.editor.value = saved;
-        els.charCount.textContent = saved.length;
-      }
-    } catch (_) {}
 
     refreshWords();
     injectWords();
-    els.editor.focus();
+    (async () => {
+      const docId = new URLSearchParams(location.search).get('doc');
+      if (docId) await library.openDocument(docId);
+      els.editor.focus();
+      els.editor.setSelectionRange(0, 0);
+    })();
   </script>
   <script src="../shared/site-link.js"></script>
 </body>
