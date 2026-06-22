@@ -293,12 +293,14 @@
       const undoBtn = document.getElementById('btn-undo');
       const undoStack = [];
       const UNDO_LIMIT = 50;
+      let restoring = false;
 
       function updateUndoButton() {
         undoBtn.disabled = undoStack.length === 0;
       }
 
       function recordUndo() {
+        if (restoring) return;
         undoStack.push(editorEl.value);
         if (undoStack.length > UNDO_LIMIT) undoStack.shift();
         updateUndoButton();
@@ -306,7 +308,9 @@
 
       function undoLastAction() {
         if (!undoStack.length) return;
+        restoring = true;
         editorEl.value = undoStack.pop();
+        restoring = false;
         updateCharCount();
         updateUndoButton();
         editorEl.focus();
@@ -318,13 +322,9 @@
 
       function setEditorText(text, { record = true } = {}) {
         if (record && text !== editorEl.value) recordUndo();
-        editorEl.focus();
-        editorEl.setSelectionRange(0, editorEl.value.length);
-        const inserted = document.execCommand('insertText', false, text);
-        if (!inserted) {
-          editorEl.value = text;
-        }
+        editorEl.value = text;
         updateCharCount();
+        editorEl.focus();
       }
 
       function applyTransform(name) {
@@ -332,7 +332,9 @@
         if (!fn) return;
         const next = fn(editorEl.value);
         if (next === editorEl.value) return;
-        setEditorText(next);
+        recordUndo();
+        editorEl.value = next;
+        updateCharCount();
         editorEl.focus();
       }
 
