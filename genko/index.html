@@ -162,6 +162,11 @@
       background-color: rgba(0, 0, 0, 0.14);
     }
 
+    /* 三点リーダー等は横倒しのままになるため、90度回転して縦並びにする */
+    .genko-cell.cell-sideways {
+      text-orientation: sideways;
+    }
+
     /* セル内スロット: レイアウト計算済みの kind/slot に従って描画する */
     .genko-cell .cell-main,
     .genko-cell .cell-mark {
@@ -736,6 +741,12 @@
       return ch !== undefined && CANVAS_VERTICAL_ROTATE.has(ch);
     }
 
+    // 三点リーダー・二点リーダーは縦組みでも横並びのままになるため、90度回転させて縦に揃える
+    const ROTATE_SIDEWAYS = new Set('…‥⋯');
+    function needsSidewaysRotate(ch) {
+      return ch !== undefined && ROTATE_SIDEWAYS.has(ch);
+    }
+
     const EXPORT_FONT_FAMILY = 'Yu Mincho, Hiragino Mincho ProN, YuMincho, serif';
     const vGlyphCache = new Map();   // key: px|ch -> { img, size, ready:Promise }
 
@@ -787,6 +798,14 @@
         }
         // 先読みできていない場合のフォールバック（簡易な縦線）
         ctx.fillText(ch, x, y);
+        return;
+      }
+      if (chars.length === 1 && needsSidewaysRotate(chars[0])) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.PI / 2);
+        ctx.fillText(chars[0], 0, 0);
+        ctx.restore();
         return;
       }
       ctx.fillText(text, x, y);
@@ -1062,14 +1081,17 @@
         'cell-hang-kutouten',
         'cell-hang-close',
         'cell-hang-both',
-        'cell-pair'
+        'cell-pair',
+        'cell-sideways'
       );
       cell.textContent = '';
       if (!cellView) return;
 
       if (cellView.kind === 'normal') {
         cell.classList.add('cell-normal');
-        cell.textContent = vForm(cellView.mainChar);
+        const ch = vForm(cellView.mainChar);
+        if (needsSidewaysRotate(ch)) cell.classList.add('cell-sideways');
+        cell.textContent = ch;
         return;
       }
 
@@ -1093,7 +1115,9 @@
       }
 
       cell.classList.add('cell-normal');
-      cell.textContent = vForm(cellView.mainChar || '');
+      const fallbackChar = vForm(cellView.mainChar || '');
+      if (needsSidewaysRotate(fallbackChar)) cell.classList.add('cell-sideways');
+      cell.textContent = fallbackChar;
     }
 
     // L のレイアウトでマス目を描画する。
@@ -1593,7 +1617,7 @@
       return canvas;
     }
 
-    async function buildExportJpgZipBlob(folderName) {
+    async function buildExportJpgBlobs() {
       const L = computeLayout();
       const pages = Math.max(1, L.pageCount);
       const cellSize = Math.max(18, CELL_PX);
@@ -1606,26 +1630,40 @@
         await preloadVerticalGlyphs([...new Set(pxList)], [...vChars]);
       }
 
-      const zip = new JSZip();
-      const folder = zip.folder(folderName || 'genko');
-
+      const blobs = [];
       for (let p = 0; p < pages; p++) {
         const canvas = renderExportPageCanvas(L, p, cellSize);
         const blob = await canvasToJpgBlob(canvas);
-        if (blob) folder.file(String(p + 1).padStart(3, '0') + '.jpg', blob);
+        if (blob) blobs.push(blob);
       }
+      return blobs;
+    }
 
+    async function buildExportJpgZipBlob(folderName, blobs) {
+      const zip = new JSZip();
+      const folder = zip.folder(folderName || 'genko');
+      blobs.forEach((blob, i) => {
+        folder.file(String(i + 1).padStart(3, '0') + '.jpg', blob);
+      });
       return zip.generateAsync({ type: 'blob' });
     }
 
     async function exportFile(format) {
       const base = TadekuEditorDraft.basenameFromDraft(els.workTitle.value, exportSourceText());
-      const filename = format === 'jpg' ? base + '.zip' : base + '.' + format;
       if (format === 'jpg') {
-        const blob = await buildExportJpgZipBlob(base);
-        if (blob) ExportUtils.downloadBlob(blob, filename);
+        const blobs = await buildExportJpgBlobs();
+        if (!blobs.length) return;
+        // 画像が1枚のときはフォルダ・zipにせず単体の .jpg として出力
+        if (blobs.length === 1) {
+          ExportUtils.downloadBlob(blobs[0], base + '.jpg');
+          return;
+        }
+        const zipBlob = await buildExportJpgZipBlob(base, blobs);
+        if (zipBlob) ExportUtils.downloadBlob(zipBlob, base + '.zip');
         return;
       }
+
+      const filename = base + '.' + format;
 
       const content = buildExportContent(format);
       const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';

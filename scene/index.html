@@ -577,13 +577,25 @@
     }
 
     function startPointerDrag(e, card, handle, list) {
+      if (e.button != null && e.button > 0) return;
+      // タッチ環境ではポインターのキャプチャが DOM 移動で外れたり、
+      // OS にスクロールとして横取りされて pointermove が止まることがある。
+      // タッチイベントは開始要素で発火し続けるため、タッチ時は touch* を使う。
+      const isTouch = e.pointerType === 'touch';
       e.preventDefault();
-      handle.setPointerCapture(e.pointerId);
       card.classList.add('dragging');
       list.classList.add('is-dragging');
 
+      const pointY = ev => {
+        if (ev.touches) return ev.touches[0] ? ev.touches[0].clientY : null;
+        if (ev.changedTouches) return ev.changedTouches[0] ? ev.changedTouches[0].clientY : null;
+        return ev.clientY;
+      };
+
       const onMove = ev => {
-        const y = ev.clientY;
+        if (ev.cancelable) ev.preventDefault();
+        const y = pointY(ev);
+        if (y == null) return;
         const others = [...list.querySelectorAll('.scene-card:not(.dragging)')];
         let next = null;
         for (const other of others) {
@@ -598,9 +610,15 @@
       };
 
       const finish = () => {
-        handle.removeEventListener('pointermove', onMove);
-        handle.removeEventListener('pointerup', finish);
-        handle.removeEventListener('pointercancel', finish);
+        if (isTouch) {
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', finish);
+          document.removeEventListener('touchcancel', finish);
+        } else {
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', finish);
+          document.removeEventListener('pointercancel', finish);
+        }
         card.classList.remove('dragging');
         list.classList.remove('is-dragging');
 
@@ -613,9 +631,15 @@
         }
       };
 
-      handle.addEventListener('pointermove', onMove);
-      handle.addEventListener('pointerup', finish);
-      handle.addEventListener('pointercancel', finish);
+      if (isTouch) {
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', finish);
+        document.addEventListener('touchcancel', finish);
+      } else {
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', finish);
+        document.addEventListener('pointercancel', finish);
+      }
     }
 
     function render() {
