@@ -965,11 +965,87 @@
     return createStaticPageElement(page.html, page.type || 'static', format, font, bleedMm, scale, pageNumber, staticOpts);
   }
 
+  function buildExportRenderOptions(opts) {
+    return {
+      nonbulePosition: opts.nonbulePosition || 'spread',
+      lineHeightH: opts.lineHeightH,
+      letterSpacing: opts.letterSpacing || 0,
+      columnCount: opts.columnCount,
+      danGapMm: opts.danGapMm,
+      writingDirection: opts.writingDirection,
+      tocFontSizePt: opts.tocFontSizePt,
+    };
+  }
+
+  async function waitForExportReady() {
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+  }
+
+  function prepareExportHost(host) {
+    host.innerHTML = '';
+    host.classList.add('is-exporting');
+    host.removeAttribute('style');
+  }
+
+  function clearExportHost(host) {
+    if (!host) return;
+    host.innerHTML = '';
+    host.classList.remove('is-exporting');
+    host.removeAttribute('style');
+  }
+
+  function mountExportPage(host, pageEl) {
+    pageEl.style.position = 'absolute';
+    pageEl.style.left = '0';
+    pageEl.style.top = '0';
+    pageEl.style.margin = '0';
+    host.appendChild(pageEl);
+  }
+
+  let htmlToImageModule = null;
+
+  async function loadHtmlToImage() {
+    if (htmlToImageModule) return htmlToImageModule;
+    if (window.htmlToImage) {
+      htmlToImageModule = window.htmlToImage;
+      return htmlToImageModule;
+    }
+    htmlToImageModule = await import('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm');
+    return htmlToImageModule;
+  }
+
+  async function capturePageElement(pageEl) {
+    await waitForExportReady();
+    const rect = pageEl.getBoundingClientRect();
+    const width = Math.ceil(rect.width);
+    const height = Math.ceil(rect.height);
+    if (!width || !height) {
+      throw new Error('page has zero size');
+    }
+
+    const htmlToImage = await loadHtmlToImage();
+
+    return htmlToImage.toCanvas(pageEl, {
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+    });
+  }
+
+  function canvasToJpgBlob(canvas) {
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.94);
+    });
+  }
+
   async function exportPdf(layout, format, font, bleedMm, title, options) {
     const opts = options || {};
-    const nonbulePosition = opts.nonbulePosition || 'spread';
-    const lineHeight = resolveLineHeight(opts, font);
-    const letterSpacing = opts.letterSpacing || 0;
+    const pageOpts = buildExportRenderOptions(opts);
     const { jsPDF } = window.jspdf;
     const dims = pageDimensions(format, bleedMm, 1);
     const pdf = new jsPDF({
@@ -980,41 +1056,81 @@
 
     const host = document.getElementById('nyuko-export-host');
     if (!host) throw new Error('export host missing');
-    host.innerHTML = '';
+    prepareExportHost(host);
 
-    for (let i = 0; i < layout.pages.length; i++) {
-      const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 3, i + 1, {
-        nonbulePosition,
-        lineHeightH: opts.lineHeightH,
-        letterSpacing,
-        columnCount: opts.columnCount,
-        danGapMm: opts.danGapMm,
-        writingDirection: opts.writingDirection,
-        tocFontSizePt: opts.tocFontSizePt,
-      });
-      pageEl.classList.add('nyuko-page-export');
-      host.appendChild(pageEl);
+    try {
+      for (let i = 0; i < layout.pages.length; i++) {
+        const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, pageOpts);
+        pageEl.classList.add('nyuko-page-export');
+        pageEl.style.width = dims.widthMm + 'mm';
+        pageEl.style.height = dims.heightMm + 'mm';
+        mountExportPage(host, pageEl);
 
-      const canvas = await window.html2canvas(pageEl, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false,
-      });
+        const canvas = await capturePageElement(pageEl);
+        if (i > 0) pdf.addPage([dims.widthMm, dims.heightMm]);
+        const img = canvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(img, 'JPEG', 0, 0, dims.widthMm, dims.heightMm);
+        host.removeChild(pageEl);
+      }
 
-      if (i > 0) pdf.addPage([dims.widthMm, dims.heightMm]);
-      const img = canvas.toDataURL('image/jpeg', 0.95);
-      pdf.addImage(img, 'JPEG', 0, 0, dims.widthMm, dims.heightMm);
-      host.removeChild(pageEl);
+      const base = (title || '無題').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '無題';
+      pdf.save(base + '.pdf');
+    } finally {
+      clearExportHost(host);
     }
+  }
 
-    const base = (title || '無題').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '無題';
-    pdf.save(base + '.pdf');
+  async function exportImages(layout, format, font, bleedMm, title, options) {
+    const opts = options || {};
+    const pageOpts = buildExportRenderOptions(opts);
+    const host = document.getElementById('nyuko-export-host');
+    if (!host) throw new Error('export host missing');
+
+    prepareExportHost(host);
+    const dims = pageDimensions(format, bleedMm, 1);
+    const blobs = [];
+
+    try {
+      for (let i = 0; i < layout.pages.length; i++) {
+        const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, pageOpts);
+        pageEl.classList.add('nyuko-page-export');
+        pageEl.style.width = dims.widthMm + 'mm';
+        pageEl.style.height = dims.heightMm + 'mm';
+        mountExportPage(host, pageEl);
+
+        const canvas = await capturePageElement(pageEl);
+        const blob = await canvasToJpgBlob(canvas);
+        if (blob) blobs.push(blob);
+        host.removeChild(pageEl);
+      }
+
+      if (!blobs.length) throw new Error('no images');
+
+      const base = (title || '無題').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '無題';
+      const download = window.ExportUtils && window.ExportUtils.downloadBlob;
+      if (!download) throw new Error('ExportUtils missing');
+
+      if (blobs.length === 1) {
+        download(blobs[0], base + '.jpg');
+        return;
+      }
+
+      if (!window.JSZip) throw new Error('JSZip missing');
+      const zip = new JSZip();
+      const folder = zip.folder(base);
+      blobs.forEach((blob, i) => {
+        folder.file(String(i + 1).padStart(3, '0') + '.jpg', blob);
+      });
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      download(zipBlob, base + '.zip');
+    } finally {
+      clearExportHost(host);
+    }
   }
 
   function exportPrint(layout, format, font, bleedMm, title, options) {
     const opts = options || {};
-    const nonbulePosition = opts.nonbulePosition || 'spread';
+    const pageOpts = buildExportRenderOptions(opts);
     const dims = pageDimensions(format, bleedMm, 1);
 
     let root = document.getElementById('nyuko-print-root');
@@ -1027,15 +1143,7 @@
     root.innerHTML = '';
 
     for (let i = 0; i < layout.pages.length; i++) {
-      const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, {
-        nonbulePosition,
-        lineHeightH: opts.lineHeightH,
-        letterSpacing: opts.letterSpacing || 0,
-        columnCount: opts.columnCount,
-        danGapMm: opts.danGapMm,
-        writingDirection: opts.writingDirection,
-        tocFontSizePt: opts.tocFontSizePt,
-      });
+      const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, pageOpts);
       pageEl.classList.add('nyuko-print-page');
       // 印刷時に @page と寸法が完全一致するよう mm 指定にする（余白ページ防止）
       pageEl.style.width = dims.widthMm + 'mm';
@@ -1081,7 +1189,9 @@
     createPageElement,
     createLayoutPage,
     exportPdf,
+    exportImages,
     exportPrint,
+    clearExportHost,
     pageDimensions,
   };
 })();

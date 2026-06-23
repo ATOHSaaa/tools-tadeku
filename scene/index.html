@@ -16,7 +16,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/export.css">
-  <link rel="stylesheet" href="../shared/site-link.css">
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
@@ -64,8 +63,7 @@
     .brand {
       font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      letter-spacing: 0.08em;
       color: var(--muted);
       margin-bottom: 0.35rem;
     }
@@ -449,13 +447,14 @@
       .scene-side { padding: 0.5rem 0.35rem; }
     }
   </style>
+  <link rel="stylesheet" href="../shared/site-link.css">
 </head>
 <body>
   <div class="app">
     <header class="header">
       <div class="header-top">
         <div style="flex:1; min-width:0">
-          <div class="brand">Scene — シーンエディタ</div>
+          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Scene — シーンエディタ</div>
           <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
         </div>
         <div class="header-actions">

@@ -10,13 +10,13 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Nyuko — 縦書き入稿PDF</title>
+  <title>Nyuko(α) — 縦書き入稿PDF</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../shared/site-link.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="../shared/export.js"></script>
   <script src="../shared/nyuko-data.js"></script>
   <script src="../shared/nyuko-engine.js"></script>
   <style>
@@ -1112,9 +1112,30 @@
 
     #nyuko-export-host {
       position: fixed;
-      left: -9999px;
+      left: -200vw;
       top: 0;
+      width: 0;
+      height: 0;
+      overflow: visible;
       pointer-events: none;
+      visibility: hidden;
+      z-index: -1;
+    }
+
+    #nyuko-export-host.is-exporting {
+      left: -200vw;
+      top: 0;
+      width: auto;
+      height: auto;
+      visibility: visible;
+      overflow: visible;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    #nyuko-export-host .nyuko-page {
+      background: #fff;
+      box-shadow: none;
     }
 
     #nyuko-print-root { display: none; }
@@ -1313,14 +1334,16 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="../shared/site-link.css">
 </head>
 <body data-mobile-pane="edit">
   <div class="app">
     <header class="header">
       <div class="header-left">
-        <div class="brand">Nyuko</div>
+        <div class="brand">Nyuko(α)</div>
       </div>
       <div class="header-right">
+        <button type="button" class="btn btn-primary" id="btn-export-images" disabled>画像出力</button>
         <button type="button" class="btn btn-primary" id="btn-export-pdf" disabled>PDF出力</button>
         <button type="button" class="btn btn-clear" id="btn-clear">クリア</button>
       </div>
@@ -1397,10 +1420,10 @@
         </div>
 
         <div class="panel" id="panel-pages" role="tabpanel">
-          <p class="pages-note">本文の前後に白ページを挿入できます。目次・奥付は各タブに内容がある場合のみ載ります。</p>
+          <p class="pages-note">本文の前後に白ページを挿入できます。目次がある場合は、目次の前後にも設定できます。目次・奥付は各タブに内容がある場合のみ載ります。</p>
           <div class="page-structure">
             <div class="page-blank-field" id="page-block-before-body">
-              <label for="blank-before-body">空白ページ</label>
+              <label for="blank-before-body" id="label-blank-before-body">空白ページ（本文前）</label>
               <div class="page-blank-input-wrap">
                 <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="-1" aria-label="1ページ減らす">−</button>
                 <input type="number" id="blank-before-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白ページ数">
@@ -1409,6 +1432,15 @@
               </div>
             </div>
             <div class="page-section-row" id="page-section-toc">目次</div>
+            <div class="page-blank-field" id="page-block-after-toc" hidden>
+              <label for="blank-after-toc">空白ページ（目次後）</label>
+              <div class="page-blank-input-wrap">
+                <button type="button" class="page-blank-step" data-spacer="afterToc" data-delta="-1" aria-label="1ページ減らす">−</button>
+                <input type="number" id="blank-after-toc" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="目次後の空白ページ数">
+                <button type="button" class="page-blank-step" data-spacer="afterToc" data-delta="1" aria-label="1ページ増やす">+</button>
+                <span>ページ</span>
+              </div>
+            </div>
             <div class="page-section-row" id="page-section-body">本文</div>
             <div class="page-blank-field" id="page-block-after-body">
               <label for="blank-after-body">空白ページ</label>
@@ -1505,7 +1537,7 @@
   <script>
     (function () {
       const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, computeGutter, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
-      const { paginate, assembleLayout, createLayoutPage, exportPdf, exportPrint, pageDimensions } = window.NyukoEngine;
+      const { paginate, assembleLayout, createLayoutPage, exportPdf, exportImages, exportPrint, clearExportHost, pageDimensions } = window.NyukoEngine;
 
       const STORAGE_KEY = 'nyuko-draft-v1';
       const ZOOM_MIN = 5;
@@ -1537,7 +1569,7 @@
         pageSpacers: Object.assign({}, DEFAULT_PAGE_SPACERS),
       };
 
-      const PAGE_SPACER_INPUTS = ['blankBeforeBody', 'blankAfterBody'];
+      const PAGE_SPACER_INPUTS = ['blankBeforeBody', 'blankAfterToc', 'blankAfterBody'];
 
       const els = {
         editor: document.getElementById('editor'),
@@ -1561,6 +1593,7 @@
         zoomInBtn: document.getElementById('zoom-in-btn'),
         zoomFitBtn: document.getElementById('zoom-fit-btn'),
         zoomActualBtn: document.getElementById('zoom-actual-btn'),
+        btnExportImages: document.getElementById('btn-export-images'),
         btnExportPdf: document.getElementById('btn-export-pdf'),
         btnClear: document.getElementById('btn-clear'),
         formatGroup: document.getElementById('format-group'),
@@ -1584,7 +1617,10 @@
         tocImportChapters: document.getElementById('toc-import-chapters'),
         tocAddRow: document.getElementById('toc-add-row'),
         blankBeforeBody: document.getElementById('blank-before-body'),
+        blankAfterToc: document.getElementById('blank-after-toc'),
         blankAfterBody: document.getElementById('blank-after-body'),
+        labelBlankBeforeBody: document.getElementById('label-blank-before-body'),
+        pageBlockAfterToc: document.getElementById('page-block-after-toc'),
         pageSectionToc: document.getElementById('page-section-toc'),
         pageSectionColophon: document.getElementById('page-section-colophon'),
       };
@@ -1607,13 +1643,21 @@
       }
 
       function updatePageStructureUI() {
-        els.pageSectionToc.hidden = !hasTocContent();
+        const hasToc = hasTocContent();
+        els.pageSectionToc.hidden = !hasToc;
         els.pageSectionColophon.hidden = !hasColophonFilled();
+        els.pageBlockAfterToc.hidden = !hasToc;
+        if (els.labelBlankBeforeBody) {
+          els.labelBlankBeforeBody.textContent = hasToc ? '空白ページ（目次前）' : '空白ページ（本文前）';
+        }
         updatePageSpacersUI();
       }
 
       function pageSpacerStepValue(key, spacers) {
-        if (key === 'beforeBody') return spacers.beforeToc + spacers.afterToc;
+        if (key === 'beforeBody') {
+          return hasTocContent() ? spacers.beforeToc : spacers.beforeToc + spacers.afterToc;
+        }
+        if (key === 'afterToc') return spacers.afterToc;
         if (key === 'afterBodyTail') return spacers.afterBody + spacers.afterColophon;
         return 0;
       }
@@ -1623,11 +1667,15 @@
       }
 
       function readPageSpacersFromUI() {
-        const beforeTotal = normalizePageSpacers({ beforeToc: els.blankBeforeBody.value }).beforeToc;
+        const hasToc = hasTocContent();
+        const beforeToc = normalizePageSpacers({ beforeToc: els.blankBeforeBody.value }).beforeToc;
+        const afterToc = hasToc
+          ? normalizePageSpacers({ afterToc: els.blankAfterToc.value }).afterToc
+          : 0;
         const afterTotal = normalizePageSpacers({ afterBody: els.blankAfterBody.value }).afterBody;
         return normalizePageSpacers({
-          beforeToc: beforeTotal,
-          afterToc: 0,
+          beforeToc,
+          afterToc,
           afterBody: afterTotal,
           afterColophon: 0,
         });
@@ -1645,12 +1693,18 @@
         const next = Object.assign({}, current);
 
         if (key === 'beforeBody') {
-          const total = current.beforeToc + current.afterToc + delta;
-          next.beforeToc = Math.min(99, Math.max(0, total));
-          next.afterToc = 0;
+          if (hasTocContent()) {
+            next.beforeToc = current.beforeToc + delta;
+          } else {
+            const total = current.beforeToc + current.afterToc + delta;
+            next.beforeToc = total;
+            next.afterToc = 0;
+          }
+        } else if (key === 'afterToc') {
+          next.afterToc = current.afterToc + delta;
         } else if (key === 'afterBodyTail') {
           const total = current.afterBody + current.afterColophon + delta;
-          next.afterBody = Math.min(99, Math.max(0, total));
+          next.afterBody = total;
           next.afterColophon = 0;
         } else {
           next[key] = current[key] + delta;
@@ -1664,7 +1718,13 @@
 
       function updatePageSpacersUI() {
         const spacers = pageSpacersData();
-        els.blankBeforeBody.value = String(spacers.beforeToc + spacers.afterToc);
+        const hasToc = hasTocContent();
+        if (hasToc) {
+          els.blankBeforeBody.value = String(spacers.beforeToc);
+          els.blankAfterToc.value = String(spacers.afterToc);
+        } else {
+          els.blankBeforeBody.value = String(spacers.beforeToc + spacers.afterToc);
+        }
         els.blankAfterBody.value = String(spacers.afterBody + spacers.afterColophon);
 
         document.querySelectorAll('.page-blank-step').forEach((btn) => {
@@ -2241,6 +2301,7 @@
         if (state.layout.bodyPageCount) metaParts.push('本文' + state.layout.bodyPageCount + 'p');
         metaParts.push('計' + state.layout.pageCount + 'p');
         els.editorMeta.textContent = metaParts.join(' / ');
+        els.btnExportImages.disabled = !state.layout.pageCount;
         els.btnExportPdf.disabled = !state.layout.pageCount;
       }
 
@@ -2571,36 +2632,68 @@
         if (document.visibilityState === 'hidden') flushPending();
       });
 
-      async function handleExport() {
+      function exportTitleLine() {
+        return (els.editor.value.split('\n').find((l) => l.trim()) || '無題').trim();
+      }
+
+      function exportLayoutOptions() {
+        return {
+          nonbulePosition: state.nonbulePosition,
+          lineHeightH: state.lineHeightH,
+          letterSpacing: state.letterSpacing,
+          columnCount: effectiveColumnCount(),
+          writingDirection: state.writingDirection,
+          tocFontSizePt: effectiveTocFontSizePt(),
+        };
+      }
+
+      async function runExport(btn, run) {
         flushPending();
         if (!state.layout.pageCount) return;
-        const btn = els.btnExportPdf;
         const original = btn.textContent;
-        btn.disabled = true;
+        els.btnExportImages.disabled = true;
+        els.btnExportPdf.disabled = true;
         btn.textContent = '出力準備中…';
         try {
-          const titleLine = els.editor.value.split('\n').find((l) => l.trim()) || '無題';
-          await exportPrint(
-            state.layout, activeFormat(), effectiveFont(), currentBleedMm(), titleLine.trim(),
-            {
-              nonbulePosition: state.nonbulePosition,
-              lineHeightH: state.lineHeightH,
-              letterSpacing: state.letterSpacing,
-              columnCount: effectiveColumnCount(),
-              writingDirection: state.writingDirection,
-              tocFontSizePt: effectiveTocFontSizePt(),
-            }
-          );
+          await run();
         } catch (err) {
           console.error(err);
-          alert('PDFの生成に失敗しました。');
+          throw err;
         } finally {
           btn.textContent = original;
-          btn.disabled = !state.layout.pageCount;
+          els.btnExportImages.disabled = !state.layout.pageCount;
+          els.btnExportPdf.disabled = !state.layout.pageCount;
         }
       }
 
-      els.btnExportPdf.addEventListener('click', () => handleExport());
+      async function handleExportImages() {
+        const exportHost = document.getElementById('nyuko-export-host');
+        try {
+          await runExport(els.btnExportImages, () => exportImages(
+            state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
+            exportLayoutOptions()
+          ));
+        } catch (err) {
+          alert('画像の生成に失敗しました。縦組みの画像化はブラウザによって制限があります。PDF出力（印刷ダイアログ）をお試しください。');
+        } finally {
+          clearExportHost(exportHost);
+          refreshPreview();
+        }
+      }
+
+      async function handleExportPdf() {
+        try {
+          await runExport(els.btnExportPdf, () => exportPrint(
+            state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
+            exportLayoutOptions()
+          ));
+        } catch (err) {
+          alert('PDFの生成に失敗しました。');
+        }
+      }
+
+      els.btnExportImages.addEventListener('click', () => handleExportImages());
+      els.btnExportPdf.addEventListener('click', () => handleExportPdf());
       els.btnClear.addEventListener('click', clearAll);
 
       (function setupMobilePane() {
@@ -2729,5 +2822,6 @@
       }
     })();
   </script>
+  <script src="../shared/site-link.js"></script>
 </body>
 </html>
