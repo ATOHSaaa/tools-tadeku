@@ -8,21 +8,23 @@
   const DOCS_STORE = 'documents';
 
   const EDITORS = [
-    { id: 'stoic', name: 'Stoic', path: 'stoic/' },
     { id: 'plain', name: 'Plain', path: 'plain/' },
+    { id: 'stoic', name: 'Stoic', path: 'stoic/' },
     { id: 'tachometer', name: 'Tachometer', path: 'tachometer/' },
     { id: 'interval', name: 'Interval', path: 'Interval/' },
     { id: 'scene', name: 'Scene', path: 'scene/' },
     { id: 'cue', name: 'Cue', path: 'cue/' },
     { id: 'genko', name: 'Genko', path: 'genko/' },
     { id: 'length', name: 'Length', path: 'length/' },
+    { id: 'seam', name: 'Seam', path: 'seam/' },
   ];
 
   const RESUME_EXCLUDED = new Set(['scene']);
   const RESUME_EDITORS = EDITORS.filter((e) => !RESUME_EXCLUDED.has(e.id));
-  const LIBRARY_EDITORS = EDITORS.filter((e) =>
-    ['stoic', 'plain', 'tachometer', 'interval', 'cue', 'genko', 'length'].includes(e.id),
-  );
+  const LIBRARY_EDITOR_IDS = ['plain', 'stoic', 'tachometer', 'interval', 'cue', 'genko', 'length', 'seam'];
+  const LIBRARY_EDITORS = LIBRARY_EDITOR_IDS
+    .map((id) => EDITORS.find((e) => e.id === id))
+    .filter(Boolean);
 
   function isResumeEditor(id) {
     return RESUME_EDITORS.some((e) => e.id === id);

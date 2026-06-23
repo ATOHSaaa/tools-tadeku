@@ -11,7 +11,8 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stoic</title>
+  <meta name="description" content="前に進むだけの執筆エディタ。小説やエッセイを書き切るための、すっきりしたWeb執筆空間。書くことに没頭できます。">
+  <title>Stoic — 書き進める執筆エディタ | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
@@ -219,8 +220,7 @@
     }, 1000);
 
     (async () => {
-      const docId = new URLSearchParams(location.search).get('doc');
-      if (docId) await library.openDocument(docId);
+      await library.initFromUrl();
       editor.focus();
       editor.setSelectionRange(0, 0);
     })();

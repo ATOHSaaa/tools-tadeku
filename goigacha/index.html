@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="物書きのための語彙辞典から30語をランダムに引く語彙ガチャ。小説執筆のネタ出しや、語の組み合わせを試すアイデア発想ツールです。">
+  <title>語彙ガチャ — アイデア発想 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #1a1a1a;
+      --surface: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 4rem;
+    }
+
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: clamp(2rem, 7vw, 3rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      line-height: 1.05;
+      margin-bottom: 0.65rem;
+    }
+
+    .lead {
+      font-size: clamp(0.62rem, 2.6vw, 0.92rem);
+      color: var(--muted);
+      white-space: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .lead::-webkit-scrollbar {
+      display: none;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin: 1.75rem 0 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.55rem 1rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      margin-top: 2.25rem;
+      width: 100%;
+    }
+
+    .cards-row {
+      --cards-gap: 1rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--cards-gap);
+      row-gap: 1rem;
+      align-items: stretch;
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      min-height: var(--cards-row-height, auto);
+    }
+
+    .card-slot {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .card-slot .card {
+      width: 100%;
+      max-width: 240px;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: var(--card-height, auto);
+      max-width: 240px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .card-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 0.75rem;
+      text-align: center;
+    }
+
+    .card-text {
+      font-size: clamp(1.1rem, 3vw, 1.35rem);
+      font-weight: 700;
+      line-height: 1.55;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity 0.12s;
+    }
+
+    a.card-text {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a.card-text:hover {
+      text-decoration: underline;
+    }
+
+    .card-text.is-changing {
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="title">語彙ガチャ</h1>
+      <p class="lead">物書きのための語彙辞典から、30語をランダムで表示します</p>
+    </header>
+
+    <div class="toolbar">
+      <button type="button" class="btn" id="draw-all">ガチャ</button>
+    </div>
+
+    <div class="cards" id="cards" aria-live="polite"></div>
+  </div>
+
+  <script src="../shared/wordfall-words.js"></script>
+  <script>
+    (function () {
+      const CARD_COUNT = 30;
+      const CARDS_PER_ROW = 3;
+      const cardsEl = document.getElementById('cards');
+
+      const DICT_BASE = 'https://scrapbox.io/monokaki-goi-jiten/';
+
+      function normalizeWord(entry) {
+        return {
+          word: (entry.word || '').trim(),
+          url: entry.url || '',
+        };
+      }
+
+      let allItems = (window.WORDFALL_CONFIG?.words || [])
+        .map(normalizeWord)
+        .filter((item) => item.word);
+
+      const state = Array.from({ length: CARD_COUNT }, (_, i) => ({
+        id: i,
+        word: '',
+        url: '',
+      }));
+
+      let lockedCardHeight = 0;
+      let lockedRowHeight = 0;
+
+      function lockCardDimensions() {
+        if (lockedCardHeight) return;
+
+        const cards = cardsEl.querySelectorAll('.card');
+        if (!cards.length) return;
+
+        cards.forEach((card) => {
+          lockedCardHeight = Math.max(lockedCardHeight, card.offsetHeight);
+        });
+
+        const firstRow = cardsEl.querySelector('.cards-row');
+        lockedRowHeight = firstRow ? firstRow.offsetHeight : lockedCardHeight;
+
+        document.documentElement.style.setProperty('--card-height', `${lockedCardHeight}px`);
+        document.documentElement.style.setProperty('--cards-row-height', `${lockedRowHeight}px`);
+      }
+
+      function applyLockedDimensions() {
+        if (!lockedCardHeight) return;
+
+        cardsEl.querySelectorAll('.card').forEach((card) => {
+          card.style.minHeight = `${lockedCardHeight}px`;
+        });
+        cardsEl.querySelectorAll('.cards-row').forEach((row) => {
+          row.style.minHeight = `${lockedRowHeight}px`;
+        });
+      }
+
+      function resolveUrl(item) {
+        const word = (item?.word || '').trim();
+        if (item?.url) return item.url;
+        if (!word) return '';
+        return DICT_BASE + encodeURIComponent(word);
+      }
+
+      function escapeHtml(text) {
+        return text
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function renderWordHtml(item) {
+        const word = escapeHtml((item?.word || '').trim() || '—');
+        const url = resolveUrl(item);
+        if (!url) return `<p class="card-text">${word}</p>`;
+        return `<a class="card-text" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${word}</a>`;
+      }
+
+      function updateCardWord(card, item, { changing = false } = {}) {
+        const body = card.querySelector('.card-body');
+        body.innerHTML = renderWordHtml(item);
+        if (changing) body.querySelector('.card-text')?.classList.add('is-changing');
+      }
+
+      function getCard(index) {
+        return cardsEl.querySelector(`.card[data-index="${index}"]`);
+      }
+
+      function pickUniqueItems(count) {
+        const pool = allItems.slice();
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool.slice(0, count);
+      }
+
+      function setSlotValue(index, next, animate) {
+        const card = getCard(index);
+        state[index].word = next?.word || '';
+        state[index].url = next?.url || '';
+
+        if (!animate) {
+          updateCardWord(card, next);
+          return;
+        }
+
+        const textEl = card.querySelector('.card-text');
+        if (textEl) textEl.classList.add('is-changing');
+        window.setTimeout(() => {
+          updateCardWord(card, next);
+        }, 120);
+      }
+
+      function drawAll(animate) {
+        const picks = pickUniqueItems(CARD_COUNT);
+        state.forEach((slot, index) => {
+          setSlotValue(index, picks[index] || { word: '', url: '' }, animate);
+        });
+      }
+
+      function renderCard(slot, index) {
+        return `
+          <article class="card" data-index="${index}">
+            <div class="card-body">
+              ${renderWordHtml(slot)}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderRow(slots, rowStart) {
+        let html = '<div class="cards-row">';
+        for (let i = 0; i < CARDS_PER_ROW; i++) {
+          const index = rowStart + i;
+          html += `<div class="card-slot">${renderCard(slots[index], index)}</div>`;
+        }
+        html += '</div>';
+        return html;
+      }
+
+      function renderCards() {
+        const rows = [];
+        for (let i = 0; i < CARD_COUNT; i += CARDS_PER_ROW) {
+          rows.push(renderRow(state, i));
+        }
+        cardsEl.innerHTML = rows.join('');
+        applyLockedDimensions();
+      }
+
+      function refreshWordsFromGas() {
+        const gasUrl = window.WORDFALL_CONFIG?.gasUrl;
+        if (!gasUrl || !navigator.onLine) return;
+
+        fetch(gasUrl)
+          .then((response) => {
+            if (!response.ok) throw new Error('fetch failed');
+            return response.json();
+          })
+          .then((fresh) => {
+            if (!fresh?.length) return;
+            allItems = fresh.map(normalizeWord).filter((item) => item.word);
+          })
+          .catch(() => {});
+      }
+
+      document.getElementById('draw-all').addEventListener('click', () => {
+        drawAll(true);
+      });
+
+      renderCards();
+      drawAll(false);
+      refreshWordsFromGas();
+      requestAnimationFrame(() => {
+        lockCardDimensions();
+        applyLockedDimensions();
+      });
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

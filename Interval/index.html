@@ -11,7 +11,8 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interval</title>
+  <meta name="description" content="一行書いたらひと息。余韻を楽しみながら次の文へ進む、小説執筆用Webエディタ。自分のペースで丁寧に書きたいときに。">
+  <title>Interval — ゆったり執筆エディタ | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
@@ -357,8 +358,7 @@
     }
 
     (async () => {
-      const docId = new URLSearchParams(location.search).get('doc');
-      if (docId) await library.openDocument(docId);
+      await library.initFromUrl();
       editor.focus();
       editor.setSelectionRange(0, 0);
     })();

@@ -11,7 +11,8 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Library | tadeku-tools</title>
+  <meta name="description" content="執筆エディタで自動保存した原稿の一覧ページ。Plain・Genko・Lengthなどで書いたテキストをブラウザから確認し、執筆を再開できます。">
+  <title>Library — 保存テキスト一覧 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -123,6 +124,7 @@
     }
     tbody tr:last-child td { border-bottom: none; }
     .col-title { min-width: 10rem; }
+    .col-editor { white-space: nowrap; font-size: 0.82rem; font-weight: 700; }
     .doc-title {
       font-weight: 700;
       letter-spacing: -0.01em;
@@ -218,7 +220,7 @@
 <body>
   <div class="wrap">
     <h1>Library</h1>
-    <p class="intro">Plain / Stoic / Tachometer / Interval / Cue / Genko で書いたテキストが、入力とともに自動保存されます。</p>
+    <p class="intro">Plain / Stoic / Tachometer / Interval / Cue / Genko / Length / Seam で書いたテキストが、入力とともに自動保存されます。</p>
     <div class="toolbar">
       <input type="file" id="import-input" accept=".txt,.md,text/plain" multiple>
       <button class="import-btn" id="import-btn" type="button">インポート</button>
@@ -285,7 +287,7 @@
       if (prefs.lastEditor && P.LIBRARY_EDITORS.some((e) => e.id === prefs.lastEditor)) {
         return prefs.lastEditor;
       }
-      return P.LIBRARY_EDITORS[0]?.id || 'stoic';
+      return P.LIBRARY_EDITORS[0]?.id || 'plain';
     }
 
     async function importFile(file, editorId) {
@@ -378,6 +380,22 @@
       return P.documentDisplayTitle(doc);
     }
 
+    function libraryListTitle(doc) {
+      const raw = (doc?.title || '').trim();
+      if (raw && !P.isPlaceholderTitle(raw)) return raw;
+      const body = (doc.body || '').replace(/^\uFEFF/, '');
+      const firstLine = body.split(/\r\n|\r|\n/).find((line) => line.trim());
+      if (firstLine) {
+        const compact = firstLine.trim();
+        return compact.length > 48 ? `${compact.slice(0, 48)}…` : compact;
+      }
+      return displayTitle(doc);
+    }
+
+    function editorName(doc) {
+      return P.getEditor(doc.editorId)?.name || '—';
+    }
+
     async function showExportModal(doc) {
       const chars = (doc.charCount || 0).toLocaleString();
       const message = `${displayTitle(doc)} · ${chars} 字`;
@@ -449,6 +467,7 @@
         <thead>
           <tr>
             <th class="col-title">タイトル</th>
+            <th class="col-editor">エディタ</th>
             <th>文字数</th>
             <th>更新</th>
             <th>開く</th>
@@ -469,9 +488,13 @@
         const titleCell = document.createElement('td');
         const titleEl = document.createElement('div');
         titleEl.className = 'doc-title';
-        const label = displayTitle(doc);
+        const label = libraryListTitle(doc);
         titleEl.textContent = label;
         titleCell.appendChild(titleEl);
+
+        const editorCell = document.createElement('td');
+        editorCell.className = 'col-editor';
+        editorCell.textContent = editorName(doc);
 
         const countCell = document.createElement('td');
         countCell.className = 'num';
@@ -513,7 +536,7 @@
         actionsCell.append(select, exportBtn, deleteBtn);
         actionsCell.addEventListener('click', (e) => e.stopPropagation());
 
-        tr.append(titleCell, countCell, dateCell, actionsCell);
+        tr.append(titleCell, editorCell, countCell, dateCell, actionsCell);
 
         tr.addEventListener('click', () => {
           if (select.value) window.location.assign(select.value);
@@ -566,6 +589,14 @@
     });
 
     render();
+
+    window.addEventListener('pageshow', () => {
+      render();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) render();
+    });
   </script>
 </body>
 </html>

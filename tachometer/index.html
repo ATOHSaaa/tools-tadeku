@@ -11,7 +11,8 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tachometer</title>
+  <meta name="description" content="執筆速度をリアルタイムで見える化する小説執筆エディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認し、書くリズムを整えられます。">
+  <title>Tachometer — 執筆ペースを可視化 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
@@ -389,8 +390,7 @@
     }
 
     (async () => {
-      const docId = new URLSearchParams(location.search).get('doc');
-      if (docId) await library.openDocument(docId);
+      await library.initFromUrl();
       editor.focus();
       editor.setSelectionRange(0, 0);
     })();

@@ -2,6 +2,7 @@
   function createLibrarySession(editorId, getContent, options) {
     const P = global.TadekuEditorPrefs;
     const debounceMs = options?.debounceMs ?? 400;
+    const sessionKey = `tadeku-library-session-${editorId}`;
     let sessionDocId = null;
     let lastSavedTitle = '';
     let saveTimer = null;
@@ -19,6 +20,13 @@
       if (!userTitle) return;
       if (resolvedTitle === userTitle) return;
       options.onTitleResolved(resolvedTitle);
+    }
+
+    function rememberSession() {
+      try {
+        if (sessionDocId) sessionStorage.setItem(sessionKey, sessionDocId);
+        else sessionStorage.removeItem(sessionKey);
+      } catch (_) {}
     }
 
     async function persist() {
@@ -44,6 +52,7 @@
           const doc = await P.saveDocument({ editorId, title: storedTitle, body });
           sessionDocId = doc.id;
           lastSavedTitle = storedTitle;
+          rememberSession();
           notifyRename(userTitle, storedTitle);
         } else {
           let storedTitle = '';
@@ -53,6 +62,7 @@
           await P.updateDocument(sessionDocId, { editorId, title: storedTitle, body });
           notifyRename(userTitle, storedTitle);
           lastSavedTitle = storedTitle;
+          rememberSession();
         }
 
         P.syncDraftMeta(editorId, {
@@ -80,14 +90,23 @@
       sessionDocId = null;
       lastSavedTitle = '';
       clearTimeout(saveTimer);
+      rememberSession();
     }
 
     async function openDocument(docId) {
       if (!P || !docId) return false;
       const doc = await P.getDocument(docId);
-      if (!doc) return false;
+      if (!doc) {
+        if (sessionDocId === docId) {
+          sessionDocId = null;
+          lastSavedTitle = '';
+          rememberSession();
+        }
+        return false;
+      }
       sessionDocId = doc.id;
       lastSavedTitle = doc.title || '';
+      rememberSession();
       options?.onLoad?.({
         title: doc.title || '',
         body: doc.body || '',
@@ -95,11 +114,37 @@
       return true;
     }
 
+    async function initFromUrl() {
+      const docId = new URLSearchParams(global.location?.search || '').get('doc');
+      if (docId) return openDocument(docId);
+      try {
+        const savedId = sessionStorage.getItem(sessionKey);
+        if (savedId) {
+          const ok = await openDocument(savedId);
+          if (!ok) sessionStorage.removeItem(sessionKey);
+          return ok;
+        }
+      } catch (_) {}
+      return false;
+    }
+
+    function flushOnExit() {
+      clearTimeout(saveTimer);
+      rememberSession();
+      void persist();
+    }
+
+    if (global.addEventListener) {
+      global.addEventListener('pagehide', flushOnExit);
+    }
+
     return {
       scheduleSave,
       resetSession,
       flush: persist,
       openDocument,
+      initFromUrl,
+      flushOnExit,
     };
   }
 

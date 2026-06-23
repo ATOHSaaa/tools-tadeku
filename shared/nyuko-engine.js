@@ -544,6 +544,8 @@
       measureBodyEl.style.fontSize = font.size + 'pt';
       measureBodyEl.style.lineHeight = String(lineHeight);
       measureBodyEl.style.letterSpacing = letterSpacing + 'em';
+      measureBodyEl.style.textAlign = 'justify';
+      measureBodyEl.style.textJustify = 'inter-character';
       applyMeasureLayout(measureBodyEl, bodyWidthPx, bodyHeightPx, columnCount || 1, danGapMm, writingDirection);
       measureBodyCacheKey = cacheKey;
     }

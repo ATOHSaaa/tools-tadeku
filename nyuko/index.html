@@ -10,13 +10,12 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Nyuko(α) — 縦書き入稿PDF</title>
+  <meta name="description" content="小説・文学向けの縦書き入稿PDFをブラウザで作成。版型・目次・奥付・ルビに対応。入稿用PDFのプレビューと出力ができる執筆支援ツールです。">
+  <title>Nyuko(α) — 縦書き入稿PDF | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="../shared/export.js"></script>
   <script src="../shared/nyuko-data.js"></script>
   <script src="../shared/nyuko-engine.js"></script>
   <style>
@@ -124,7 +123,7 @@
 
     .main {
       display: grid;
-      grid-template-columns: var(--sidebar-width, 300px) 6px 1fr;
+      grid-template-columns: var(--sidebar-width, 360px) 6px 1fr;
       min-height: 0;
       min-width: 0;
     }
@@ -912,14 +911,20 @@
       box-sizing: border-box;
     }
 
-    .nyuko-page-body.writing-vertical {
+    .nyuko-page-body.writing-vertical,
+    .nyuko-measure-body.writing-vertical {
       writing-mode: vertical-rl;
       text-orientation: mixed;
+      text-align: justify;
+      text-justify: inter-character;
     }
 
-    .nyuko-page-body.writing-horizontal {
+    .nyuko-page-body.writing-horizontal,
+    .nyuko-measure-body.writing-horizontal {
       writing-mode: horizontal-tb;
       text-orientation: mixed;
+      text-align: justify;
+      text-justify: inter-character;
     }
 
     .nyuko-tcy {
@@ -941,6 +946,7 @@
       display: inline-block;
       font-weight: 700;
       padding-left: 1em;
+      text-align: start;
     }
 
     .nyuko-heading-chapter {
@@ -1343,7 +1349,6 @@
         <div class="brand">Nyuko(α)</div>
       </div>
       <div class="header-right">
-        <button type="button" class="btn btn-primary" id="btn-export-images" disabled>画像出力</button>
         <button type="button" class="btn btn-primary" id="btn-export-pdf" disabled>PDF出力</button>
         <button type="button" class="btn btn-clear" id="btn-clear">クリア</button>
       </div>
@@ -1537,7 +1542,7 @@
   <script>
     (function () {
       const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, computeGutter, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
-      const { paginate, assembleLayout, createLayoutPage, exportPdf, exportImages, exportPrint, clearExportHost, pageDimensions } = window.NyukoEngine;
+      const { paginate, assembleLayout, createLayoutPage, exportPrint, pageDimensions } = window.NyukoEngine;
 
       const STORAGE_KEY = 'nyuko-draft-v1';
       const ZOOM_MIN = 5;
@@ -1593,7 +1598,6 @@
         zoomInBtn: document.getElementById('zoom-in-btn'),
         zoomFitBtn: document.getElementById('zoom-fit-btn'),
         zoomActualBtn: document.getElementById('zoom-actual-btn'),
-        btnExportImages: document.getElementById('btn-export-images'),
         btnExportPdf: document.getElementById('btn-export-pdf'),
         btnClear: document.getElementById('btn-clear'),
         formatGroup: document.getElementById('format-group'),
@@ -2301,7 +2305,6 @@
         if (state.layout.bodyPageCount) metaParts.push('本文' + state.layout.bodyPageCount + 'p');
         metaParts.push('計' + state.layout.pageCount + 'p');
         els.editorMeta.textContent = metaParts.join(' / ');
-        els.btnExportImages.disabled = !state.layout.pageCount;
         els.btnExportPdf.disabled = !state.layout.pageCount;
       }
 
@@ -2651,7 +2654,6 @@
         flushPending();
         if (!state.layout.pageCount) return;
         const original = btn.textContent;
-        els.btnExportImages.disabled = true;
         els.btnExportPdf.disabled = true;
         btn.textContent = '出力準備中…';
         try {
@@ -2661,23 +2663,7 @@
           throw err;
         } finally {
           btn.textContent = original;
-          els.btnExportImages.disabled = !state.layout.pageCount;
           els.btnExportPdf.disabled = !state.layout.pageCount;
-        }
-      }
-
-      async function handleExportImages() {
-        const exportHost = document.getElementById('nyuko-export-host');
-        try {
-          await runExport(els.btnExportImages, () => exportImages(
-            state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
-            exportLayoutOptions()
-          ));
-        } catch (err) {
-          alert('画像の生成に失敗しました。縦組みの画像化はブラウザによって制限があります。PDF出力（印刷ダイアログ）をお試しください。');
-        } finally {
-          clearExportHost(exportHost);
-          refreshPreview();
         }
       }
 
@@ -2692,7 +2678,6 @@
         }
       }
 
-      els.btnExportImages.addEventListener('click', () => handleExportImages());
       els.btnExportPdf.addEventListener('click', () => handleExportPdf());
       els.btnClear.addEventListener('click', clearAll);
 
@@ -2749,6 +2734,7 @@
         const resizer = document.getElementById('sidebar-resizer');
         if (!resizer) return;
         const SIDEBAR_KEY = 'nyuko-sidebar-width';
+        const DEFAULT_W = 360;
         const MIN_W = 220;
         const maxWidth = () => Math.min(560, Math.round(window.innerWidth * 0.6));
 
@@ -2761,7 +2747,10 @@
         try {
           const saved = Number(localStorage.getItem(SIDEBAR_KEY));
           if (Number.isFinite(saved) && saved >= MIN_W) applyWidth(saved);
-        } catch (_) {}
+          else applyWidth(DEFAULT_W);
+        } catch (_) {
+          applyWidth(DEFAULT_W);
+        }
 
         let dragging = false;
         function onMove(e) {
@@ -2778,7 +2767,7 @@
           window.removeEventListener('pointermove', onMove);
           window.removeEventListener('pointerup', onUp);
           const cur = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim();
-          try { localStorage.setItem(SIDEBAR_KEY, String(parseInt(cur, 10) || 300)); } catch (_) {}
+          try { localStorage.setItem(SIDEBAR_KEY, String(parseInt(cur, 10) || DEFAULT_W)); } catch (_) {}
           if (state.zoomMode === 'fit') { fitPreviewZoom(); renderPreview(); }
         }
         resizer.addEventListener('pointerdown', (e) => {
@@ -2791,7 +2780,7 @@
           e.preventDefault();
         });
         resizer.addEventListener('keydown', (e) => {
-          const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'), 10) || 300;
+          const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'), 10) || DEFAULT_W;
           let next = cur;
           if (e.key === 'ArrowLeft') next = cur - 16;
           else if (e.key === 'ArrowRight') next = cur + 16;

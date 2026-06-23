@@ -11,7 +11,8 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>三題噺ガチャ — アイデア発想</title>
+  <meta name="description" content="三題噺用のお題をランダム表示する三題噺ガチャ。小説・短編の執筆練習や、創作チャレンジのアイデア発想に使える無料Webツールです。">
+  <title>三題噺ガチャ — アイデア発想 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
@@ -107,8 +108,10 @@
     }
 
     .cards-row {
+      --cards-gap: 2.75rem;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--cards-gap);
       align-items: stretch;
       width: 100%;
       max-width: 800px;
@@ -127,7 +130,7 @@
     .cards-row--with-seps .card-slot + .card-slot::before {
       content: '×';
       position: absolute;
-      left: 0;
+      left: calc(var(--cards-gap) / -2);
       top: 50%;
       transform: translate(-50%, -50%);
       font-size: 1.35rem;
@@ -279,14 +282,22 @@
 
       const KANJI_ONES = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
+      function kanjiUnder10000(n) {
+        if (n === 0) return '';
+        const units = ['', '十', '百', '千'];
+        const digits = String(n).split('').reverse();
+        let result = '';
+        digits.forEach((d, i) => {
+          const v = Number(d);
+          if (v === 0) return;
+          const head = v === 1 && i > 0 ? '' : KANJI_ONES[v];
+          result = head + units[i] + result;
+        });
+        return result;
+      }
+
       function topicKanji(n) {
-        if (n < 10) return KANJI_ONES[n];
-        if (n < 20) return '十' + KANJI_ONES[n - 10];
-        if (n < 100) {
-          const tens = Math.floor(n / 10);
-          const ones = n % 10;
-          return KANJI_ONES[tens] + '十' + KANJI_ONES[ones];
-        }
+        if (n < 10000) return kanjiUnder10000(n);
         return String(n);
       }
 
