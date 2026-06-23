@@ -124,8 +124,9 @@
       color: #999;
     }
     .library-link {
-      display: inline-block;
-      margin-top: 1rem;
+      display: block;
+      width: fit-content;
+      margin: 2rem auto 0;
       padding: 0.85rem 1.25rem;
       background: var(--ink);
       color: #fff;
@@ -198,8 +199,23 @@
             <div class="accent-line" aria-hidden="true"></div>
             <p>400字詰め原稿用紙向けの縦書きエディタ。枚数換算と原稿用紙の進捗を確認しながら書けます。</p>
           </a>
+          <a class="item" href="length/">
+            <h3>Length</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>一文が一定字数を超えた箇所をハイライトするエディタ。目安の字数（デフォルト40字）を自由に設定できます。</p>
+          </a>
         </div>
         <a class="library-link" href="library/">保存したテキスト一覧</a>
+      </section>
+      <section class="category">
+        <h2 class="category-title">発想</h2>
+        <div class="grid">
+          <a class="item" href="sandai/" target="_blank" rel="noopener noreferrer">
+            <h3>三題噺ガチャ</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>三題噺用に、3つのお題をランダムで表示します。カードを固定して引き直すこともできます</p>
+          </a>
+        </div>
       </section>
       <section class="category">
         <h2 class="category-title">プロット</h2>
@@ -208,6 +224,16 @@
             <h3>Scene</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>シーン単位で物語の骨組みを組み立てるエディタ。1シーン300字以内。ドラッグで並べ替え、構成だけに集中できます。</p>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">入稿</h2>
+        <div class="grid">
+          <a class="item" href="nyuko/">
+            <h3>Nyuko</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>小説原稿を縦組みに組版し、A6・B6・A5・B5 の入稿用 PDF をブラウザ上で作成します。</p>
           </a>
         </div>
       </section>

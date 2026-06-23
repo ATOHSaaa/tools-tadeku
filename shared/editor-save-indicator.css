@@ -1,0 +1,7 @@
+.save-indicator {
+  font-weight: 700;
+}
+
+.save-indicator:empty {
+  display: none;
+}

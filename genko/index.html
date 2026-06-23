@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../shared/site-link.css">
   <script src="../shared/export.js"></script>
   <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -83,13 +84,6 @@
       font-size: 0.78rem;
       font-weight: 700;
     }
-
-    .save-indicator {
-      opacity: 0.35;
-      transition: opacity 0.3s;
-    }
-
-    .save-indicator.saved { opacity: 1; }
 
     .btn {
       border: 2px solid var(--border);
@@ -517,7 +511,8 @@
         <div class="brand">Genko</div>
         <div class="header-right">
           <div class="stats">
-            <span class="save-indicator" id="save-indicator">Library</span>
+            <span class="save-indicator" id="save-indicator"></span>
+            <span>文字数 <strong id="char-count">0</strong></span>
           </div>
           <button class="btn" id="export-btn" type="button">書き出し</button>
         </div>
@@ -548,7 +543,7 @@
       </div>
     </aside>
 
-    <footer class="footer">400字詰め · 1マス1文字 · 縦書き · Library に自動保存</footer>
+    <footer class="footer">400字詰め · 1マス1文字 · 縦書き</footer>
   </div>
 
   <div class="modal-overlay" id="export-modal" hidden>
@@ -583,6 +578,7 @@
       pagesScroll: document.getElementById('pages-scroll'),
       editorWrap: document.getElementById('editor-wrap'),
       saveIndicator: document.getElementById('save-indicator'),
+      charCount: document.getElementById('char-count'),
       workTitle: document.getElementById('work-title'),
       pageCount: document.getElementById('page-count'),
       totalMasu: document.getElementById('total-masu'),
@@ -1190,6 +1186,7 @@
       const currentInPage = currentPageUsedCells(L.lastLinear);
 
       els.pageCount.textContent = L.pageCount + '枚';
+      els.charCount.textContent = totalMasu;
       els.totalMasu.textContent = totalMasu + '字';
       els.totalNoWhitespace.textContent = '空白除く ' + noWhitespace + '字';
       els.pageCurrent.textContent = String(currentInPage).padStart(3, '0') + ' / 400';

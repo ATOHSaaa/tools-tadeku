@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -97,13 +98,6 @@
       font-weight: 700;
       flex-shrink: 0;
     }
-
-    .save-indicator {
-      opacity: 0.35;
-      transition: opacity 0.3s;
-    }
-
-    .save-indicator.saved { opacity: 1; }
 
     .header-actions {
       display: flex;
@@ -404,8 +398,8 @@
         </div>
       </div>
       <div class="stats">
+        <span class="save-indicator" id="save-indicator"></span>
         <span>文字数 <strong id="char-count">0</strong></span>
-        <span class="save-indicator" id="save-indicator">—</span>
       </div>
       <div class="header-actions">
         <button type="button" class="btn" id="export-draft-btn">本文を保存</button>

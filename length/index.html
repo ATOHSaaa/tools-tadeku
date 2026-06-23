@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Length</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-save-indicator.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --muted: #4a4a4a;
+      --highlight: #fde8d0;
+      --accent: #e8913a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .header-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.85rem 1.25rem 0.65rem;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .stats strong {
+      font-weight: 900;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .limit-line {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .limit-line span {
+      letter-spacing: 0.04em;
+    }
+
+    .limit-input {
+      width: 3.5rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 0.25rem 0.35rem;
+      outline: none;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .limit-input::-webkit-outer-spin-button,
+    .limit-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .limit-input:focus {
+      outline: none;
+    }
+
+    .limit-slider {
+      flex: 1;
+      min-width: 5rem;
+      max-width: 14rem;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .editor-backdrop,
+    #editor {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 1.5rem 1.75rem;
+      border: none;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      overflow: auto;
+      resize: none;
+    }
+
+    .editor-backdrop {
+      pointer-events: none;
+      color: transparent;
+      background: var(--bg);
+      z-index: 1;
+    }
+
+    .editor-backdrop .long {
+      background: var(--highlight);
+      border-radius: 2px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    #editor {
+      background: transparent;
+      color: var(--ink);
+      caret-color: var(--ink);
+      outline: none;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="header-stack">
+        <div class="header-top">
+          <div class="brand">Length</div>
+          <div class="stats">
+            <span class="save-indicator" id="save-indicator"></span>
+            <span>文字数 <strong id="char-count">0</strong></span>
+          </div>
+        </div>
+        <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
+      </div>
+      <div class="toolbar">
+        <div class="limit-line">
+          <span>一文の文字：</span>
+          <input type="number" class="limit-input" id="limit-input" value="40" min="1" max="999" inputmode="numeric" aria-label="一文の文字数">
+          <span>字以下</span>
+        </div>
+        <input type="range" class="limit-slider" id="limit-slider" min="1" max="200" step="1" value="40" aria-label="一文の文字数">
+      </div>
+    </header>
+    <div class="editor-wrap">
+      <div class="editor-backdrop" id="backdrop" aria-hidden="true"></div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
+  <script>
+    const STORAGE_KEY = 'length-limit';
+    const DEFAULT_LIMIT = 40;
+    const LIMIT_MIN = 1;
+    const LIMIT_MAX = 999;
+    const SLIDER_MAX = 200;
+    const SENTENCE_END = /[。！？!?…]/;
+
+    const editor = document.getElementById('editor');
+    const workTitle = document.getElementById('work-title');
+    const backdrop = document.getElementById('backdrop');
+    const charCountEl = document.getElementById('char-count');
+    const saveIndicator = document.getElementById('save-indicator');
+    const limitInput = document.getElementById('limit-input');
+    const limitSlider = document.getElementById('limit-slider');
+
+    TadekuEditorPrefs.trackEditor('length');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'length',
+      () => ({ title: workTitle.value, body: editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          workTitle.value = title || '';
+          editor.value = body || '';
+          render();
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
+        },
+        onSaved: () => {
+          saveIndicator.textContent = '保存済み';
+          saveIndicator.classList.add('saved');
+        },
+        onError: () => {
+          saveIndicator.textContent = '保存エラー';
+          saveIndicator.classList.remove('saved');
+        },
+      },
+    );
+
+    function scheduleSave() {
+      saveIndicator.textContent = '保存中…';
+      saveIndicator.classList.remove('saved');
+      library.scheduleSave();
+    }
+
+    function loadLimit() {
+      const saved = localStorage.getItem(STORAGE_KEY)
+        ?? localStorage.getItem('span-limit');
+      const n = saved !== null ? parseInt(saved, 10) : DEFAULT_LIMIT;
+      return Number.isFinite(n) && n >= LIMIT_MIN ? n : DEFAULT_LIMIT;
+    }
+
+    function saveLimit(value) {
+      localStorage.setItem(STORAGE_KEY, String(value));
+    }
+
+    function clampLimit(n) {
+      if (!Number.isFinite(n)) return DEFAULT_LIMIT;
+      return Math.min(LIMIT_MAX, Math.max(LIMIT_MIN, Math.round(n)));
+    }
+
+    function syncLimitControls(limit) {
+      limitInput.value = limit;
+      limitSlider.value = Math.min(limit, SLIDER_MAX);
+    }
+
+    function getLimit() {
+      return clampLimit(parseInt(limitInput.value, 10));
+    }
+
+    function setLimit(n, { save = true } = {}) {
+      const limit = clampLimit(n);
+      syncLimitControls(limit);
+      if (save) saveLimit(limit);
+      render();
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function splitSentences(text) {
+      const sentences = [];
+      let start = 0;
+
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (SENTENCE_END.test(ch) || ch === '\n') {
+          if (i >= start) {
+            sentences.push({ text: text.slice(start, i + 1), start, end: i + 1 });
+          }
+          start = i + 1;
+        }
+      }
+
+      if (start < text.length) {
+        sentences.push({ text: text.slice(start), start, end: text.length });
+      }
+
+      return sentences;
+    }
+
+    function render() {
+      const text = editor.value;
+      const limit = getLimit();
+      const sentences = splitSentences(text);
+
+      const html = sentences.map((sentence) => {
+        const escaped = escapeHtml(sentence.text);
+        if (!sentence.text.trim()) return escaped;
+        if (sentence.text.length > limit) {
+          return `<span class="long">${escaped}</span>`;
+        }
+        return escaped;
+      }).join('');
+
+      backdrop.innerHTML = html;
+      charCountEl.textContent = text.length;
+    }
+
+    function syncScroll() {
+      backdrop.scrollTop = editor.scrollTop;
+      backdrop.scrollLeft = editor.scrollLeft;
+    }
+
+    setLimit(loadLimit(), { save: false });
+
+    limitInput.addEventListener('change', () => setLimit(parseInt(limitInput.value, 10)));
+    limitSlider.addEventListener('input', () => setLimit(parseInt(limitSlider.value, 10)));
+
+    limitInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        limitInput.blur();
+      }
+    });
+
+    workTitle.addEventListener('input', scheduleSave);
+
+    editor.addEventListener('input', () => {
+      render();
+      scheduleSave();
+    });
+    editor.addEventListener('scroll', syncScroll);
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        render();
+        scheduleSave();
+      }, 0);
+    });
+
+    (async () => {
+      const docId = new URLSearchParams(location.search).get('doc');
+      if (docId) await library.openDocument(docId);
+      render();
+      editor.focus();
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

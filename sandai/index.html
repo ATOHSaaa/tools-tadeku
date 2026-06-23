@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三題噺ガチャ — アイデア発想</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #1a1a1a;
+      --surface: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 4rem;
+    }
+
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: clamp(2rem, 7vw, 3rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      line-height: 1.05;
+      margin-bottom: 0.65rem;
+    }
+
+    .lead {
+      font-size: clamp(0.62rem, 2.6vw, 0.92rem);
+      color: var(--muted);
+      white-space: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .lead::-webkit-scrollbar {
+      display: none;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin: 1.75rem 0 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.55rem 1rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      margin-top: 2.25rem;
+      width: 100%;
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: stretch;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      min-height: var(--cards-row-height, auto);
+    }
+
+    .card-slot {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .cards-row--with-seps .card-slot + .card-slot::before {
+      content: '×';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--muted);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .card-slot--add {
+      align-self: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card-slot .card {
+      width: 100%;
+      max-width: 240px;
+    }
+
+    .btn-add {
+      width: auto;
+      min-width: 2rem;
+      padding: 0.5rem 0.6rem;
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: var(--card-height, auto);
+      max-width: 240px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      transition: opacity 0.15s;
+    }
+
+    .card.is-locked {
+      opacity: 0.72;
+    }
+
+    .card-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 0.75rem;
+      text-align: center;
+    }
+
+    .card-text {
+      font-size: clamp(1.1rem, 3vw, 1.35rem);
+      font-weight: 700;
+      line-height: 1.55;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity 0.12s;
+    }
+
+    .card-text.is-changing {
+      opacity: 0;
+    }
+
+    .card-foot {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 0.4rem;
+      border-top: 2px solid var(--border);
+      padding: 0.55rem 0.65rem;
+    }
+
+    .lock-btn {
+      justify-self: end;
+    }
+
+    .reroll-btn {
+      justify-self: start;
+    }
+
+    .card-action {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.4rem 0.85rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .card-action:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .card-action.is-active {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .card-action:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-add:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-add:disabled:hover {
+      background: var(--surface);
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="title" id="page-title">三題噺ガチャ</h1>
+      <p class="lead" id="page-lead">三題噺用に、3つのお題をランダムで表示します。カードを固定して引き直すこともできます</p>
+    </header>
+
+    <div class="toolbar">
+      <button type="button" class="btn" id="draw-unlocked">固定以外引き直す</button>
+      <button type="button" class="btn" id="draw-all">全部引き直す</button>
+    </div>
+
+    <div class="cards" id="cards" aria-live="polite"></div>
+  </div>
+
+  <script src="../shared/sandai-data.js"></script>
+  <script>
+    (function () {
+      const INITIAL_COUNT = 3;
+      const CARDS_PER_ROW = 3;
+      const allItems = (window.SANDAI_DATA?.items || []).slice();
+      const cardsEl = document.getElementById('cards');
+      const titleEl = document.getElementById('page-title');
+      const leadEl = document.getElementById('page-lead');
+
+      const KANJI_ONES = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+      function topicKanji(n) {
+        if (n < 10) return KANJI_ONES[n];
+        if (n < 20) return '十' + KANJI_ONES[n - 10];
+        if (n < 100) {
+          const tens = Math.floor(n / 10);
+          const ones = n % 10;
+          return KANJI_ONES[tens] + '十' + KANJI_ONES[ones];
+        }
+        return String(n);
+      }
+
+      const state = Array.from({ length: INITIAL_COUNT }, (_, i) => ({
+        id: i,
+        value: '',
+        locked: false,
+      }));
+
+      let lockedCardHeight = 0;
+      let lockedRowHeight = 0;
+
+      function lockCardDimensions() {
+        if (lockedCardHeight) return;
+
+        const cards = cardsEl.querySelectorAll('.card');
+        if (!cards.length) return;
+
+        cards.forEach((card) => {
+          lockedCardHeight = Math.max(lockedCardHeight, card.offsetHeight);
+        });
+
+        const firstRow = cardsEl.querySelector('.cards-row');
+        if (firstRow) {
+          lockedRowHeight = firstRow.offsetHeight;
+        } else {
+          lockedRowHeight = lockedCardHeight;
+        }
+
+        document.documentElement.style.setProperty('--card-height', `${lockedCardHeight}px`);
+        document.documentElement.style.setProperty('--cards-row-height', `${lockedRowHeight}px`);
+      }
+
+      function applyLockedDimensions() {
+        if (!lockedCardHeight) return;
+
+        cardsEl.querySelectorAll('.card').forEach((card) => {
+          card.style.minHeight = `${lockedCardHeight}px`;
+        });
+        cardsEl.querySelectorAll('.cards-row').forEach((row) => {
+          row.style.minHeight = `${lockedRowHeight}px`;
+        });
+      }
+
+      function updateTitle() {
+        const n = state.length;
+        const kanji = topicKanji(n);
+        const title = `${kanji}題噺ガチャ`;
+        titleEl.textContent = title;
+        document.title = `${title} — アイデア発想`;
+        leadEl.textContent = `${kanji}題噺用に、${n}つのお題をランダムで表示します。カードを固定して引き直すこともできます`;
+      }
+
+      function addCard() {
+        if (state.length >= allItems.length) return;
+
+        state.push({
+          id: state.length,
+          value: '',
+          locked: false,
+        });
+
+        renderCards();
+        updateTitle();
+
+        const newIndex = state.length - 1;
+        setSlotValue(newIndex, pickItem(newIndex, ''), true);
+      }
+
+      function getCard(index) {
+        return cardsEl.querySelector(`.card[data-index="${index}"]`);
+      }
+
+      function usedValues(excludeIndex) {
+        return state
+          .filter((_, i) => i !== excludeIndex)
+          .map((slot) => slot.value)
+          .filter(Boolean);
+      }
+
+      function pickItem(excludeIndex, current) {
+        const used = usedValues(excludeIndex);
+        const pool = allItems.filter((item) => item !== current && !used.includes(item));
+        if (!pool.length) {
+          const fallback = allItems.filter((item) => item !== current);
+          return fallback[Math.floor(Math.random() * fallback.length)] || current;
+        }
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      function setSlotValue(index, next, animate) {
+        const card = getCard(index);
+        const textEl = card.querySelector('.card-text');
+
+        if (!animate) {
+          state[index].value = next;
+          textEl.textContent = next;
+          return;
+        }
+
+        textEl.classList.add('is-changing');
+        window.setTimeout(() => {
+          state[index].value = next;
+          textEl.textContent = next;
+          textEl.classList.remove('is-changing');
+        }, 120);
+      }
+
+      function drawSlot(index, animate) {
+        if (state[index].locked) return;
+        setSlotValue(index, pickItem(index, state[index].value), animate);
+      }
+
+      function drawUnlocked(animate) {
+        const unlocked = state
+          .map((slot, index) => ({ slot, index }))
+          .filter(({ slot }) => !slot.locked);
+
+        if (!unlocked.length) return;
+
+        const reserved = state
+          .filter((slot) => slot.locked && slot.value)
+          .map((slot) => slot.value);
+
+        const pool = allItems.filter((item) => !reserved.includes(item));
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        let cursor = 0;
+        unlocked.forEach(({ index }) => {
+          const next = pool[cursor] ?? pickItem(index, state[index].value);
+          cursor += 1;
+          setSlotValue(index, next, animate);
+        });
+      }
+
+      function drawAll(animate) {
+        state.forEach((slot) => {
+          slot.locked = false;
+        });
+
+        const pool = allItems.slice();
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        state.forEach((slot, index) => {
+          const next = pool[index] ?? pickItem(index, slot.value);
+          setSlotValue(index, next, animate);
+          updateLockUi(index);
+        });
+      }
+
+      function renderCard(slot, index) {
+        return `
+          <article class="card${slot.locked ? ' is-locked' : ''}" data-index="${index}">
+            <div class="card-body">
+              <p class="card-text">${slot.value || '—'}</p>
+            </div>
+            <div class="card-foot">
+              <button type="button" class="card-action lock-btn${slot.locked ? ' is-active' : ''}" data-index="${index}" aria-label="${slot.locked ? '固定を解除' : '固定する'}" title="${slot.locked ? '固定を解除' : '固定する'}">固定</button>
+              <button type="button" class="card-action reroll-btn" data-index="${index}"${slot.locked ? ' disabled' : ''}>引き直す</button>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderAddButton() {
+        const disabled = state.length >= allItems.length;
+        return `<button type="button" class="btn btn-add" id="add-card" aria-label="カードを追加"${disabled ? ' disabled' : ''}>+</button>`;
+      }
+
+      function renderRow(rowItems) {
+        const hasCardSeps = rowItems.length > 1
+          && rowItems.every((item) => item.type === 'card');
+
+        let html = `<div class="cards-row${hasCardSeps ? ' cards-row--with-seps' : ''}">`;
+        rowItems.forEach((item) => {
+          if (item.type === 'card') {
+            html += `<div class="card-slot">${renderCard(item.slot, item.index)}</div>`;
+          } else {
+            html += `<div class="card-slot card-slot--add">${renderAddButton()}</div>`;
+          }
+        });
+        for (let i = rowItems.length; i < CARDS_PER_ROW; i++) {
+          html += '<div class="card-slot card-slot--empty" aria-hidden="true"></div>';
+        }
+        html += '</div>';
+        return html;
+      }
+
+      function renderCards() {
+        const items = state.map((slot, index) => ({ type: 'card', slot, index }));
+        items.push({ type: 'add' });
+
+        const rows = [];
+        for (let i = 0; i < items.length; i += CARDS_PER_ROW) {
+          rows.push(renderRow(items.slice(i, i + CARDS_PER_ROW)));
+        }
+        cardsEl.innerHTML = rows.join('');
+        applyLockedDimensions();
+      }
+
+      function updateLockUi(index) {
+        const slot = state[index];
+        const card = getCard(index);
+        card.classList.toggle('is-locked', slot.locked);
+        const lockBtn = card.querySelector('.lock-btn');
+        lockBtn.classList.toggle('is-active', slot.locked);
+        lockBtn.setAttribute('aria-label', slot.locked ? '固定を解除' : '固定する');
+        lockBtn.setAttribute('title', slot.locked ? '固定を解除' : '固定する');
+        card.querySelector('.reroll-btn').disabled = slot.locked;
+      }
+
+      cardsEl.addEventListener('click', (event) => {
+        const addBtn = event.target.closest('#add-card');
+        if (addBtn) {
+          if (!addBtn.disabled) addCard();
+          return;
+        }
+
+        const lockBtn = event.target.closest('.lock-btn');
+        if (lockBtn) {
+          const index = Number(lockBtn.dataset.index);
+          state[index].locked = !state[index].locked;
+          updateLockUi(index);
+          return;
+        }
+
+        const rerollBtn = event.target.closest('.reroll-btn');
+        if (!rerollBtn || rerollBtn.disabled) return;
+        drawSlot(Number(rerollBtn.dataset.index), true);
+      });
+
+      document.getElementById('draw-unlocked').addEventListener('click', () => {
+        drawUnlocked(true);
+      });
+
+      document.getElementById('draw-all').addEventListener('click', () => {
+        drawAll(true);
+      });
+
+      renderCards();
+      drawAll(false);
+      requestAnimationFrame(() => {
+        lockCardDimensions();
+        applyLockedDimensions();
+      });
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

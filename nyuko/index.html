@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nyuko — 縦書き入稿PDF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="../shared/nyuko-data.js"></script>
+  <script src="../shared/nyuko-engine.js"></script>
+  <style>
+    :root {
+      --bg: #f0eeea;
+      --ink: #1a1a1a;
+      --muted: #5a5a5a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+      --accent: var(--ink);
+      --accent-soft: #e8e6e1;
+      --workspace: #e8e6e1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    .mobile-pane-bar {
+      display: none;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.7rem 1rem;
+      padding-right: 11rem;
+      background: var(--surface);
+      color: var(--ink);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 50;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .header-right {
+      position: fixed;
+      top: 0.7rem;
+      right: 1rem;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      border: none;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.5rem 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) { opacity: 0.85; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-clear {
+      background: #c62828;
+      color: #fff;
+    }
+
+    .btn-clear:hover { opacity: 0.88; }
+
+    .main {
+      display: grid;
+      grid-template-columns: var(--sidebar-width, 300px) 6px 1fr;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+
+    .sidebar-resizer {
+      position: relative;
+      cursor: col-resize;
+      background: var(--border);
+      touch-action: none;
+    }
+
+    .sidebar-resizer::before {
+      content: "";
+      position: absolute;
+      inset: 0 -4px;
+    }
+
+    .sidebar-resizer:hover,
+    .sidebar-resizer.dragging,
+    .sidebar-resizer:focus-visible {
+      background: var(--accent);
+      outline: none;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      border: none;
+      background: var(--bg);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab:hover { color: var(--ink); }
+    .tab.active {
+      background: var(--surface);
+      color: var(--ink);
+      border-bottom-color: var(--accent);
+    }
+
+    .panel {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 1rem;
+    }
+
+    .panel.active { display: flex; flex-direction: column; gap: 1rem; }
+
+    #panel-edit.active .editor-area {
+      flex: 1;
+      min-height: 120px;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    #panel-settings > div:not(:first-child) .section-label {
+      margin-top: 0.65rem;
+    }
+
+    .import-btn {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .import-btn:hover {
+      border-color: var(--ink);
+      background: var(--surface);
+    }
+
+    .import-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #panel-edit .import-btn {
+      display: inline-block;
+      width: auto;
+      margin-bottom: 0;
+      border-color: var(--ink);
+      background: var(--ink);
+      color: #fff;
+    }
+
+    #panel-edit .import-btn:hover {
+      background: #000;
+      border-color: #000;
+    }
+
+    #import-file { display: none; }
+
+    .toggle-group {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .toggle-group-wrap {
+      flex-direction: column;
+    }
+
+    .toggle-group-wrap .toggle-btn {
+      flex: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.55rem 0.35rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .toggle-btn:hover { border-color: var(--ink); }
+
+    .toggle-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--ink);
+    }
+
+    .settings-select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.55rem 0.6rem;
+      cursor: pointer;
+    }
+
+    .settings-select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .spacing-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .spacing-field-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .spacing-field-head span {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .spacing-field input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .font-card {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      padding: 0.65rem 0.75rem;
+      margin-top: 0.35rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .font-card:first-of-type { margin-top: 0; }
+
+    .format-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .format-card {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      padding: 0.55rem 0.7rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 700;
+      line-height: 1.45;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .format-card:hover { border-color: var(--ink); }
+
+    .format-card.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .font-card:hover { border-color: var(--ink); }
+
+    .font-card.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .font-card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.15rem;
+    }
+
+    .font-card-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .editor-area {
+      flex: 1;
+      min-height: 160px;
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      padding: 0.65rem 0.75rem;
+      resize: vertical;
+    }
+
+    .editor-area:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .editor-meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .workspace-wrap {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+      background: var(--workspace);
+    }
+
+    .workspace-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .preview-view-toggle {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .preview-view-btn {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+    }
+
+    .preview-view-btn:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .preview-view-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--ink);
+    }
+
+    .zoom-preset-group {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .zoom-fit-btn {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .zoom-fit-btn:hover { border-color: var(--ink); }
+
+    .zoom-fit-btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .workspace-toolbar label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .preview-scroll {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      overflow: auto;
+      max-width: 100%;
+      padding: 1.5rem;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px) 0 0 / 24px 24px,
+        var(--workspace);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .colophon-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .colophon-field label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .colophon-field input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.6rem;
+    }
+
+    .colophon-field input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .colophon-date-wrap {
+      position: relative;
+    }
+
+    .colophon-date-wrap input[type="text"] {
+      cursor: pointer;
+    }
+
+    .colophon-date-picker {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .colophon-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toc-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toc-note code {
+      font-family: inherit;
+      font-size: 0.9em;
+      font-weight: 700;
+    }
+
+    .toc-meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .toc-actions {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .toc-actions .import-btn {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .toc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .toc-row {
+      display: grid;
+      grid-template-columns: 1fr 3.5rem 1.75rem;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .toc-row input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      padding: 0.45rem 0.5rem;
+    }
+
+    .toc-row input[type="number"] {
+      text-align: center;
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+      -moz-appearance: textfield;
+    }
+
+    .toc-row input[type="number"]::-webkit-outer-spin-button,
+    .toc-row input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .toc-row input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .toc-remove {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0.35rem 0;
+      cursor: pointer;
+    }
+
+    .toc-remove:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .toc-empty {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.7;
+      padding: 0.5rem 0;
+    }
+
+    .pages-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .page-structure {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .page-blank-field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .page-blank-field label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .page-blank-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex: none;
+    }
+
+    .page-blank-step {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1;
+      width: 1.75rem;
+      height: 1.75rem;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .page-blank-step:hover:not(:disabled) { border-color: var(--ink); }
+
+    .page-blank-step:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .page-blank-input-wrap span {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .page-blank-field input[type="number"] {
+      width: 3.5rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.4rem 0.35rem;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .page-blank-field input[type="number"]::-webkit-outer-spin-button,
+    .page-blank-field input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .page-blank-field input[type="number"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .page-section-row {
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.55rem 0.75rem;
+      text-align: center;
+    }
+
+    .empty-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .preview-wrap {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--workspace);
+    }
+
+    .zoom-slider {
+      flex: 0 1 130px;
+      max-width: 130px;
+      accent-color: var(--accent);
+    }
+
+    .zoom-rate {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .zoom-step-btn {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1;
+      width: 1.65rem;
+      height: 1.65rem;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .zoom-step-btn:hover:not(:disabled) { border-color: var(--ink); }
+
+    .zoom-step-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .zoom-value {
+      font-size: 0.78rem;
+      font-weight: 700;
+      min-width: 2.5rem;
+    }
+
+    .preview-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    .preview-spread-track {
+      display: flex;
+      flex-direction: row-reverse;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0.75rem;
+      width: max-content;
+      max-width: 100%;
+      margin-inline: auto;
+      box-sizing: border-box;
+    }
+
+    .preview-spread-track.preview-spread-horizontal {
+      flex-direction: row;
+    }
+
+    .preview-slot {
+      flex: none;
+    }
+
+    .preview-slot-empty {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .preview-single {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .preview-empty {
+      width: 100%;
+      max-width: 28rem;
+      margin: 2rem auto;
+      text-align: center;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .nyuko-page-preview {
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.8) inset,
+        0 2px 6px rgba(0,0,0,0.08),
+        0 14px 36px rgba(0,0,0,0.12);
+    }
+
+    .nyuko-page-preview .nyuko-page-bleed {
+      position: relative;
+    }
+
+    .nyuko-page-trim {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border: 1px dashed rgba(26, 26, 26, 0.45);
+      pointer-events: none;
+      box-sizing: border-box;
+      z-index: 2;
+    }
+
+    .nyuko-page-preview .nyuko-page-body {
+      position: relative;
+      z-index: 1;
+    }
+
+    .nyuko-page {
+      position: relative;
+      background: #fff;
+      flex: none;
+    }
+
+    .nyuko-page-bleed {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nyuko-page-body {
+      line-break: strict;
+      word-break: normal;
+      overflow-wrap: normal;
+      white-space: normal;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .nyuko-page-body.writing-vertical {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+
+    .nyuko-page-body.writing-horizontal {
+      writing-mode: horizontal-tb;
+      text-orientation: mixed;
+    }
+
+    .nyuko-tcy {
+      text-combine-upright: all;
+      -webkit-text-combine: horizontal;
+    }
+
+    .nyuko-page-body ruby {
+      ruby-align: center;
+    }
+
+    .nyuko-page-body rt {
+      font-size: 0.5em;
+      font-weight: inherit;
+      letter-spacing: 0;
+    }
+
+    .nyuko-heading {
+      display: inline-block;
+      font-weight: 700;
+      padding-left: 1em;
+    }
+
+    .nyuko-heading-chapter {
+      font-size: 1.3em;
+      letter-spacing: 0.2em;
+      padding-left: 1.35em;
+    }
+
+    .nyuko-heading-section {
+      font-size: 1.08em;
+      letter-spacing: 0.1em;
+      padding-left: 1.2em;
+    }
+
+    .nyuko-page-body.cols-2 .nyuko-heading-chapter {
+      column-span: all;
+    }
+
+    .nyuko-page-body.writing-horizontal .nyuko-heading {
+      display: block;
+      padding-left: 0;
+      padding-top: 1em;
+    }
+
+    .nyuko-page-body.writing-horizontal .nyuko-heading-chapter {
+      padding-top: 1.35em;
+    }
+
+    .nyuko-page-body.writing-horizontal .nyuko-heading-section {
+      padding-top: 1.2em;
+    }
+
+    .nyuko-page-static {
+      overflow: hidden;
+    }
+
+    .nyuko-extra.nyuko-toc {
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.6em;
+    }
+
+    .nyuko-extra-title {
+      font-size: 1.2em;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      flex: 0 0 auto;
+      padding-top: 0.2em;
+    }
+
+    .nyuko-toc-list {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.5em;
+      padding-top: 1.2em;
+    }
+
+    .nyuko-toc-item {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    .nyuko-toc-item-title {
+      flex: 0 0 auto;
+      line-height: inherit;
+      padding-top: 0.2em;
+    }
+
+    .nyuko-toc-item-leader {
+      flex: 1 1 auto;
+      align-self: center;
+      width: 0;
+      min-height: 2.5em;
+      margin: 0.5em 0;
+      border-left: 1px dotted currentColor;
+      opacity: 0.5;
+    }
+
+    .nyuko-toc-item-page {
+      flex: 0 0 auto;
+      padding-bottom: 0.2em;
+      letter-spacing: 0;
+    }
+
+    .nyuko-toc-horizontal.nyuko-extra.nyuko-toc {
+      gap: 1.2em;
+    }
+
+    .nyuko-toc-horizontal .nyuko-extra-title {
+      padding-top: 0;
+      letter-spacing: 0.15em;
+    }
+
+    .nyuko-toc-horizontal .nyuko-toc-list {
+      gap: 0.65em;
+      padding-top: 0.75em;
+    }
+
+    .nyuko-toc-horizontal .nyuko-toc-item {
+      width: 100%;
+      margin-inline-end: 0;
+    }
+
+    .nyuko-toc-horizontal .nyuko-toc-item-title {
+      padding-top: 0;
+    }
+
+    .nyuko-toc-horizontal .nyuko-toc-item-leader {
+      min-height: 0;
+      height: 0;
+      margin: 0 0.35em;
+      border-left: none;
+      border-bottom: 1px dotted currentColor;
+    }
+
+    .nyuko-toc-horizontal .nyuko-toc-item-page {
+      padding-bottom: 0;
+    }
+
+    .nyuko-page-body.writing-horizontal.nyuko-page-colophon {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .nyuko-page-body.writing-horizontal .nyuko-colophon-inner {
+      padding-left: 0;
+      padding-bottom: 1.4em;
+      display: block;
+    }
+
+    .nyuko-page-body.writing-horizontal .nyuko-colophon-title,
+    .nyuko-page-body.writing-horizontal .nyuko-colophon-line {
+      margin-inline-end: 0;
+    }
+
+    .nyuko-colophon-inner {
+      display: inline-block;
+      padding-left: 1.4em;
+      padding-bottom: 0.5em;
+    }
+
+    .nyuko-colophon-title {
+      font-size: 1.1em;
+      font-weight: 700;
+      margin-inline-end: 1.4em;
+    }
+
+    .nyuko-colophon-line {
+      margin-inline-end: 1.1em;
+    }
+
+    .nyuko-page-label {
+      position: absolute;
+      font-weight: 700;
+      color: var(--ink);
+      writing-mode: horizontal-tb;
+      line-height: 1;
+      letter-spacing: 0.05em;
+    }
+
+    #nyuko-export-host {
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      pointer-events: none;
+    }
+
+    #nyuko-print-root { display: none; }
+
+    @media print {
+      html, body {
+        background: #fff !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      body > .app { display: none !important; }
+      #nyuko-export-host { display: none !important; }
+      #nyuko-print-root {
+        display: block !important;
+        position: static !important;
+      }
+      #nyuko-print-root .nyuko-page {
+        margin: 0 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        break-after: page;
+        page-break-after: always;
+      }
+      #nyuko-print-root .nyuko-page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+      #nyuko-print-root .nyuko-page,
+      #nyuko-print-root .nyuko-page-bleed,
+      #nyuko-print-root .nyuko-page-body,
+      #nyuko-print-root .nyuko-page-label {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+
+    @media (max-width: 860px) {
+      body {
+        padding:
+          env(safe-area-inset-top, 0)
+          env(safe-area-inset-right, 0)
+          env(safe-area-inset-bottom, 0)
+          env(safe-area-inset-left, 0);
+      }
+
+      .app {
+        grid-template-rows: auto auto 1fr;
+      }
+
+      .mobile-pane-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .mobile-pane-btn {
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: var(--bg);
+        color: var(--muted);
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 0.65rem 0.5rem;
+        min-height: 2.75rem;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .mobile-pane-btn.active {
+        background: var(--surface);
+        color: var(--ink);
+        border-bottom-color: var(--accent);
+      }
+
+      .header {
+        padding: 0.55rem 0.75rem;
+        gap: 0.5rem;
+        justify-content: space-between;
+      }
+
+      .header-right {
+        position: static;
+        top: auto;
+        right: auto;
+      }
+
+      .btn {
+        padding: 0.45rem 0.65rem;
+        font-size: 0.72rem;
+        min-height: 2.25rem;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        min-height: 0;
+      }
+
+      .sidebar {
+        max-height: none;
+        border-right: none;
+        border-bottom: none;
+        min-height: 0;
+      }
+
+      .sidebar-resizer { display: none; }
+
+      body[data-mobile-pane="edit"] .sidebar {
+        display: flex;
+      }
+
+      body[data-mobile-pane="edit"] .workspace-wrap {
+        display: none;
+      }
+
+      body[data-mobile-pane="preview"] .sidebar {
+        display: none;
+      }
+
+      body[data-mobile-pane="preview"] .workspace-wrap {
+        display: flex;
+      }
+
+      .tab {
+        min-height: 2.75rem;
+        padding: 0.65rem 0.35rem;
+      }
+
+      .editor-area {
+        font-size: 16px;
+        min-height: 12rem;
+      }
+
+      #panel-edit.active .editor-area {
+        min-height: 8rem;
+      }
+
+      .workspace-toolbar {
+        gap: 0.5rem;
+        padding: 0.5rem 0.65rem;
+      }
+
+      .preview-scroll {
+        padding: 0.75rem;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .zoom-slider {
+        flex: 1 1 5rem;
+        max-width: none;
+        min-width: 4rem;
+      }
+
+      .zoom-step-btn {
+        width: 2rem;
+        height: 2rem;
+      }
+
+      .toggle-btn {
+        min-height: 2.5rem;
+      }
+
+      .page-blank-step {
+        width: 2rem;
+        height: 2rem;
+      }
+
+      .settings-select {
+        min-height: 2.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .brand { font-size: 0.95rem; }
+
+      .tab {
+        font-size: 0.74rem;
+        letter-spacing: -0.02em;
+      }
+
+      .workspace-toolbar label[for="zoom-slider"] {
+        display: none;
+      }
+
+      .zoom-preset-group {
+        display: none;
+      }
+
+      .editor-meta {
+        font-size: 0.68rem;
+      }
+    }
+  </style>
+</head>
+<body data-mobile-pane="edit">
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <div class="brand">Nyuko</div>
+      </div>
+      <div class="header-right">
+        <button type="button" class="btn btn-primary" id="btn-export-pdf" disabled>PDF出力</button>
+        <button type="button" class="btn btn-clear" id="btn-clear">クリア</button>
+      </div>
+    </header>
+
+    <div class="mobile-pane-bar" role="tablist" aria-label="表示切替">
+      <button type="button" class="mobile-pane-btn active" data-mobile-pane="edit" role="tab" aria-selected="true">編集</button>
+      <button type="button" class="mobile-pane-btn" data-mobile-pane="preview" role="tab" aria-selected="false">プレビュー</button>
+    </div>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="edit" role="tab" aria-selected="true">テキスト</button>
+          <button type="button" class="tab" data-tab="settings" role="tab" aria-selected="false">設定</button>
+          <button type="button" class="tab" data-tab="toc" role="tab" aria-selected="false">目次</button>
+          <button type="button" class="tab" data-tab="okutsuke" role="tab" aria-selected="false">奥付</button>
+          <button type="button" class="tab" data-tab="pages" role="tab" aria-selected="false">ページ</button>
+        </div>
+
+        <div class="panel active" id="panel-edit" role="tabpanel">
+          <div class="import-bar">
+            <input type="file" id="import-file" accept=".txt,.md,text/plain">
+            <button type="button" class="import-btn" id="import-btn">インポート</button>
+          </div>
+          <textarea class="editor-area" id="editor" placeholder="テキストを入力または貼り付け" spellcheck="false"></textarea>
+          <div class="editor-meta" id="editor-meta">0字 / 計0p</div>
+        </div>
+
+        <div class="panel" id="panel-settings" role="tabpanel">
+          <div>
+            <div class="section-label">判型</div>
+            <div class="format-list" id="format-group"></div>
+          </div>
+          <div>
+            <div class="section-label">塗り足し</div>
+            <div class="toggle-group" id="bleed-group"></div>
+          </div>
+          <div>
+            <div class="section-label">フォント</div>
+            <div id="font-group"></div>
+          </div>
+          <div>
+            <div class="section-label">組み方向</div>
+            <div class="toggle-group" id="direction-group"></div>
+          </div>
+          <div id="column-section">
+            <div class="section-label">段組</div>
+            <div class="toggle-group" id="column-group"></div>
+          </div>
+          <div>
+            <div class="section-label">章の扱い</div>
+            <select id="chapter-mode-select" class="settings-select" aria-label="章の扱い"></select>
+          </div>
+          <div>
+            <div class="section-label">ノンブル</div>
+            <div class="toggle-group" id="nonbule-group"></div>
+          </div>
+          <div>
+            <div class="section-label">文字サイズ・行間・字間</div>
+            <div class="spacing-field">
+              <div class="spacing-field-head">文字サイズ <span id="font-size-value">9.0pt</span></div>
+              <input type="range" id="font-size-slider" min="6" max="16" step="0.5" value="9">
+            </div>
+            <div class="spacing-field">
+              <div class="spacing-field-head">行間 <span id="line-height-value">8H</span></div>
+              <input type="range" id="line-height-slider" min="5" max="15" step="0.5" value="8">
+            </div>
+            <div class="spacing-field">
+              <div class="spacing-field-head">字間 <span id="letter-spacing-value">0.00em</span></div>
+              <input type="range" id="letter-spacing-slider" min="0" max="40" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-pages" role="tabpanel">
+          <p class="pages-note">本文の前後に白ページを挿入できます。目次・奥付は各タブに内容がある場合のみ載ります。</p>
+          <div class="page-structure">
+            <div class="page-blank-field" id="page-block-before-body">
+              <label for="blank-before-body">空白ページ</label>
+              <div class="page-blank-input-wrap">
+                <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="-1" aria-label="1ページ減らす">−</button>
+                <input type="number" id="blank-before-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白ページ数">
+                <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="1" aria-label="1ページ増やす">+</button>
+                <span>ページ</span>
+              </div>
+            </div>
+            <div class="page-section-row" id="page-section-toc">目次</div>
+            <div class="page-section-row" id="page-section-body">本文</div>
+            <div class="page-blank-field" id="page-block-after-body">
+              <label for="blank-after-body">空白ページ</label>
+              <div class="page-blank-input-wrap">
+                <button type="button" class="page-blank-step" data-spacer="afterBodyTail" data-delta="-1" aria-label="1ページ減らす">−</button>
+                <input type="number" id="blank-after-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白ページ数">
+                <button type="button" class="page-blank-step" data-spacer="afterBodyTail" data-delta="1" aria-label="1ページ増やす">+</button>
+                <span>ページ</span>
+              </div>
+            </div>
+            <div class="page-section-row" id="page-section-colophon">奥付</div>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-toc" role="tabpanel">
+          <p class="toc-note">目次の項目を手入力するか、原稿の <code>##</code> 章見出しから拾えます。頁欄の数字はそのまま目次に表示されます。「章から拾う」では、本文の頁に目次より前のページ数を加えた値が入ります。</p>
+          <div class="spacing-field">
+            <div class="spacing-field-head">文字サイズ <span id="toc-font-size-value">8.5pt</span></div>
+            <input type="range" id="toc-font-size-slider" min="6" max="16" step="0.5" value="8.5">
+          </div>
+          <div class="toc-meta" id="toc-meta">章は未検出</div>
+          <div class="toc-actions">
+            <button type="button" class="import-btn" id="toc-import-chapters">章から拾う</button>
+            <button type="button" class="import-btn" id="toc-add-row">行を追加</button>
+          </div>
+          <div class="toc-list" id="toc-list"></div>
+        </div>
+
+        <div class="panel" id="panel-okutsuke" role="tabpanel">
+          <p class="colophon-note">奥付ページに載せる情報を入力します。</p>
+          <div class="colophon-field">
+            <label for="colophon-title">書名</label>
+            <input type="text" id="colophon-title" autocomplete="off">
+          </div>
+          <div class="colophon-field">
+            <label for="colophon-author">著者名</label>
+            <input type="text" id="colophon-author" autocomplete="off">
+          </div>
+          <div class="colophon-field">
+            <label for="colophon-publisher">発行者</label>
+            <input type="text" id="colophon-publisher" autocomplete="off">
+          </div>
+          <div class="colophon-field">
+            <label for="colophon-date">発行日</label>
+            <div class="colophon-date-wrap">
+              <input type="text" id="colophon-date" readonly autocomplete="off" placeholder="日付を選択">
+              <input type="date" id="colophon-date-picker" class="colophon-date-picker" tabindex="-1" aria-hidden="true">
+            </div>
+          </div>
+          <div class="colophon-field">
+            <label for="colophon-printer">印刷所</label>
+            <input type="text" id="colophon-printer" autocomplete="off">
+          </div>
+          <div class="colophon-field">
+            <label for="colophon-email">メールアドレス</label>
+            <input type="email" id="colophon-email" autocomplete="off" inputmode="email">
+          </div>
+          <div class="colophon-field">
+            <label for="colophon-website">Webサイト</label>
+            <input type="url" id="colophon-website" autocomplete="off" inputmode="url" placeholder="https://">
+          </div>
+        </div>
+      </aside>
+
+      <div class="sidebar-resizer" id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="サイドバーの幅を調整" tabindex="0"></div>
+
+      <section class="workspace-wrap">
+        <div class="workspace-toolbar">
+          <div class="preview-view-toggle" role="group" aria-label="表示形式">
+            <button type="button" class="preview-view-btn active" data-preview-view="spread">見開き</button>
+            <button type="button" class="preview-view-btn" data-preview-view="single">1ページ</button>
+          </div>
+          <label for="zoom-slider">拡大</label>
+          <input type="range" class="zoom-slider" id="zoom-slider" min="5" max="200" value="30">
+          <div class="zoom-rate">
+            <button type="button" class="zoom-step-btn" id="zoom-out-btn" aria-label="縮小">−</button>
+            <span class="zoom-value" id="zoom-value">30%</span>
+            <button type="button" class="zoom-step-btn" id="zoom-in-btn" aria-label="拡大">+</button>
+          </div>
+          <div class="zoom-preset-group" role="group" aria-label="拡大プリセット">
+            <button type="button" class="zoom-fit-btn active" id="zoom-fit-btn">フィット</button>
+            <button type="button" class="zoom-fit-btn" id="zoom-actual-btn">100%</button>
+          </div>
+        </div>
+        <div class="preview-scroll" id="preview-scroll">
+          <div class="preview-grid" id="preview-grid"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="nyuko-export-host" aria-hidden="true"></div>
+
+  <script>
+    (function () {
+      const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, computeGutter, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
+      const { paginate, assembleLayout, createLayoutPage, exportPdf, exportPrint, pageDimensions } = window.NyukoEngine;
+
+      const STORAGE_KEY = 'nyuko-draft-v1';
+      const ZOOM_MIN = 5;
+      const ZOOM_MAX = 200;
+      const ZOOM_STEP = 5;
+      const TEXT_RENDER_DEBOUNCE_MS = 250;
+      const SAVE_DRAFT_DEBOUNCE_MS = 500;
+
+      let textRenderTimer = null;
+      let saveDraftTimer = null;
+
+      const state = {
+        formatId: 'a6',
+        bleed: 'on',
+        fontId: 'literary',
+        nonbulePosition: 'spread',
+        columnCount: 1,
+        writingDirection: 'vertical',
+        chapterMode: 'break-before',
+        fontSizePt: null,
+        tocFontSizePt: null,
+        lineHeightH: 8,
+        letterSpacing: 0,
+        previewView: 'spread',
+        zoomMode: 'fit',
+        zoom: 0.3,
+        layout: { pages: [], pageCount: 0, charCount: 0, chapters: [] },
+        toc: [],
+        pageSpacers: Object.assign({}, DEFAULT_PAGE_SPACERS),
+      };
+
+      const PAGE_SPACER_INPUTS = ['blankBeforeBody', 'blankAfterBody'];
+
+      const els = {
+        editor: document.getElementById('editor'),
+        importBtn: document.getElementById('import-btn'),
+        importFile: document.getElementById('import-file'),
+        editorMeta: document.getElementById('editor-meta'),
+        previewGrid: document.getElementById('preview-grid'),
+        previewScroll: document.getElementById('preview-scroll'),
+        previewViewBtns: document.querySelectorAll('[data-preview-view]'),
+        colophonTitle: document.getElementById('colophon-title'),
+        colophonAuthor: document.getElementById('colophon-author'),
+        colophonDate: document.getElementById('colophon-date'),
+        colophonDatePicker: document.getElementById('colophon-date-picker'),
+        colophonPublisher: document.getElementById('colophon-publisher'),
+        colophonPrinter: document.getElementById('colophon-printer'),
+        colophonEmail: document.getElementById('colophon-email'),
+        colophonWebsite: document.getElementById('colophon-website'),
+        zoomSlider: document.getElementById('zoom-slider'),
+        zoomValue: document.getElementById('zoom-value'),
+        zoomOutBtn: document.getElementById('zoom-out-btn'),
+        zoomInBtn: document.getElementById('zoom-in-btn'),
+        zoomFitBtn: document.getElementById('zoom-fit-btn'),
+        zoomActualBtn: document.getElementById('zoom-actual-btn'),
+        btnExportPdf: document.getElementById('btn-export-pdf'),
+        btnClear: document.getElementById('btn-clear'),
+        formatGroup: document.getElementById('format-group'),
+        bleedGroup: document.getElementById('bleed-group'),
+        nonbuleGroup: document.getElementById('nonbule-group'),
+        columnGroup: document.getElementById('column-group'),
+        columnSection: document.getElementById('column-section'),
+        directionGroup: document.getElementById('direction-group'),
+        chapterModeSelect: document.getElementById('chapter-mode-select'),
+        fontGroup: document.getElementById('font-group'),
+        fontSizeSlider: document.getElementById('font-size-slider'),
+        fontSizeValue: document.getElementById('font-size-value'),
+        tocFontSizeSlider: document.getElementById('toc-font-size-slider'),
+        tocFontSizeValue: document.getElementById('toc-font-size-value'),
+        lineHeightSlider: document.getElementById('line-height-slider'),
+        lineHeightValue: document.getElementById('line-height-value'),
+        letterSpacingSlider: document.getElementById('letter-spacing-slider'),
+        letterSpacingValue: document.getElementById('letter-spacing-value'),
+        tocList: document.getElementById('toc-list'),
+        tocMeta: document.getElementById('toc-meta'),
+        tocImportChapters: document.getElementById('toc-import-chapters'),
+        tocAddRow: document.getElementById('toc-add-row'),
+        blankBeforeBody: document.getElementById('blank-before-body'),
+        blankAfterBody: document.getElementById('blank-after-body'),
+        pageSectionToc: document.getElementById('page-section-toc'),
+        pageSectionColophon: document.getElementById('page-section-colophon'),
+      };
+
+      function hasTocContent() {
+        return tocData().some((entry) => String(entry.title || '').trim());
+      }
+
+      function hasColophonFilled() {
+        const d = colophonData();
+        return Boolean(
+          String(d.title || '').trim() ||
+          String(d.author || '').trim() ||
+          String(d.publisher || '').trim() ||
+          String(d.date || '').trim() ||
+          String(d.printer || '').trim() ||
+          String(d.email || '').trim() ||
+          String(d.website || '').trim()
+        );
+      }
+
+      function updatePageStructureUI() {
+        els.pageSectionToc.hidden = !hasTocContent();
+        els.pageSectionColophon.hidden = !hasColophonFilled();
+        updatePageSpacersUI();
+      }
+
+      function pageSpacerStepValue(key, spacers) {
+        if (key === 'beforeBody') return spacers.beforeToc + spacers.afterToc;
+        if (key === 'afterBodyTail') return spacers.afterBody + spacers.afterColophon;
+        return 0;
+      }
+
+      function pageSpacersData() {
+        return normalizePageSpacers(state.pageSpacers);
+      }
+
+      function readPageSpacersFromUI() {
+        const beforeTotal = normalizePageSpacers({ beforeToc: els.blankBeforeBody.value }).beforeToc;
+        const afterTotal = normalizePageSpacers({ afterBody: els.blankAfterBody.value }).afterBody;
+        return normalizePageSpacers({
+          beforeToc: beforeTotal,
+          afterToc: 0,
+          afterBody: afterTotal,
+          afterColophon: 0,
+        });
+      }
+
+      function commitPageSpacers() {
+        state.pageSpacers = readPageSpacersFromUI();
+        updatePageSpacersUI();
+        saveDraft();
+        render();
+      }
+
+      function stepPageSpacer(key, delta) {
+        const current = pageSpacersData();
+        const next = Object.assign({}, current);
+
+        if (key === 'beforeBody') {
+          const total = current.beforeToc + current.afterToc + delta;
+          next.beforeToc = Math.min(99, Math.max(0, total));
+          next.afterToc = 0;
+        } else if (key === 'afterBodyTail') {
+          const total = current.afterBody + current.afterColophon + delta;
+          next.afterBody = Math.min(99, Math.max(0, total));
+          next.afterColophon = 0;
+        } else {
+          next[key] = current[key] + delta;
+        }
+
+        state.pageSpacers = normalizePageSpacers(next);
+        updatePageSpacersUI();
+        saveDraft();
+        render();
+      }
+
+      function updatePageSpacersUI() {
+        const spacers = pageSpacersData();
+        els.blankBeforeBody.value = String(spacers.beforeToc + spacers.afterToc);
+        els.blankAfterBody.value = String(spacers.afterBody + spacers.afterColophon);
+
+        document.querySelectorAll('.page-blank-step').forEach((btn) => {
+          const key = btn.dataset.spacer;
+          const delta = Number(btn.dataset.delta);
+          if (!key || !delta) return;
+          const value = pageSpacerStepValue(key, spacers);
+          if (delta < 0) btn.disabled = value <= 0;
+          else btn.disabled = value >= 99;
+        });
+      }
+
+      function currentFormat() { return FORMATS[state.formatId]; }
+      function currentFont() { return FONTS[state.fontId]; }
+      function effectiveFont() {
+        const f = currentFont();
+        return Object.assign({}, f, { size: state.fontSizePt || f.size });
+      }
+      function effectiveTocFontSizePt() {
+        return state.tocFontSizePt || effectiveFont().size;
+      }
+      function currentBleedMm() { return bleedMmFromSetting(state.bleed); }
+
+      function formatJapaneseDate(iso) {
+        const parts = iso.split('-').map(Number);
+        return parts[0] + '年' + parts[1] + '月' + parts[2] + '日';
+      }
+
+      function parseColophonDate(value) {
+        if (!value) return null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+        const m = value.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日$/);
+        if (!m) return null;
+        return m[1] + '-' + String(Number(m[2])).padStart(2, '0') + '-' + String(Number(m[3])).padStart(2, '0');
+      }
+
+      function setColophonDate(iso) {
+        if (!iso) {
+          els.colophonDatePicker.value = '';
+          els.colophonDate.value = '';
+          return;
+        }
+        els.colophonDatePicker.value = iso;
+        els.colophonDate.value = formatJapaneseDate(iso);
+      }
+
+      function syncColophonDateFromPicker() {
+        const iso = els.colophonDatePicker.value || '';
+        const current = parseColophonDate(els.colophonDate.value);
+        if ((current || '') === iso) return;
+        setColophonDate(iso);
+        updatePageStructureUI();
+        saveDraft();
+        refreshPreview();
+      }
+
+      function openColophonDatePicker() {
+        if (typeof els.colophonDatePicker.showPicker === 'function') {
+          els.colophonDatePicker.showPicker();
+        } else {
+          els.colophonDatePicker.click();
+        }
+      }
+
+      function normalizeTocEntry(entry) {
+        const title = entry && typeof entry.title === 'string' ? entry.title : '';
+        const pageRaw = entry ? entry.page : '';
+        const page = pageRaw === '' || pageRaw == null ? '' : Number(pageRaw);
+        return {
+          title,
+          page: Number.isFinite(page) && page > 0 ? page : '',
+        };
+      }
+
+      function tocData() {
+        return state.toc.map(normalizeTocEntry);
+      }
+
+      function setToc(entries) {
+        state.toc = (entries || []).map(normalizeTocEntry);
+      }
+
+      function updateTocMeta() {
+        const chapters = state.layout.chapters || [];
+        els.tocMeta.textContent = chapters.length
+          ? chapters.length + '章を検出（## で指定）'
+          : '章は未検出';
+      }
+
+      function renderTocList() {
+        els.tocList.innerHTML = '';
+        if (!state.toc.length) {
+          const empty = document.createElement('p');
+          empty.className = 'toc-empty';
+          empty.textContent = '目次はまだありません。「行を追加」または「章から拾う」で作成できます。';
+          els.tocList.appendChild(empty);
+          updatePageStructureUI();
+          return;
+        }
+
+        state.toc.forEach((entry, index) => {
+          const row = document.createElement('div');
+          row.className = 'toc-row';
+
+          const titleInput = document.createElement('input');
+          titleInput.type = 'text';
+          titleInput.placeholder = '章タイトル';
+          titleInput.value = entry.title;
+          titleInput.addEventListener('input', () => {
+            state.toc[index].title = titleInput.value;
+            saveDraft();
+            updatePageStructureUI();
+            refreshPreview();
+          });
+
+          const pageInput = document.createElement('input');
+          pageInput.type = 'number';
+          pageInput.min = '1';
+          pageInput.placeholder = '頁';
+          pageInput.value = entry.page === '' ? '' : String(entry.page);
+          pageInput.addEventListener('input', () => {
+            const value = pageInput.value.trim();
+            state.toc[index].page = value ? Number(value) : '';
+            saveDraft();
+            refreshPreview();
+          });
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'toc-remove';
+          removeBtn.setAttribute('aria-label', '削除');
+          removeBtn.textContent = '×';
+          removeBtn.addEventListener('click', () => {
+            state.toc.splice(index, 1);
+            saveDraft();
+            renderTocList();
+            refreshPreview();
+          });
+
+          row.appendChild(titleInput);
+          row.appendChild(pageInput);
+          row.appendChild(removeBtn);
+          els.tocList.appendChild(row);
+        });
+        updatePageStructureUI();
+      }
+
+      function addTocRow() {
+        state.toc.push({ title: '', page: '' });
+        saveDraft();
+        renderTocList();
+        const lastTitle = els.tocList.querySelector('.toc-row:last-child input[type="text"]');
+        if (lastTitle) lastTitle.focus();
+      }
+
+      function pagesBeforeBodyCount() {
+        const spacers = pageSpacersData();
+        let count = spacers.beforeToc + spacers.afterToc;
+        count += 1; // 目次ページ
+        return count;
+      }
+
+      function importChaptersFromManuscript() {
+        const chapters = state.layout.chapters || [];
+        if (!chapters.length) {
+          alert('原稿に ## で始まる章が見つかりません。');
+          return;
+        }
+        if (state.toc.length && !confirm('目次を章一覧で上書きしますか？')) return;
+        const offset = pagesBeforeBodyCount();
+        setToc(chapters.map((chapter) => ({ title: chapter.title, page: chapter.page + offset })));
+        saveDraft();
+        renderTocList();
+        render();
+      }
+
+      function colophonData() {
+        return {
+          title: els.colophonTitle.value,
+          author: els.colophonAuthor.value,
+          publisher: els.colophonPublisher.value,
+          date: els.colophonDate.value,
+          printer: els.colophonPrinter.value,
+          email: els.colophonEmail.value,
+          website: els.colophonWebsite.value,
+        };
+      }
+
+      function draftData() {
+        return {
+          text: els.editor.value,
+          formatId: state.formatId,
+          bleed: state.bleed,
+          fontId: state.fontId,
+          nonbulePosition: state.nonbulePosition,
+          columnCount: state.columnCount,
+          writingDirection: state.writingDirection,
+          chapterMode: state.chapterMode,
+          fontSizePt: state.fontSizePt,
+          tocFontSizePt: state.tocFontSizePt,
+          lineHeightH: state.lineHeightH,
+          letterSpacing: state.letterSpacing,
+          previewView: state.previewView,
+          zoomMode: state.zoomMode,
+          zoom: state.zoom,
+          colophon: colophonData(),
+          toc: tocData(),
+          pageSpacers: pageSpacersData(),
+        };
+      }
+
+      function clearAll() {
+        if (!confirm('テキスト・設定・目次・奥付をすべて初期化しますか？')) return;
+
+        flushPending();
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (_) {}
+
+        els.editor.value = '';
+        els.colophonTitle.value = '';
+        els.colophonAuthor.value = '';
+        els.colophonPublisher.value = '';
+        els.colophonPrinter.value = '';
+        els.colophonEmail.value = '';
+        els.colophonWebsite.value = '';
+        setColophonDate('');
+
+        state.formatId = 'a6';
+        state.bleed = 'on';
+        state.fontId = 'literary';
+        state.nonbulePosition = 'spread';
+        state.columnCount = 1;
+        state.writingDirection = 'vertical';
+        state.chapterMode = 'break-before';
+        state.fontSizePt = FONTS.literary.size;
+        state.tocFontSizePt = FONTS.literary.size;
+        state.lineHeightH = 8;
+        state.letterSpacing = 0;
+        state.previewView = 'spread';
+        state.zoomMode = 'fit';
+        state.zoom = 0.3;
+        state.toc = [];
+        state.pageSpacers = Object.assign({}, DEFAULT_PAGE_SPACERS);
+        state.layout = { pages: [], pageCount: 0, charCount: 0, chapters: [] };
+
+        els.previewViewBtns.forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.previewView === state.previewView);
+        });
+        updateZoomUI();
+        updateSpacingUI();
+        updateTocFontSizeUI();
+        updatePageSpacersUI();
+        renderTocList();
+        saveDraft();
+        render();
+      }
+
+      function saveDraft() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData()));
+        } catch (err) {
+          console.warn('下書きの保存に失敗しました', err);
+        }
+      }
+
+      function flushTextRender() {
+        if (textRenderTimer) {
+          clearTimeout(textRenderTimer);
+          textRenderTimer = null;
+        }
+        refreshPreview();
+      }
+
+      function scheduleTextRender() {
+        if (textRenderTimer) clearTimeout(textRenderTimer);
+        textRenderTimer = setTimeout(() => {
+          textRenderTimer = null;
+          refreshPreview();
+        }, TEXT_RENDER_DEBOUNCE_MS);
+      }
+
+      function flushSaveDraft() {
+        if (saveDraftTimer) {
+          clearTimeout(saveDraftTimer);
+          saveDraftTimer = null;
+        }
+        saveDraft();
+      }
+
+      function scheduleSaveDraft() {
+        if (saveDraftTimer) clearTimeout(saveDraftTimer);
+        saveDraftTimer = setTimeout(() => {
+          saveDraftTimer = null;
+          saveDraft();
+        }, SAVE_DRAFT_DEBOUNCE_MS);
+      }
+
+      function flushPending() {
+        flushTextRender();
+        flushSaveDraft();
+      }
+
+      function loadDraft() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          if (typeof data.text === 'string') els.editor.value = data.text;
+          const resolved = resolveDraftSettings(data);
+          state.formatId = resolved.formatId;
+          state.bleed = resolved.bleed;
+          if (data.fontId === 'readable') state.fontId = 'standard';
+          else if (data.fontId && FONTS[data.fontId]) state.fontId = data.fontId;
+          if (data.nonbulePosition && NONBULE_POSITIONS.some((p) => p.id === data.nonbulePosition)) {
+            state.nonbulePosition = data.nonbulePosition;
+          }
+          if (data.columnCount === 1 || data.columnCount === 2) {
+            state.columnCount = data.columnCount;
+          }
+          if (data.writingDirection === 'vertical' || data.writingDirection === 'horizontal') {
+            state.writingDirection = data.writingDirection;
+          }
+          if (CHAPTER_MODES.some((m) => m.id === data.chapterMode)) {
+            state.chapterMode = data.chapterMode;
+          }
+          if (typeof data.fontSizePt === 'number' && data.fontSizePt > 0) {
+            state.fontSizePt = Math.min(16, Math.max(6, data.fontSizePt));
+          }
+          if (typeof data.tocFontSizePt === 'number' && data.tocFontSizePt > 0) {
+            state.tocFontSizePt = Math.min(16, Math.max(6, data.tocFontSizePt));
+          }
+          if (typeof data.lineHeightH === 'number' && data.lineHeightH > 0) {
+            state.lineHeightH = snapLineHeightH(data.lineHeightH);
+          } else if (typeof data.lineHeightScale === 'number' && data.lineHeightScale > 0) {
+            const font = FONTS[state.fontId] || FONTS.literary;
+            const sizePt = state.fontSizePt || font.size;
+            const lh = font.lineHeight * data.lineHeightScale;
+            state.lineHeightH = snapLineHeightH(hFromLineHeight(lh, sizePt));
+          }
+          if (typeof data.letterSpacing === 'number' && data.letterSpacing >= 0) {
+            state.letterSpacing = Math.min(0.4, Math.max(0, data.letterSpacing));
+          }
+          if (data.previewView === 'spread' || data.previewView === 'single') {
+            state.previewView = data.previewView;
+          } else if (data.previewView === 'grid') {
+            state.previewView = 'spread';
+          }
+          if (data.zoomMode === 'fit' || data.zoomMode === 'manual' || data.zoomMode === 'actual') {
+            state.zoomMode = data.zoomMode;
+          } else if (typeof data.zoom === 'number') {
+            state.zoomMode = 'manual';
+          }
+          if (state.zoomMode === 'actual') {
+            state.zoom = 1;
+          } else if (typeof data.zoom === 'number' && data.zoom > 0) {
+            state.zoom = Math.min(ZOOM_MAX / 100, data.zoom);
+            els.zoomSlider.value = String(Math.round(data.zoom * 100));
+            els.zoomValue.textContent = els.zoomSlider.value + '%';
+          }
+          if (data.colophon) {
+            els.colophonTitle.value = data.colophon.title || '';
+            els.colophonAuthor.value = data.colophon.author || '';
+            els.colophonPublisher.value = data.colophon.publisher || '';
+            const savedDate = parseColophonDate(data.colophon.date);
+            if (savedDate) setColophonDate(savedDate);
+            else setColophonDate('');
+            els.colophonPrinter.value = data.colophon.printer || '';
+            els.colophonEmail.value = data.colophon.email || data.colophon.contact || '';
+            els.colophonWebsite.value = data.colophon.website || '';
+          }
+          if (Array.isArray(data.toc)) {
+            setToc(data.toc);
+          }
+          if (data.pageSpacers) {
+            state.pageSpacers = normalizePageSpacers(data.pageSpacers);
+          }
+        } catch (err) {
+          console.warn('下書きの読み込みに失敗しました', err);
+        }
+      }
+
+      function buildToggleGroup(container, items, activeId, onSelect) {
+        container.innerHTML = '';
+        items.forEach((item) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'toggle-btn' + (item.id === activeId ? ' active' : '');
+          btn.textContent = item.label;
+          btn.dataset.id = item.id;
+          btn.addEventListener('click', () => onSelect(item.id));
+          container.appendChild(btn);
+        });
+      }
+
+      function effectiveColumnCount() {
+        return state.writingDirection === 'horizontal' ? 1 : state.columnCount;
+      }
+
+      function spacingOptions() {
+        return {
+          lineHeightH: state.lineHeightH,
+          letterSpacing: state.letterSpacing,
+          columnCount: effectiveColumnCount(),
+          writingDirection: state.writingDirection,
+          chapterMode: state.chapterMode,
+        };
+      }
+
+      function renderOptions() {
+        return {
+          nonbulePosition: state.nonbulePosition,
+          preview: true,
+          lineHeightH: state.lineHeightH,
+          letterSpacing: state.letterSpacing,
+          columnCount: effectiveColumnCount(),
+          writingDirection: state.writingDirection,
+          chapterMode: state.chapterMode,
+          tocFontSizePt: effectiveTocFontSizePt(),
+        };
+      }
+
+      function layoutOptions() {
+        return {
+          writingDirection: state.writingDirection,
+          pageSpacers: pageSpacersData(),
+        };
+      }
+
+      function updateSpacingUI() {
+        const sizePt = state.fontSizePt || currentFont().size;
+        els.fontSizeSlider.value = String(sizePt);
+        els.fontSizeValue.textContent = sizePt.toFixed(1) + 'pt';
+        els.lineHeightSlider.value = String(state.lineHeightH);
+        els.lineHeightValue.textContent = formatLineHeightLabel(state.lineHeightH, sizePt);
+        els.letterSpacingSlider.value = String(Math.round(state.letterSpacing * 100));
+        els.letterSpacingValue.textContent = state.letterSpacing.toFixed(2) + 'em';
+      }
+
+      function updateTocFontSizeUI() {
+        const sizePt = effectiveTocFontSizePt();
+        els.tocFontSizeSlider.value = String(sizePt);
+        els.tocFontSizeValue.textContent = sizePt.toFixed(1) + 'pt';
+      }
+
+      function updateZoomUI() {
+        const percent = Math.round(state.zoom * 100);
+        els.zoomSlider.value = String(percent);
+        els.zoomValue.textContent = percent + '%';
+        els.zoomOutBtn.disabled = percent <= ZOOM_MIN;
+        els.zoomInBtn.disabled = percent >= ZOOM_MAX;
+        els.zoomFitBtn.classList.toggle('active', state.zoomMode === 'fit');
+        els.zoomActualBtn.classList.toggle('active', state.zoomMode === 'actual');
+      }
+
+      let previewRenderRaf = 0;
+      let pinchSaveTimer = 0;
+
+      function queuePreviewRender() {
+        if (previewRenderRaf) return;
+        previewRenderRaf = requestAnimationFrame(() => {
+          previewRenderRaf = 0;
+          renderPreview();
+        });
+      }
+
+      function schedulePinchSave() {
+        clearTimeout(pinchSaveTimer);
+        pinchSaveTimer = setTimeout(saveDraft, 300);
+      }
+
+      function setManualZoomRatio(ratio, options) {
+        const opts = options || {};
+        state.zoomMode = 'manual';
+        state.zoom = Math.min(ZOOM_MAX / 100, Math.max(ZOOM_MIN / 100, ratio));
+        updateZoomUI();
+        if (opts.renderNow) renderPreview();
+        else queuePreviewRender();
+        if (opts.save) saveDraft();
+      }
+
+      function applyManualZoom(percent) {
+        setManualZoomRatio(percent / 100, { renderNow: true, save: true });
+      }
+
+      function stepZoom(delta) {
+        applyManualZoom(Math.round(state.zoom * 100) + delta);
+      }
+
+      function fitPreviewZoom() {
+        if (!state.layout.pageCount) return;
+        const format = activeFormat();
+        const bleedMm = currentBleedMm();
+        const dims = pageDimensions(format, bleedMm, 1);
+        const scrollStyle = getComputedStyle(els.previewScroll);
+        const padX = (parseFloat(scrollStyle.paddingLeft) || 0) + (parseFloat(scrollStyle.paddingRight) || 0);
+        const padY = (parseFloat(scrollStyle.paddingTop) || 0) + (parseFloat(scrollStyle.paddingBottom) || 0);
+        const availW = Math.max(80, els.previewScroll.clientWidth - padX);
+        const availH = Math.max(80, els.previewScroll.clientHeight - padY);
+
+        const spreadGap = 12;
+        const spreadW = dims.widthPx * 2 + spreadGap;
+        const targetW = state.previewView === 'spread' ? spreadW : dims.widthPx;
+        const targetH = dims.heightPx;
+        const zoom = Math.min(availW / targetW, availH / targetH, 1.25);
+        state.zoom = Math.max(0.05, Math.min(1.25, zoom));
+        updateZoomUI();
+      }
+
+      function setPreviewView(view) {
+        state.previewView = view;
+        els.previewViewBtns.forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.previewView === view);
+        });
+        if (state.zoomMode === 'fit') fitPreviewZoom();
+        saveDraft();
+        renderPreview();
+      }
+
+      function buildFormatGroup() {
+        els.formatGroup.innerHTML = '';
+        FORMAT_ORDER.forEach((id) => {
+          const format = FORMATS[id];
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'format-card' + (id === state.formatId ? ' active' : '');
+          btn.textContent = format.label;
+          btn.addEventListener('click', () => {
+            state.formatId = id;
+            saveDraft();
+            buildFormatGroup();
+            render();
+          });
+          els.formatGroup.appendChild(btn);
+        });
+      }
+
+      function buildFontGroup() {
+        els.fontGroup.innerHTML = '';
+        Object.values(FONTS).forEach((font) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'font-card' + (font.id === state.fontId ? ' active' : '');
+          btn.style.fontFamily = font.family;
+          btn.textContent = font.label;
+          btn.addEventListener('click', () => {
+            state.fontId = font.id;
+            saveDraft();
+            buildFontGroup();
+            render();
+          });
+          els.fontGroup.appendChild(btn);
+        });
+      }
+
+      function buildBodyLayout() {
+        const baseFormat = currentFormat();
+        const font = effectiveFont();
+        const opts = spacingOptions();
+        let bodyLayout = paginate(els.editor.value, baseFormat, font, opts);
+        const adjusted = computeGutter(baseFormat, bodyLayout.pageCount || 1);
+        if (adjusted.marginInner !== baseFormat.marginInner) {
+          bodyLayout = paginate(els.editor.value, adjusted, font, opts);
+        }
+        return bodyLayout;
+      }
+
+      function buildFullLayout() {
+        return assembleLayout(buildBodyLayout(), tocData(), colophonData(), layoutOptions());
+      }
+
+      function updateLayoutMeta() {
+        const metaParts = [state.layout.charCount.toLocaleString() + '字'];
+        if (state.layout.bodyPageCount) metaParts.push('本文' + state.layout.bodyPageCount + 'p');
+        metaParts.push('計' + state.layout.pageCount + 'p');
+        els.editorMeta.textContent = metaParts.join(' / ');
+        els.btnExportPdf.disabled = !state.layout.pageCount;
+      }
+
+      function refreshPreview() {
+        state.layout = buildFullLayout();
+        updateLayoutMeta();
+        updateTocMeta();
+        if (state.zoomMode === 'fit') fitPreviewZoom();
+        renderPreview();
+      }
+
+      function buildChapterModeSelect() {
+        els.chapterModeSelect.innerHTML = '';
+        CHAPTER_MODES.forEach((mode) => {
+          const option = document.createElement('option');
+          option.value = mode.id;
+          option.textContent = mode.label;
+          els.chapterModeSelect.appendChild(option);
+        });
+      }
+
+      function renderSettings() {
+        buildFormatGroup();
+        buildToggleGroup(els.bleedGroup, BLEED_OPTIONS, state.bleed, (id) => {
+          state.bleed = id;
+          saveDraft();
+          render();
+        });
+        buildToggleGroup(els.nonbuleGroup, NONBULE_POSITIONS, state.nonbulePosition, (id) => {
+          state.nonbulePosition = id;
+          saveDraft();
+          render();
+        });
+        els.columnSection.hidden = state.writingDirection === 'horizontal';
+        if (state.writingDirection !== 'horizontal') {
+          buildToggleGroup(els.columnGroup, COLUMN_COUNTS, state.columnCount, (id) => {
+            state.columnCount = id;
+            saveDraft();
+            render();
+          });
+        }
+        buildToggleGroup(els.directionGroup, WRITING_DIRECTIONS, state.writingDirection, (id) => {
+          state.writingDirection = id;
+          saveDraft();
+          render();
+        });
+        els.chapterModeSelect.value = state.chapterMode;
+        buildFontGroup();
+        updateSpacingUI();
+      }
+
+      function activeFormat() {
+        const base = currentFormat();
+        const count = state.layout && (state.layout.bodyPageCount || state.layout.pageCount)
+          ? (state.layout.bodyPageCount || state.layout.pageCount)
+          : 1;
+        return computeGutter(base, count || 1);
+      }
+
+      function renderPreview() {
+        const format = activeFormat();
+        const font = effectiveFont();
+        const bleedMm = currentBleedMm();
+        const scale = state.zoom;
+
+        els.previewGrid.innerHTML = '';
+        if (!state.layout.pageCount) {
+          const empty = document.createElement('p');
+          empty.className = 'preview-empty';
+          empty.textContent = '原稿を入力すると、PDF出力と同じ縦組みレイアウトでここに表示されます。';
+          els.previewGrid.appendChild(empty);
+          return;
+        }
+
+        if (state.previewView === 'single') {
+          for (let i = 0; i < state.layout.pages.length; i++) {
+            const row = document.createElement('div');
+            row.className = 'preview-single';
+            row.appendChild(createLayoutPage(
+              state.layout.pages[i], format, font, bleedMm, scale, i + 1, renderOptions()
+            ));
+            els.previewGrid.appendChild(row);
+          }
+          return;
+        }
+
+        const layoutPages = state.layout.pages;
+        const total = layoutPages.length;
+        const horizontal = state.writingDirection === 'horizontal';
+        const dims = pageDimensions(format, bleedMm, scale);
+
+        function makeEmptySlot(side) {
+          const spacer = document.createElement('div');
+          spacer.className = 'preview-slot preview-slot-' + side + ' preview-slot-empty';
+          spacer.style.width = dims.widthPx + 'px';
+          spacer.style.minHeight = dims.heightPx + 'px';
+          return spacer;
+        }
+
+        function appendSpreadTrack(rightIdx, leftIdx) {
+          const track = document.createElement('div');
+          track.className = 'preview-spread-track' + (horizontal ? ' preview-spread-horizontal' : '');
+
+          if (rightIdx != null) {
+            const slot = document.createElement('div');
+            slot.className = 'preview-slot preview-slot-right';
+            slot.appendChild(createLayoutPage(
+              layoutPages[rightIdx], format, font, bleedMm, scale, rightIdx + 1, renderOptions()
+            ));
+            track.appendChild(slot);
+          } else {
+            track.appendChild(makeEmptySlot('right'));
+          }
+
+          if (leftIdx != null) {
+            const slot = document.createElement('div');
+            slot.className = 'preview-slot preview-slot-left';
+            slot.appendChild(createLayoutPage(
+              layoutPages[leftIdx], format, font, bleedMm, scale, leftIdx + 1, renderOptions()
+            ));
+            track.appendChild(slot);
+          } else {
+            track.appendChild(makeEmptySlot('left'));
+          }
+
+          els.previewGrid.appendChild(track);
+        }
+
+        let i = 0;
+        if (total > 0 && layoutPages[0].type === 'blank') {
+          if (horizontal) appendSpreadTrack(0, null);
+          else appendSpreadTrack(null, 0);
+          i = 1;
+        }
+
+        let spreadEnd = total;
+        if (total > 0 && layoutPages[total - 1].type === 'colophon') {
+          spreadEnd = total - 1;
+        }
+
+        while (i < spreadEnd) {
+          if (i + 1 < spreadEnd) {
+            appendSpreadTrack(i, i + 1);
+          } else {
+            appendSpreadTrack(i, null);
+          }
+          i += 2;
+        }
+
+        if (spreadEnd < total) {
+          appendSpreadTrack(total - 1, null);
+        }
+      }
+
+      function render() {
+        renderSettings();
+        updatePageStructureUI();
+        refreshPreview();
+      }
+
+      document.querySelectorAll('.tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach((t) => {
+            t.classList.toggle('active', t === tab);
+            t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+          });
+          document.querySelectorAll('.panel').forEach((panel) => {
+            panel.classList.toggle('active', panel.id === 'panel-' + tab.dataset.tab);
+          });
+        });
+      });
+
+      els.editor.addEventListener('input', () => {
+        scheduleTextRender();
+        scheduleSaveDraft();
+      });
+
+      [els.colophonTitle, els.colophonAuthor, els.colophonPublisher, els.colophonPrinter, els.colophonEmail, els.colophonWebsite].forEach((input) => {
+        input.addEventListener('input', () => {
+          updatePageStructureUI();
+          scheduleSaveDraft();
+          refreshPreview();
+        });
+      });
+
+      els.colophonDate.addEventListener('click', openColophonDatePicker);
+      els.colophonDatePicker.addEventListener('change', syncColophonDateFromPicker);
+      els.colophonDatePicker.addEventListener('input', syncColophonDateFromPicker);
+
+      els.tocAddRow.addEventListener('click', addTocRow);
+      els.tocImportChapters.addEventListener('click', importChaptersFromManuscript);
+
+      els.importBtn.addEventListener('click', () => els.importFile.click());
+
+      els.importFile.addEventListener('change', async () => {
+        const file = els.importFile.files[0];
+        els.importFile.value = '';
+        if (!file) return;
+
+        const name = file.name.toLowerCase();
+        if (!name.endsWith('.txt') && !name.endsWith('.md') && file.type && !file.type.startsWith('text/')) {
+          alert('.txt または .md ファイルを選んでください。');
+          return;
+        }
+
+        try {
+          const text = await file.text();
+          els.editor.value = text;
+          saveDraft();
+          render();
+        } catch (_) {
+          alert('ファイルの読み込みに失敗しました。');
+        }
+      });
+
+      els.zoomSlider.addEventListener('input', () => {
+        applyManualZoom(Number(els.zoomSlider.value));
+      });
+
+      els.zoomOutBtn.addEventListener('click', () => stepZoom(-ZOOM_STEP));
+      els.zoomInBtn.addEventListener('click', () => stepZoom(ZOOM_STEP));
+
+      let pinchStartZoom = 1;
+      els.previewScroll.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        const factor = Math.exp(-e.deltaY * 0.01);
+        setManualZoomRatio(state.zoom * factor);
+        schedulePinchSave();
+      }, { passive: false });
+
+      els.previewScroll.addEventListener('gesturestart', (e) => {
+        e.preventDefault();
+        pinchStartZoom = state.zoom;
+      }, { passive: false });
+
+      els.previewScroll.addEventListener('gesturechange', (e) => {
+        e.preventDefault();
+        setManualZoomRatio(pinchStartZoom * e.scale);
+        schedulePinchSave();
+      }, { passive: false });
+
+      els.previewScroll.addEventListener('gestureend', (e) => {
+        e.preventDefault();
+        saveDraft();
+      }, { passive: false });
+
+      els.zoomFitBtn.addEventListener('click', () => {
+        state.zoomMode = 'fit';
+        fitPreviewZoom();
+        saveDraft();
+        renderPreview();
+      });
+
+      els.zoomActualBtn.addEventListener('click', () => {
+        state.zoomMode = 'actual';
+        state.zoom = 1;
+        updateZoomUI();
+        saveDraft();
+        renderPreview();
+      });
+
+      els.previewViewBtns.forEach((btn) => {
+        btn.addEventListener('click', () => setPreviewView(btn.dataset.previewView));
+      });
+
+      PAGE_SPACER_INPUTS.forEach((id) => {
+        els[id].addEventListener('input', commitPageSpacers);
+      });
+
+      document.querySelectorAll('.page-blank-step').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          stepPageSpacer(btn.dataset.spacer, Number(btn.dataset.delta));
+        });
+      });
+
+      els.chapterModeSelect.addEventListener('change', () => {
+        state.chapterMode = els.chapterModeSelect.value;
+        saveDraft();
+        render();
+      });
+
+      els.fontSizeSlider.addEventListener('input', () => {
+        state.fontSizePt = Number(els.fontSizeSlider.value);
+        updateSpacingUI();
+        saveDraft();
+        render();
+      });
+
+      els.tocFontSizeSlider.addEventListener('input', () => {
+        state.tocFontSizePt = Number(els.tocFontSizeSlider.value);
+        updateTocFontSizeUI();
+        saveDraft();
+        render();
+      });
+
+      els.lineHeightSlider.addEventListener('input', () => {
+        state.lineHeightH = snapLineHeightH(Number(els.lineHeightSlider.value));
+        updateSpacingUI();
+        saveDraft();
+        render();
+      });
+
+      els.letterSpacingSlider.addEventListener('input', () => {
+        state.letterSpacing = Number(els.letterSpacingSlider.value) / 100;
+        updateSpacingUI();
+        saveDraft();
+        render();
+      });
+
+      window.addEventListener('resize', () => {
+        if (state.zoomMode !== 'fit') return;
+        fitPreviewZoom();
+        renderPreview();
+      });
+
+      if (typeof ResizeObserver !== 'undefined') {
+        const previewResizeObserver = new ResizeObserver(() => {
+          if (state.zoomMode !== 'fit') return;
+          fitPreviewZoom();
+          renderPreview();
+        });
+        previewResizeObserver.observe(els.previewScroll);
+      }
+
+      window.addEventListener('pagehide', flushPending);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flushPending();
+      });
+
+      async function handleExport() {
+        flushPending();
+        if (!state.layout.pageCount) return;
+        const btn = els.btnExportPdf;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '出力準備中…';
+        try {
+          const titleLine = els.editor.value.split('\n').find((l) => l.trim()) || '無題';
+          await exportPrint(
+            state.layout, activeFormat(), effectiveFont(), currentBleedMm(), titleLine.trim(),
+            {
+              nonbulePosition: state.nonbulePosition,
+              lineHeightH: state.lineHeightH,
+              letterSpacing: state.letterSpacing,
+              columnCount: effectiveColumnCount(),
+              writingDirection: state.writingDirection,
+              tocFontSizePt: effectiveTocFontSizePt(),
+            }
+          );
+        } catch (err) {
+          console.error(err);
+          alert('PDFの生成に失敗しました。');
+        } finally {
+          btn.textContent = original;
+          btn.disabled = !state.layout.pageCount;
+        }
+      }
+
+      els.btnExportPdf.addEventListener('click', () => handleExport());
+      els.btnClear.addEventListener('click', clearAll);
+
+      (function setupMobilePane() {
+        const MOBILE_MQ = window.matchMedia('(max-width: 860px)');
+        const MOBILE_KEY = 'nyuko-mobile-pane';
+        const paneBtns = document.querySelectorAll('.mobile-pane-btn');
+
+        function isMobileLayout() {
+          return MOBILE_MQ.matches;
+        }
+
+        function setMobilePane(pane, options) {
+          const opts = options || {};
+          document.body.dataset.mobilePane = pane;
+          paneBtns.forEach((btn) => {
+            const active = btn.dataset.mobilePane === pane;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          if (opts.save !== false) {
+            try { localStorage.setItem(MOBILE_KEY, pane); } catch (_) {}
+          }
+          if (isMobileLayout() && pane === 'preview') {
+            if (state.zoomMode === 'fit') fitPreviewZoom();
+            renderPreview();
+          }
+        }
+
+        paneBtns.forEach((btn) => {
+          btn.addEventListener('click', () => setMobilePane(btn.dataset.mobilePane));
+        });
+
+        try {
+          const saved = localStorage.getItem(MOBILE_KEY);
+          if (saved === 'edit' || saved === 'preview') {
+            setMobilePane(saved, { save: false });
+          } else {
+            setMobilePane('edit', { save: false });
+          }
+        } catch (_) {
+          setMobilePane('edit', { save: false });
+        }
+
+        MOBILE_MQ.addEventListener('change', () => {
+          if (isMobileLayout() && document.body.dataset.mobilePane === 'preview' && state.zoomMode === 'fit') {
+            fitPreviewZoom();
+            renderPreview();
+          }
+        });
+      })();
+
+      (function setupSidebarResizer() {
+        const resizer = document.getElementById('sidebar-resizer');
+        if (!resizer) return;
+        const SIDEBAR_KEY = 'nyuko-sidebar-width';
+        const MIN_W = 220;
+        const maxWidth = () => Math.min(560, Math.round(window.innerWidth * 0.6));
+
+        function applyWidth(px) {
+          const w = Math.max(MIN_W, Math.min(maxWidth(), Math.round(px)));
+          document.documentElement.style.setProperty('--sidebar-width', w + 'px');
+          return w;
+        }
+
+        try {
+          const saved = Number(localStorage.getItem(SIDEBAR_KEY));
+          if (Number.isFinite(saved) && saved >= MIN_W) applyWidth(saved);
+        } catch (_) {}
+
+        let dragging = false;
+        function onMove(e) {
+          if (!dragging) return;
+          const left = els.previewScroll.closest('.main').getBoundingClientRect().left;
+          applyWidth(e.clientX - left);
+        }
+        function onUp() {
+          if (!dragging) return;
+          dragging = false;
+          resizer.classList.remove('dragging');
+          document.body.style.userSelect = '';
+          document.body.style.cursor = '';
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          const cur = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim();
+          try { localStorage.setItem(SIDEBAR_KEY, String(parseInt(cur, 10) || 300)); } catch (_) {}
+          if (state.zoomMode === 'fit') { fitPreviewZoom(); renderPreview(); }
+        }
+        resizer.addEventListener('pointerdown', (e) => {
+          dragging = true;
+          resizer.classList.add('dragging');
+          document.body.style.userSelect = 'none';
+          document.body.style.cursor = 'col-resize';
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
+          e.preventDefault();
+        });
+        resizer.addEventListener('keydown', (e) => {
+          const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'), 10) || 300;
+          let next = cur;
+          if (e.key === 'ArrowLeft') next = cur - 16;
+          else if (e.key === 'ArrowRight') next = cur + 16;
+          else return;
+          e.preventDefault();
+          const applied = applyWidth(next);
+          try { localStorage.setItem(SIDEBAR_KEY, String(applied)); } catch (_) {}
+          if (state.zoomMode === 'fit') { fitPreviewZoom(); renderPreview(); }
+        });
+      })();
+
+      loadDraft();
+      buildChapterModeSelect();
+      els.previewViewBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.previewView === state.previewView);
+      });
+      updateZoomUI();
+      if (!state.fontSizePt) state.fontSizePt = currentFont().size;
+      if (!state.tocFontSizePt) state.tocFontSizePt = effectiveFont().size;
+      updateSpacingUI();
+      updateTocFontSizeUI();
+      updatePageSpacersUI();
+      renderTocList();
+      render();
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => render());
+      }
+    })();
+  </script>
+</body>
+</html>

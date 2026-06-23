@@ -15,12 +15,13 @@
     { id: 'scene', name: 'Scene', path: 'scene/' },
     { id: 'cue', name: 'Cue', path: 'cue/' },
     { id: 'genko', name: 'Genko', path: 'genko/' },
+    { id: 'length', name: 'Length', path: 'length/' },
   ];
 
   const RESUME_EXCLUDED = new Set(['scene']);
   const RESUME_EDITORS = EDITORS.filter((e) => !RESUME_EXCLUDED.has(e.id));
   const LIBRARY_EDITORS = EDITORS.filter((e) =>
-    ['stoic', 'plain', 'tachometer', 'interval', 'cue', 'genko'].includes(e.id),
+    ['stoic', 'plain', 'tachometer', 'interval', 'cue', 'genko', 'length'].includes(e.id),
   );
 
   function isResumeEditor(id) {

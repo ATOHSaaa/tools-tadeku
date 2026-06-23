@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="../shared/export.css">
   <link rel="stylesheet" href="../shared/site-link.css">
   <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -372,16 +373,6 @@
       text-align: center;
     }
 
-    .save-indicator {
-      font-size: 0.72rem;
-      color: var(--ink);
-      font-weight: 700;
-      opacity: 0.4;
-      transition: opacity 0.3s;
-    }
-
-    .save-indicator.saved { opacity: 1; }
-
     /* Modal */
     .modal-overlay {
       position: fixed;
@@ -473,9 +464,9 @@
         </div>
       </div>
       <div class="stats">
+        <span class="save-indicator" id="save-indicator"></span>
         <span>シーン <strong id="scene-count">0</strong></span>
         <span>合計 <strong id="total-chars">0</strong> 字</span>
-        <span class="save-indicator" id="save-indicator">保存済み</span>
       </div>
     </header>
 
