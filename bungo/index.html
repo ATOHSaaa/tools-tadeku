@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="原稿や文章を青空文庫の文豪テキストと比較し、文体の近さをランキングで診断する無料Webツールです。">
+  <title>Bungo — 文豪タイプ診断 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f0ebe0;
+      --ink: #1a1814;
+      --muted: #5c564c;
+      --border: #1a1814;
+      --surface: #fff;
+      --accent: #6b4c2a;
+      --accent-soft: #e8ddd0;
+      --gold: #9a7340;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-top: 0.5rem;
+    }
+
+    .panel {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .input-area {
+      width: 100%;
+      min-height: 220px;
+      border: 2px solid var(--border);
+      background: #fff;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.9;
+      padding: 0.85rem 1rem;
+      resize: vertical;
+    }
+
+    .input-area:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .input-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.65rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .input-meta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 1rem;
+    }
+
+    .status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.65rem;
+      min-height: 1.2em;
+    }
+
+    .status.is-error { color: #a33; }
+
+    .result { display: none; }
+    .result.is-visible { display: block; }
+
+    .result-top {
+      text-align: center;
+      padding: 0.5rem 0 1.25rem;
+      border-bottom: 1px dashed #ccc4b8;
+      margin-bottom: 1.25rem;
+    }
+
+    .result-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-name {
+      font-family: "Shippori Mincho", serif;
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .result-era {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+
+    .result-score {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-top: 0.75rem;
+      color: var(--accent);
+    }
+
+    .result-score small {
+      font-size: 0.42em;
+      font-weight: 700;
+      margin-left: 0.15em;
+      letter-spacing: 0.08em;
+    }
+
+    .traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      margin-top: 0.85rem;
+    }
+
+    .trait {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.3rem 0.55rem;
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+    }
+
+    .works-used {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.85rem;
+      line-height: 1.7;
+    }
+
+    .result-share {
+      display: flex;
+      justify-content: center;
+      margin: 1rem 0 1.25rem;
+    }
+
+    .result-share[hidden] {
+      display: none;
+    }
+
+    .btn-share {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .btn-share svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      fill: currentColor;
+    }
+
+    .rank-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .rank-item {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+    }
+
+    .rank-num {
+      font-size: 0.82rem;
+      font-weight: 900;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .rank-item.is-top .rank-num { color: var(--accent); }
+
+    .rank-body { min-width: 0; }
+
+    .rank-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .rank-bar {
+      height: 0.65rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .rank-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+
+    .rank-item.is-top .rank-fill { background: var(--gold); }
+
+    .rank-pct {
+      font-size: 0.78rem;
+      font-weight: 700;
+      min-width: 2.5rem;
+      text-align: right;
+    }
+
+    .source-note {
+      margin-top: 1.25rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .source-note a {
+      color: inherit;
+    }
+
+    @media (max-width: 520px) {
+      .rank-item {
+        grid-template-columns: 1.75rem 1fr auto;
+        gap: 0.45rem;
+      }
+      .actions .btn { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Bungo</h1>
+      <p class="lead">原稿や文章を<a href="https://www.aozora.gr.jp/" target="_blank" rel="noopener noreferrer">青空文庫</a>の文豪テキストと比較し、文体の近さをランキングで診断します。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="input-title">
+      <h2 class="panel-title" id="input-title">テキスト</h2>
+      <textarea class="input-area" id="text-input" spellcheck="false"></textarea>
+      <div class="input-meta">
+        <span id="char-count">0 字</span>
+        <div class="input-meta-actions">
+          <button type="button" class="btn" id="sample-btn">サンプル</button>
+          <button type="button" class="btn" id="clear-btn">消す</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="diagnose-btn" disabled>診断する</button>
+      </div>
+      <p class="status" id="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel result" id="result" aria-live="polite">
+      <h2 class="panel-title">ランキング</h2>
+      <div class="result-top" id="result-top"></div>
+      <div class="result-share" id="result-share" hidden>
+        <button type="button" class="btn btn-share" id="share-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Xでシェア
+        </button>
+      </div>
+      <ol class="rank-list" id="rank-list"></ol>
+      <p class="source-note">診断は<a href="http://logoon.org/about.html" target="_blank" rel="noopener noreferrer">文体診断ロゴーン</a>を参考に、形態素解析と10項目の偏差値から一致指数を算出しています。比較対象は青空文庫の公開テキスト（18作家）です。</p>
+    </section>
+  </div>
+
+  <a class="site-link brand" href="../">tadeku-tools</a>
+
+  <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
+  <script src="../shared/bungo-engine.js"></script>
+  <script src="../shared/bungo-profiles.js"></script>
+  <script>
+    const MIN_CHARS = 150;
+    const CI_RELIABLE = 35;
+    const SHARE_URL = 'https://tools.tadeku.net/bungo/';
+    const SAMPLE = '　私はその男の写真を三葉、見たことがある。一葉は、その男が、幼年のころ、たぶん十歳前後かと思われる頃で、それと一緒に母親らしい人の写真がある。もう一葉は、その男が、青年のころ、たぶん二十歳前後かと思われる頃で、それと一緒に、彼の妻らしい人の写真がある。どちらも、どこかの下町の写真屋で撮ったものらしく、背景には、よく見る、安い絨毯がかかっている。男は、どちらも、正面を向いて、無表情で、眼を細めて、口をへの字に結んでいる。';
+
+    const els = {
+      input: document.getElementById('text-input'),
+      charCount: document.getElementById('char-count'),
+      diagnoseBtn: document.getElementById('diagnose-btn'),
+      clearBtn: document.getElementById('clear-btn'),
+      sampleBtn: document.getElementById('sample-btn'),
+      status: document.getElementById('status'),
+      result: document.getElementById('result'),
+      resultTop: document.getElementById('result-top'),
+      resultShare: document.getElementById('result-share'),
+      shareBtn: document.getElementById('share-btn'),
+      rankList: document.getElementById('rank-list'),
+    };
+
+    let lastShareTop = null;
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function countChars(text) {
+      return [...text.replace(/\s/g, '')].length;
+    }
+
+    function updateMeta() {
+      const n = countChars(els.input.value);
+      els.charCount.textContent = n + ' 字';
+      els.diagnoseBtn.disabled = n < MIN_CHARS;
+    }
+
+    function setStatus(msg, isError) {
+      els.status.textContent = msg || '';
+      els.status.classList.toggle('is-error', !!isError);
+    }
+
+    function buildShareText(top) {
+      const score = Math.round(top.score);
+      return '文豪タイプ診断の結果：' + top.name + '（一致指数' + score + '）';
+    }
+
+    function openShare() {
+      if (!lastShareTop) return;
+      const text = buildShareText(lastShareTop) + '\n' + SHARE_URL;
+      const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+      window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
+    }
+
+    function renderResult(data) {
+      const top = data.ranked[0];
+      const topProfile = window.BUNGO_PROFILES.find((p) => p.id === top.id);
+      const matchedWork = topProfile.works.find((w) => w.title === top.matchedWork) || topProfile.works[0];
+      const traits = BungoEngine.describeMatch(
+        data.userScores,
+        matchedWork.scores,
+        window.BUNGO_STATS,
+        data.morphemeCount
+      );
+      const ci = Math.round(top.score);
+
+      els.resultTop.innerHTML =
+        '<p class="result-label">いちばん近い文豪</p>' +
+        '<p class="result-name">' + esc(top.name) + '</p>' +
+        '<p class="result-era">' + esc(top.era) + '</p>' +
+        '<p class="result-score">' + ci + '<small>一致指数</small></p>' +
+        (traits.length ? '<div class="traits">' + traits.map((t) => '<span class="trait">' + esc(t) + '</span>').join('') + '</div>' : '') +
+        '<p class="works-used">参照作品：' + esc(top.matchedWork) + '</p>';
+
+      const maxScore = data.ranked[0].score || 1;
+      els.rankList.innerHTML = data.ranked.map((item, i) => {
+        const bar = Math.round((item.score / maxScore) * 100);
+        const itemCi = Math.round(item.score);
+        return '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
+          '<span class="rank-num">' + (i + 1) + '</span>' +
+          '<div class="rank-body">' +
+            '<div class="rank-name">' + esc(item.name) + '</div>' +
+            '<div class="rank-bar"><div class="rank-fill" style="width:' + bar + '%"></div></div>' +
+          '</div>' +
+          '<span class="rank-pct">' + itemCi + '</span>' +
+        '</li>';
+      }).join('');
+
+      els.result.classList.add('is-visible');
+      els.resultShare.hidden = false;
+      lastShareTop = top;
+      els.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      if (data.morphemeCount < 400 && ci < 45) {
+        setStatus('文章が短いため参考程度です。長めの文章だと精度が上がります。');
+      } else if (ci < CI_RELIABLE) {
+        setStatus('一致指数が ' + CI_RELIABLE + ' 未満です。もう少し長い文章で試してください。');
+      }
+    }
+
+    function runDiagnosis() {
+      const text = els.input.value;
+      if (countChars(text) < MIN_CHARS) return;
+
+      els.diagnoseBtn.disabled = true;
+      setStatus('形態素解析中…');
+
+      BungoEngine.rankAuthors(text, window.BUNGO_PROFILES, window.BUNGO_STATS)
+        .then((result) => {
+          if (!result.ok) {
+            setStatus('テキストが短すぎます。', true);
+            return;
+          }
+          setStatus('');
+          renderResult(result);
+        })
+        .catch(() => {
+          setStatus('解析に失敗しました。', true);
+        })
+        .finally(() => {
+          updateMeta();
+        });
+    }
+
+    els.input.addEventListener('input', updateMeta);
+    els.diagnoseBtn.addEventListener('click', runDiagnosis);
+    els.clearBtn.addEventListener('click', () => {
+      els.input.value = '';
+      updateMeta();
+      setStatus('');
+      els.result.classList.remove('is-visible');
+      els.resultShare.hidden = true;
+      lastShareTop = null;
+    });
+    els.sampleBtn.addEventListener('click', () => {
+      els.input.value = SAMPLE;
+      updateMeta();
+    });
+    els.shareBtn.addEventListener('click', openShare);
+
+    updateMeta();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>
