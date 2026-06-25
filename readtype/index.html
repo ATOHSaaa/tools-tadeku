@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ブクログの本棚から読書スタイルを診断する無料Webツール。ジャンルや傾向をチャートで可視化し、おすすめの本も提案します。">
+  <title>ReadType — 読書スタイル診断 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f3efe6;
+      --ink: #1a1a1a;
+      --muted: #5c5a54;
+      --border: #1a1a1a;
+      --surface: #fff;
+      --accent: #3d6b8c;
+      --accent-soft: #dce8f0;
+      --warm: #c47d3a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-top: 0.5rem;
+    }
+
+    .panel {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      opacity: 0.88;
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.55rem;
+      line-height: 1.6;
+    }
+
+    .book-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .book-item {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid #e8e4da;
+    }
+
+    .book-item:last-child { border-bottom: none; }
+
+    .book-cover {
+      width: 40px;
+      height: 60px;
+      object-fit: cover;
+      background: #e8e4da;
+    }
+
+    .book-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .book-title a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+    }
+
+    .book-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+
+    .remove-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    .remove-btn:hover { color: var(--ink); }
+
+    .empty-books {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 0.5rem 0;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 1.25rem;
+    }
+
+    .status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.65rem;
+      min-height: 1.2em;
+    }
+
+    .status.is-error { color: #a33; }
+
+    .result {
+      display: none;
+      margin-top: 1.5rem;
+    }
+
+    .result.is-visible { display: block; }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 1.35rem;
+      align-items: start;
+    }
+
+    .result-type {
+      font-family: "Shippori Mincho", serif;
+      font-size: clamp(1.35rem, 4vw, 1.85rem);
+      font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 0.75rem;
+    }
+
+    .result-body {
+      font-size: 0.88rem;
+      line-height: 1.85;
+      margin-bottom: 0.85rem;
+    }
+
+    .result-highlight {
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 700;
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .result-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+    }
+
+    .score-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1.15rem;
+    }
+
+    .score-card {
+      border: 1px solid #ccc8be;
+      background: var(--bg);
+      padding: 0.7rem 0.8rem;
+    }
+
+    .score-card-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .score-card-value {
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .result-section-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.32rem 0.58rem;
+      border: 1px solid #ccc8be;
+      background: var(--surface);
+      border-radius: 999px;
+    }
+
+    .insight-box {
+      border: 1px solid #ccc8be;
+      background: var(--surface);
+      padding: 0.95rem 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .insight-box-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 0.45rem;
+      line-height: 1.5;
+    }
+
+    .insight-box-body {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .insight-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.55rem;
+    }
+
+    .insight-chip {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.4rem 0.7rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 0.35rem;
+    }
+
+    .chart-card,
+    .spectrum-card,
+    .legend-card {
+      border: 1px solid #ccc8be;
+      background: var(--surface);
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .chart-card-title,
+    .spectrum-card-title,
+    .legend-card-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .radar-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .radar-wrap svg {
+      width: min(100%, 300px);
+      height: auto;
+    }
+
+    .spectrum-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .spectrum-item {
+      display: grid;
+      grid-template-columns: 4.2rem 1fr 4.2rem;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .spectrum-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .spectrum-label.is-active {
+      color: var(--accent);
+    }
+
+    .spectrum-label--right { text-align: right; }
+
+    .spectrum-track {
+      position: relative;
+      height: 7px;
+      background: #e8e4da;
+      border-radius: 999px;
+    }
+
+    .spectrum-dot {
+      position: absolute;
+      top: 50%;
+      width: 13px;
+      height: 13px;
+      margin-left: -6.5px;
+      background: var(--accent);
+      border: 2px solid var(--surface);
+      border-radius: 50%;
+      transform: translateY(-50%);
+      box-shadow: 0 0 0 1px #ccc8be;
+    }
+
+    .legend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .legend-item {
+      font-size: 0.76rem;
+      line-height: 1.65;
+    }
+
+    .legend-item strong {
+      font-size: 0.78rem;
+    }
+
+    .legend-item span {
+      color: var(--muted);
+    }
+
+    .rec-section {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed #ccc8be;
+    }
+
+    .rec-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .rec-lead {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .rec-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .rec-item {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid #e8e4da;
+    }
+
+    .rec-item:last-child { border-bottom: none; }
+
+    .rec-item .book-title a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+    }
+
+    .rec-add-btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .rec-add-btn:hover {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .rec-add-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .rec-empty {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .panel-lead {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin: -0.35rem 0 0.85rem;
+    }
+
+    .booklog-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .booklog-input {
+      flex: 1;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 0.82rem;
+      padding: 0.5rem 0.65rem;
+      min-width: 0;
+    }
+
+    .booklog-input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    @media (max-width: 760px) {
+      .result-grid { grid-template-columns: 1fr; }
+      .score-cards { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .booklog-row { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>ReadType</h1>
+      <p class="lead">ブクログの本棚を読み込んで、読書スタイルを診断します。3冊以上で結果が出て、おすすめの本も <a href="https://booklog.jp" target="_blank" rel="noopener noreferrer">ブクログ</a> から提案します。</p>
+    </header>
+
+    <section class="panel" aria-labelledby="import-title">
+      <h2 class="panel-title" id="import-title">ブクログ本棚から読み込む</h2>
+      <p class="panel-lead">自分のブクログ ID を入力すると、本棚の書籍をまとめて取り込めます。いちばん手軽な方法です。</p>
+      <div class="booklog-row">
+        <input type="text" class="booklog-input" id="booklog-id" placeholder="ブクログ ID（ユーザー名）" autocomplete="off">
+        <button type="button" class="btn btn-primary" id="booklog-btn">本棚を読み込む</button>
+      </div>
+      <p class="hint">ユーザー名（<code>booklog.jp/users/◯◯</code> の ◯◯）か、プロフィール URL をそのまま貼れます。最大100冊まで取り込みます。</p>
+      <p class="status" id="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="list-title">
+      <h2 class="panel-title" id="list-title">登録した本 <span id="book-count">(0)</span></h2>
+      <ul class="book-list" id="book-list"></ul>
+      <p class="empty-books" id="empty-books">まだ本がありません。</p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="diagnose-btn" disabled>診断する</button>
+        <button type="button" class="btn" id="clear-btn">すべて消す</button>
+      </div>
+    </section>
+
+    <section class="panel result" id="result" aria-live="polite">
+      <h2 class="panel-title">診断結果</h2>
+      <div class="result-grid">
+        <div class="result-main" id="result-main"></div>
+        <div class="result-side" id="result-side"></div>
+      </div>
+      <div class="rec-section" id="rec-section" hidden>
+        <h3 class="rec-heading">おすすめの本</h3>
+        <p class="rec-lead" id="rec-lead"></p>
+        <ul class="rec-list" id="rec-list"></ul>
+      </div>
+    </section>
+  </div>
+
+  <a class="site-link brand" href="../">tadeku-tools</a>
+
+  <script>
+    const STORAGE_KEY = 'readtype-books-v1';
+    const MIN_BOOKS = 3;
+
+    const FICTION_RE = /小説|物語|文庫|コミック|漫画|マンガ|ノベル|新潮|講談社|角川|集英社|幻冬舎|双葉|光文社|文春|筑摩|河出|ポプラ|ハヤカワ|創元|宝島|小学館|少年|少女|文芸|連作|短編集/i;
+    const KNOWLEDGE_RE = /史|哲学|科学|経済|政治|社会|心理|論|入門|図鑑|事典|評伝|研究|技術|医学|法律|ノンフィクション|ビジネス|自己啓発|資格|統計|教育|社会学|思想|経営|開発|プログラミング/i;
+    const IMAGINATION_RE = /ミステリー|推理|殺人|探偵|ＳＦ|SF|ファンタジー|幻想|ホラー|怪談|魔法|ドラゴン|宇宙|異世界|刑事|連続殺人|怪奇|妖怪|ゴシック|サスペンス|ハードボイルド|メグレ|ポアロ|マープル/i;
+    const CLASSIC_RE = /夏目漱石|芥川龍之介|川端康成|三島由紀夫|司馬遼太郎|谷崎潤一郎|太宰治|荷風|森鴎外|志賀直哉|中原中也|萩原朔太郎|与謝野|泉鏡花|樋口一葉|古典|明治|大正|昭和|全集|岩波文庫|世界文学|古典文学|ギリシア|ローマ|莎士比亜|シェイクスピア|トルストイ|ドストエフスキー|カフカ|プルースト/i;
+    const CONTEMPORARY_RE = /202[0-9]|201[6-9]|新書|KADOKAWA|文春e-book|ebook|電子版|最新|話題|令和/i;
+    const DEPTH_RE = /全集|全\d+巻|上下|上中下|完結|大長編|三部作|四部作|物語|長編/i;
+
+    const TYPES = [
+      {
+        id: 'deep',
+        name: '深掘り型',
+        headline: '没入欲が高い',
+        fullName: '深掘り没入タイプ',
+        desc: '厚めの本や、同じ作家・近いテーマに留まる傾向があります。一度入った世界を根まで味わいたい読み手です。',
+        genreRec: '長編小説、作家もの、評伝、シリーズ物など、じっくり腰を据えて読める本が向いています。',
+        readRec: '同じ作者を続けて読む、シリーズを最初から追う、一冊を何度も開き直す読み方がしっくりきやすいタイプです。',
+        chips: ['社会派小説', '文芸長編', '評伝', 'シリーズ完走'],
+        tags: ['じっくり', '没入', '反復'],
+      },
+      {
+        id: 'explorer',
+        name: '冒険家型',
+        headline: '発見欲が高い',
+        fullName: '冒険家タイプ',
+        desc: '著者もジャンルも年代も幅広く、次の一冊がいつも違う驚きになりがちです。読書棚の散歩が好きなタイプです。',
+        genreRec: 'アンソロジー、異色作、新刊ピックアップ、いま話題の本など、次の一冊の予想がつかない選び方が向いています。',
+        readRec: '気になったら即レジ、短い間隔でジャンルを切り替える、ブクログや書店の棚から偶然を拾う読み方が合います。',
+        chips: ['アンソロジー', '新刊', '異ジャンル', '書店散歩'],
+        tags: ['多様性', '発見', '好奇心'],
+      },
+      {
+        id: 'classic',
+        name: '古典派',
+        headline: '古典欲が高い',
+        fullName: '古典派タイプ',
+        desc: '出版から年月の経った作品に惹かれやすい傾向です。時代を超えて残る物語や思想に親しみを感じる読み手です。',
+        genreRec: '文庫の定番、世界文学、近代日本文学、古典の新訳など、蓄積のある作品が向いています。',
+        readRec: '文庫の背表紙から選ぶ、作家の代表作から入る、読み返し前提で本棚に並べる読み方が合います。',
+        chips: ['世界文学', '文庫定番', '近代文学', '古典新訳'],
+        tags: ['古典', '蓄積', '文庫'],
+      },
+      {
+        id: 'contemporary',
+        name: '旬を読む派',
+        headline: '共感欲が高い',
+        fullName: '旬を読むタイプ',
+        desc: '比較的新しい作品が多く、いま話題の空気や現代的な関心ごとを追いかける読み方です。',
+        genreRec: '直近の文庫新刊、話題作、エッセイ、いまの社会を映す小説が向いています。',
+        readRec: 'SNSやメディアで見かけた本をすぐ買う、発売月で選ぶ、感想を読みながら追体験する読み方が合います。',
+        chips: ['話題作', '新刊', 'エッセイ', '現代小説'],
+        tags: ['新刊', 'いま', '共感'],
+      },
+      {
+        id: 'story',
+        name: '物語派',
+        headline: '物語欲が高い',
+        fullName: '物語没入タイプ',
+        desc: 'フィクションの世界に重心があります。人物の運命や物語の起伏から、読書の主な喜びを得ているようです。',
+        genreRec: '純文学、ミステリ、恋愛小説、ヒューマンドラマなど、物語の温度を感じられる本が向いています。',
+        readRec: '登場人物の感情に寄り添う、結末まで一気に進める、余韻を味わって次の一冊を探す読み方が合います。',
+        chips: ['純文学', 'ヒューマン', '恋愛', '連作短編'],
+        tags: ['小説', '物語', '感情'],
+      },
+      {
+        id: 'mind',
+        name: '知的派',
+        headline: '求知欲が高い',
+        fullName: '知的探究タイプ',
+        desc: '歴史・科学・思想など、知的好奇心をくすぐる書籍が目立ちます。読書を「調べる」「考える」時間として楽しんでいます。',
+        genreRec: 'ノンフィクション、新書、思想書、科学書、社会評論など、読後に考えが続く本が向いています。',
+        readRec: 'メモを取りながら読む、関連書を横に広げる、著者の別著書まで追う読み方が合います。',
+        chips: ['新書', 'ノンフィクション', '思想', '科学'],
+        tags: ['ノンフィクション', '考察', '学び'],
+      },
+      {
+        id: 'dream',
+        name: '幻想派',
+        headline: '幻想欲が高い',
+        fullName: '幻想逃避タイプ',
+        desc: 'ミステリ、SF、ファンタジーなど、現実の外側へ足を伸ばす作品に親しみがあります。',
+        genreRec: 'ミステリ、SF、ファンタジー、ホラーなど、ルールや世界観の違いを楽しめる本が向いています。',
+        readRec: '設定を味わう、シリーズの法則を追う、日常から離れた世界に長く滞在する読み方が合います。',
+        chips: ['ミステリ', 'SF', 'ファンタジー', 'サスペンス'],
+        tags: ['ミステリ', 'SF', '幻想'],
+      },
+    ];
+
+    const MOTIVATIONS = [
+      { key: 'immersion', label: '没入欲', desc: 'ひとつの世界や作者に留まり、深く味わう読み方の傾向。' },
+      { key: 'story', label: '物語欲', desc: '人物や展開に感情を乗せ、物語の温度を楽しむ傾向。' },
+      { key: 'knowledge', label: '求知欲', desc: '知識や視点を増やし、読後も考え続ける傾向。' },
+      { key: 'discovery', label: '発見欲', desc: 'ジャンルや作家を横断し、新しい本との出会いを求める傾向。' },
+      { key: 'heritage', label: '古典欲', desc: '時間を経た名作や定番に親しみ、蓄積を大切にする傾向。' },
+      { key: 'fantasy', label: '幻想欲', desc: '現実の外側のルールや謎、非日常の世界に惹かれる傾向。' },
+    ];
+
+    const SPECTRUM_DEFS = [
+      { key: 'character', left: '人物派', right: '世界観派' },
+      { key: 'mood', left: '情景派', right: '進行派' },
+      { key: 'pace', left: '静読派', right: '一気読み派' },
+      { key: 'mode', left: 'フィクション', right: 'ノンフィクション' },
+      { key: 'era', left: '古典', right: '現代' },
+      { key: 'length', left: '短編', right: '長編' },
+      { key: 'focus', left: '深掘り', right: 'ジャンル横断' },
+      { key: 'reality', left: '現実寄り', right: '非現実寄り' },
+    ];
+
+    const BOOKLOG_REC_SHELVES = [
+      { id: '1192296y', types: ['explorer', 'story', 'contemporary', 'dream'] },
+      { id: 'kanataromen', types: ['mind', 'contemporary', 'explorer'] },
+      { id: 'ashitaread2017', types: ['story', 'explorer', 'dream'] },
+      { id: 'chako1225', types: ['deep', 'classic', 'story'] },
+      { id: 'book0345', types: ['story', 'contemporary', 'explorer'] },
+      { id: 'powaroroom', types: ['explorer', 'story', 'contemporary'] },
+      { id: 'vienna165cm', types: ['story', 'mind', 'explorer'] },
+      { id: 'yomuol1230', types: ['contemporary', 'story', 'explorer'] },
+      { id: 'b651fb420d204852', types: ['mind', 'explorer', 'contemporary'] },
+      { id: 'a6a8a5ec6ad56ed8', types: ['mind', 'contemporary', 'deep'] },
+    ];
+
+    const RECOMMEND_BY_TYPE = {
+      deep: { lead: 'じっくり浸れる、厚みのある一冊' },
+      explorer: { lead: '次の驚きにつながりそうな一冊' },
+      classic: { lead: '時を経ても色あせない一冊' },
+      contemporary: { lead: 'いまの空気に近い一冊' },
+      story: { lead: '物語の温度を感じる一冊' },
+      mind: { lead: '読後も考えが続く一冊' },
+      dream: { lead: '現実の外側へ連れて行く一冊' },
+    };
+
+    let books = loadBooks();
+
+    const els = {
+      status: document.getElementById('status'),
+      bookList: document.getElementById('book-list'),
+      bookCount: document.getElementById('book-count'),
+      emptyBooks: document.getElementById('empty-books'),
+      diagnoseBtn: document.getElementById('diagnose-btn'),
+      clearBtn: document.getElementById('clear-btn'),
+      result: document.getElementById('result'),
+      resultMain: document.getElementById('result-main'),
+      resultSide: document.getElementById('result-side'),
+      booklogId: document.getElementById('booklog-id'),
+      booklogBtn: document.getElementById('booklog-btn'),
+      recSection: document.getElementById('rec-section'),
+      recLead: document.getElementById('rec-lead'),
+      recList: document.getElementById('rec-list'),
+    };
+
+    function loadBooks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((book) => {
+          const authors = book.authors || [];
+          const title = book.title || '（タイトル不明）';
+          return {
+            ...book,
+            id: book.id || book.olKey || ('manual:' + normalizeTitle(title)),
+            subjects: (book.subjects && book.subjects.length)
+              ? book.subjects
+              : inferSubjects(title, authors),
+            source: book.source || ((book.id || book.olKey || '').startsWith('booklog:') ? 'booklog' : 'manual'),
+          };
+        });
+      } catch {
+        return [];
+      }
+    }
+
+    function saveBooks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+    }
+
+    function clamp(n, min = 0, max = 100) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function esc(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function bookKey(book) {
+      return book.id || book.olKey || book.title;
+    }
+
+    function parseYearFromText(text) {
+      const m = String(text || '').match(/(\d{4})年/);
+      if (!m) return null;
+      const year = Number(m[1]);
+      return year >= 1800 && year <= 2035 ? year : null;
+    }
+
+    function bookText(book) {
+      return [
+        book.title,
+        (book.authors || []).join(' '),
+        (book.subjects || []).join(' '),
+      ].join(' ');
+    }
+
+    function inferSubjects(title, authors) {
+      const text = title + ' ' + (authors || []).join(' ');
+      const subjects = [];
+      if (FICTION_RE.test(text)) subjects.push('物語');
+      if (KNOWLEDGE_RE.test(text)) subjects.push('知性');
+      if (IMAGINATION_RE.test(text)) subjects.push('幻想');
+      if (CLASSIC_RE.test(text)) subjects.push('古典');
+      if (CONTEMPORARY_RE.test(text)) subjects.push('現代');
+      if (DEPTH_RE.test(text)) subjects.push('長編');
+      return subjects;
+    }
+
+    function booklogItemToBook(item) {
+      const authors = item.author
+        ? item.author.split(/[、,／/]/).map((s) => s.trim()).filter(Boolean)
+        : [];
+      const title = item.title || '（タイトル不明）';
+      return {
+        id: booklogItemKey(item),
+        title,
+        authors,
+        year: parseYearFromText(title),
+        subjects: inferSubjects(title, authors),
+        coverUrl: item.image || null,
+        booklogUrl: item.url || '',
+        source: 'booklog',
+      };
+    }
+
+    function normalizeTitle(title) {
+      return String(title || '')
+        .toLowerCase()
+        .replace(/[\s\u3000]+/g, '')
+        .replace(/[^\p{L}\p{N}]/gu, '');
+    }
+
+    function isOwnedBook(candidate) {
+      const norm = normalizeTitle(candidate.title);
+      return books.some((b) => {
+        const candidateId = candidate.id || candidate.olKey;
+        const bookId = b.id || b.olKey;
+        if (candidateId && bookId && candidateId === bookId) return true;
+        return normalizeTitle(b.title) === norm;
+      });
+    }
+
+    function shuffleInPlace(list) {
+      for (let i = list.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      return list;
+    }
+
+    function booklogItemToRecommend(item, meta) {
+      const shelfName = meta.shelfName || 'ブクログ';
+      return {
+        ...booklogItemToBook(item),
+        sourceLabel: shelfName,
+      };
+    }
+
+    function bookMatchesRecType(book, typeId) {
+      const text = bookText(book);
+      const subjects = book.subjects || [];
+      switch (typeId) {
+        case 'deep':
+          return DEPTH_RE.test(text) || subjects.includes('長編') || subjects.includes('古典');
+        case 'classic':
+          return CLASSIC_RE.test(text) || subjects.includes('古典');
+        case 'contemporary':
+          return CONTEMPORARY_RE.test(text) || subjects.includes('現代') || !CLASSIC_RE.test(text);
+        case 'story':
+          return FICTION_RE.test(text) || subjects.includes('物語');
+        case 'mind':
+          return KNOWLEDGE_RE.test(text) || subjects.includes('知性');
+        case 'dream':
+          return IMAGINATION_RE.test(text) || subjects.includes('幻想');
+        case 'explorer':
+        default:
+          return true;
+      }
+    }
+
+    function shelvesForType(typeId) {
+      const matched = BOOKLOG_REC_SHELVES.filter((shelf) => shelf.types.includes(typeId));
+      const pool = matched.length >= 4 ? matched : BOOKLOG_REC_SHELVES;
+      return shuffleInPlace([...pool]);
+    }
+
+    async function fetchBooklogShelfBooks(userId) {
+      const attempts = [
+        { status: '3', rank: '5' },
+        { status: '3' },
+        {},
+      ];
+      for (const options of attempts) {
+        const data = await fetchBooklogJsonp(userId, 30, options);
+        if (data.books && data.books.length) return data;
+      }
+      return { books: [], tana: null };
+    }
+
+    function pickFromShelf(data, typeId, seen, strict) {
+      const shelfName = (data.tana && data.tana.name) ? data.tana.name : 'ブクログ';
+      const items = shuffleInPlace([...(data.books || [])]);
+      for (const item of items) {
+        if (!isBooklogItemReadable(item)) continue;
+        const key = booklogItemKey(item);
+        if (seen.has(key)) continue;
+        const rec = booklogItemToRecommend(item, { shelfName });
+        if (isOwnedBook(rec)) continue;
+        if (strict && !bookMatchesRecType(rec, typeId)) continue;
+        seen.add(key);
+        return rec;
+      }
+      return null;
+    }
+
+    async function fetchRecommendations(result) {
+      const typeId = result.type.id;
+      const shelves = shelvesForType(typeId);
+      const loaded = await Promise.all(shelves.map(async (shelf) => {
+        try {
+          return { shelf, data: await fetchBooklogShelfBooks(shelf.id) };
+        } catch {
+          return { shelf, data: { books: [], tana: null } };
+        }
+      }));
+
+      const seen = new Set();
+      const picks = [];
+      const usedShelfIds = new Set();
+
+      for (const entry of shuffleInPlace([...loaded])) {
+        if (picks.length >= 6) break;
+        const rec = pickFromShelf(entry.data, typeId, seen, true);
+        if (rec) {
+          picks.push(rec);
+          usedShelfIds.add(entry.shelf.id);
+        }
+      }
+
+      if (picks.length < 6) {
+        const unused = loaded.filter((entry) => !usedShelfIds.has(entry.shelf.id));
+        for (const entry of shuffleInPlace(unused)) {
+          if (picks.length >= 6) break;
+          const rec = pickFromShelf(entry.data, typeId, seen, false);
+          if (rec) {
+            picks.push(rec);
+            usedShelfIds.add(entry.shelf.id);
+          }
+        }
+      }
+
+      if (picks.length < 6) {
+        for (const entry of shuffleInPlace([...loaded])) {
+          if (picks.length >= 6) break;
+          const rec = pickFromShelf(entry.data, typeId, seen, false);
+          if (rec) picks.push(rec);
+        }
+      }
+
+      picks.sourceCount = usedShelfIds.size || new Set(picks.map((rec) => rec.sourceLabel)).size;
+      return picks;
+    }
+
+    function renderRecommendations(recs, result) {
+      const plan = RECOMMEND_BY_TYPE[result.type.id] || RECOMMEND_BY_TYPE.explorer;
+      const sourceNote = recs.sourceCount
+        ? '（ブクログ Best User Award 2025 受賞者など ' + recs.sourceCount + '人の本棚より）'
+        : '（ブクログの読書家の本棚より）';
+      els.recLead.textContent = plan.lead + sourceNote;
+      els.recSection.hidden = false;
+      if (!recs.length) {
+        els.recList.innerHTML = '<li class="rec-empty">おすすめを取得できませんでした。しばらくしてから再度診断してください。</li>';
+        return;
+      }
+      els.recList.innerHTML = recs.map((rec, index) => {
+        const cover = rec.coverUrl || '';
+        const metaParts = [
+          (rec.authors || []).join(', '),
+          rec.sourceLabel || '',
+        ].filter(Boolean);
+        const meta = metaParts.join(' · ');
+        const titleHtml = rec.booklogUrl
+          ? '<a href="' + esc(rec.booklogUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(rec.title) + '</a>'
+          : esc(rec.title);
+        return '<li class="rec-item" data-rec-index="' + index + '">' +
+          (cover
+            ? '<img class="book-cover" src="' + esc(cover) + '" alt="">'
+            : '<div class="book-cover" aria-hidden="true"></div>') +
+          '<div><div class="book-title">' + titleHtml + '</div>' +
+          (meta ? '<div class="book-sub">' + esc(meta) + '</div>' : '') +
+          '</div>' +
+          '<button type="button" class="rec-add-btn" data-rec-index="' + index + '">追加</button>' +
+          '</li>';
+      }).join('');
+      els.recList._recs = recs;
+    }
+
+    function setStatus(msg, isError) {
+      els.status.textContent = msg || '';
+      els.status.classList.toggle('is-error', !!isError);
+    }
+
+    function renderBooks() {
+      els.bookCount.textContent = '(' + books.length + ')';
+      els.emptyBooks.style.display = books.length ? 'none' : 'block';
+      els.bookList.innerHTML = books.map((book, index) => {
+        const cover = book.coverUrl || '';
+        const meta = [
+          (book.authors || []).join(', '),
+          book.year ? book.year + '年' : '',
+          (book.subjects || []).slice(0, 2).join(' · '),
+        ].filter(Boolean).join(' · ');
+        const titleHtml = book.booklogUrl
+          ? '<a href="' + esc(book.booklogUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(book.title) + '</a>'
+          : esc(book.title);
+        return '<li class="book-item">' +
+          (cover
+            ? '<img class="book-cover" src="' + esc(cover) + '" alt="">'
+            : '<div class="book-cover" aria-hidden="true"></div>') +
+          '<div><div class="book-title">' + titleHtml + '</div>' +
+          (meta ? '<div class="book-sub">' + esc(meta) + '</div>' : '') +
+          '</div>' +
+          '<button type="button" class="remove-btn" data-index="' + index + '" aria-label="削除">×</button>' +
+          '</li>';
+      }).join('');
+      els.diagnoseBtn.disabled = books.length < MIN_BOOKS;
+      saveBooks();
+    }
+
+    function addBook(book) {
+      if (books.some((b) => bookKey(b) === bookKey(book))) {
+        setStatus('すでに登録されています。');
+        return false;
+      }
+      books.push(book);
+      renderBooks();
+      setStatus('「' + book.title + '」を追加しました。');
+      return true;
+    }
+
+    function pickType(axes) {
+      const scores = [
+        { type: TYPES[0], score: axes.depth * 0.55 + (100 - axes.breadth) * 0.45 },
+        { type: TYPES[1], score: axes.breadth * 1.0 + axes.fiction * 0.1 },
+        { type: TYPES[2], score: axes.classic * 0.85 + (100 - axes.contemporary) * 0.25 },
+        { type: TYPES[3], score: axes.contemporary * 0.9 },
+        { type: TYPES[4], score: axes.fiction * 0.75 + (100 - axes.knowledge) * 0.35 },
+        { type: TYPES[5], score: axes.knowledge * 1.0 + axes.depth * 0.2 },
+        { type: TYPES[6], score: axes.imagination * 1.05 + axes.fiction * 0.15 },
+      ];
+      scores.sort((a, b) => b.score - a.score);
+      return scores[0].type;
+    }
+
+    function normalizeBooklogId(raw) {
+      const trimmed = String(raw || '').trim();
+      const fromUrl = trimmed.match(/booklog\.jp\/users\/([^/?#]+)/i);
+      if (fromUrl) return fromUrl[1];
+      return trimmed.replace(/^@/, '');
+    }
+
+    function fetchBooklogJsonp(userId, count, options) {
+      const opts = options || {};
+      return new Promise((resolve, reject) => {
+        const cb = '__readtypeBooklog' + Date.now() + Math.random().toString(36).slice(2, 8);
+        const script = document.createElement('script');
+        let settled = false;
+        const finish = (err, data) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          delete window[cb];
+          script.remove();
+          if (err) reject(err);
+          else resolve(data);
+        };
+        window[cb] = (data) => finish(null, data);
+        script.onerror = () => finish(new Error('load failed'));
+        const timer = setTimeout(() => finish(new Error('timeout')), 15000);
+        let url = 'https://api.booklog.jp/v2/json/'
+          + encodeURIComponent(userId)
+          + '?count=' + count;
+        if (opts.category) url += '&category=' + encodeURIComponent(opts.category);
+        if (opts.status) url += '&status=' + encodeURIComponent(opts.status);
+        if (opts.rank) url += '&rank=' + encodeURIComponent(opts.rank);
+        url += '&callback=' + cb;
+        script.src = url;
+        document.head.appendChild(script);
+      });
+    }
+
+    function isBooklogItemReadable(item) {
+      const cat = String(item.catalog || 'book').toLowerCase();
+      const skip = new Set(['dvd', 'cd', 'music', 'game', 'bluray', 'blu-ray']);
+      return !skip.has(cat);
+    }
+
+    function booklogItemKey(item) {
+      const url = String(item.url || '');
+      const m = url.match(/\/archives\/(?:\d+\/)?([^/?#]+)/);
+      if (m) return 'booklog:' + m[1];
+      return 'booklog:' + (item.id || item.asin || item.title);
+    }
+
+    async function importBooklog() {
+      const id = normalizeBooklogId(els.booklogId.value);
+      if (!id) {
+        setStatus('ブクログ ID を入力してください。', true);
+        return;
+      }
+      els.booklogBtn.disabled = true;
+      setStatus('本棚を読み込み中…');
+      try {
+        const data = await fetchBooklogJsonp(id, 100);
+        if (!data || !data.books || !data.books.length) {
+          setStatus('本棚が空か、IDが見つかりませんでした。', true);
+          return;
+        }
+        let added = 0;
+        let skipped = 0;
+        let duplicates = 0;
+        for (const item of data.books) {
+          if (!isBooklogItemReadable(item)) {
+            skipped += 1;
+            continue;
+          }
+          const book = booklogItemToBook(item);
+          if (books.some((b) => bookKey(b) === bookKey(book))) {
+            duplicates += 1;
+            continue;
+          }
+          books.push(book);
+          added += 1;
+        }
+        renderBooks();
+        if (added) {
+          setStatus(added + '冊を本棚から追加しました。');
+        } else if (duplicates && duplicates === data.books.length - skipped) {
+          setStatus('本棚の本はすでにすべて登録済みです。');
+        } else if (skipped && skipped === data.books.length) {
+          setStatus('本棚に取り込める書籍がありませんでした（DVD等のみ）。', true);
+        } else {
+          setStatus('新しく追加できる本がありませんでした。', true);
+        }
+      } catch {
+        setStatus('本棚を取得できませんでした。IDを確認してください。', true);
+      } finally {
+        els.booklogBtn.disabled = false;
+      }
+    }
+
+    function countPatternHits(list, re) {
+      return list.filter((book) => re.test(bookText(book))).length;
+    }
+
+    function analyzeBooks(list) {
+      const n = list.length;
+      const authors = new Set(list.flatMap((b) => b.authors || []).filter(Boolean));
+      const authorCounts = {};
+      list.forEach((book) => {
+        (book.authors || []).forEach((author) => {
+          authorCounts[author] = (authorCounts[author] || 0) + 1;
+        });
+      });
+      const repeatAuthors = Object.values(authorCounts).filter((count) => count >= 2).length;
+      const subjectSet = new Set(list.flatMap((b) => b.subjects || []));
+      const years = list.map((b) => b.year).filter((y) => y > 0);
+      const avgYear = years.length ? years.reduce((a, b) => a + b, 0) / years.length : null;
+      const avgTitleLen = list.reduce((sum, book) => sum + String(book.title || '').length, 0) / n;
+      const authorDiversity = authors.size / n;
+
+      const fictionHits = countPatternHits(list, FICTION_RE);
+      const knowledgeHits = countPatternHits(list, KNOWLEDGE_RE);
+      const imaginationHits = countPatternHits(list, IMAGINATION_RE);
+      const classicHits = countPatternHits(list, CLASSIC_RE);
+      const contemporaryHits = countPatternHits(list, CONTEMPORARY_RE);
+      const depthHits = countPatternHits(list, DEPTH_RE);
+
+      const axes = {
+        depth: clamp((depthHits / n) * 55 + (repeatAuthors / Math.max(authors.size, 1)) * 45 + (avgTitleLen / 28) * 15),
+        breadth: clamp(authorDiversity * 72 + (subjectSet.size / Math.max(n, 1)) * 28),
+        classic: clamp((classicHits / n) * 85 + (avgYear ? ((2020 - avgYear) / 90) * 40 : 0)),
+        contemporary: clamp((contemporaryHits / n) * 85 + (avgYear ? ((avgYear - 1985) / 40) * 40 : 0)),
+        fiction: clamp((fictionHits / n) * 100),
+        knowledge: clamp((knowledgeHits / n) * 100),
+        imagination: clamp((imaginationHits / n) * 100),
+      };
+
+      const motivations = {
+        immersion: axes.depth,
+        story: axes.fiction,
+        knowledge: axes.knowledge,
+        discovery: axes.breadth,
+        heritage: axes.classic,
+        fantasy: axes.imagination,
+      };
+
+      const spectrums = {
+        character: clamp(50 + axes.fiction * 0.35 - axes.knowledge * 0.15),
+        mood: clamp(50 + axes.classic * 0.2 - axes.contemporary * 0.2),
+        pace: clamp(50 + axes.contemporary * 0.3 - axes.depth * 0.25),
+        mode: clamp(axes.fiction * 0.85 + (100 - axes.knowledge) * 0.1),
+        era: clamp(axes.contemporary * 0.75 + (100 - axes.classic) * 0.1),
+        length: clamp(axes.depth * 0.8 + axes.fiction * 0.1),
+        focus: clamp(axes.depth * 0.45 + (100 - axes.breadth) * 0.35),
+        reality: clamp(50 + axes.knowledge * 0.25 - axes.imagination * 0.3),
+      };
+
+      const type = pickType(axes);
+      const rankedMotivations = rankMotivations(motivations);
+      const highlight = strongestSpectrum(spectrums);
+
+      const tags = new Set(type.tags);
+      if (axes.depth >= 60) tags.add('長編');
+      if (axes.breadth >= 60) tags.add('ジャンル横断');
+      if (axes.classic >= 55) tags.add('古典寄り');
+      if (axes.contemporary >= 55) tags.add('現代寄り');
+      if (fictionHits / n >= 0.7) tags.add('フィクション多め');
+      if (knowledgeHits / n >= 0.35) tags.add('ノンフィクション多め');
+      spectrumTags(spectrums).forEach((tag) => tags.add(tag));
+
+      const summaryParts = [
+        books.length + '冊から診断',
+        '著者 ' + authors.size + '人',
+      ];
+      if (avgYear) summaryParts.push('平均 ' + Math.round(avgYear) + '年');
+      if (subjectSet.size) summaryParts.push(subjectSet.size + '種類の傾向');
+
+      return {
+        axes,
+        motivations,
+        spectrums,
+        type,
+        tags: [...tags],
+        summary: summaryParts.join(' · '),
+        authorCount: authors.size,
+        mainMotivation: rankedMotivations[0],
+        subMotivation: rankedMotivations[1],
+        highlight,
+        strongTags: spectrumTags(spectrums).slice(0, 4),
+      };
+    }
+
+    function rankMotivations(motivations) {
+      return MOTIVATIONS
+        .map((item) => ({ ...item, score: motivations[item.key] || 0 }))
+        .sort((a, b) => b.score - a.score);
+    }
+
+    function strongestSpectrum(spectrums) {
+      let best = SPECTRUM_DEFS[0];
+      let bestDist = 0;
+      let bestValue = 50;
+      SPECTRUM_DEFS.forEach((def) => {
+        const value = spectrums[def.key];
+        const dist = Math.abs(value - 50);
+        if (dist > bestDist) {
+          bestDist = dist;
+          best = def;
+          bestValue = value;
+        }
+      });
+      return {
+        def: best,
+        value: bestValue,
+        label: bestValue >= 50 ? best.right : best.left,
+      };
+    }
+
+    function spectrumTags(spectrums) {
+      const tags = [];
+      SPECTRUM_DEFS.forEach((def) => {
+        const value = spectrums[def.key];
+        if (value >= 62) tags.push(def.right);
+        else if (value <= 38) tags.push(def.left);
+      });
+      return tags;
+    }
+
+    function renderRadar(motivations) {
+      const size = 300;
+      const cx = size / 2;
+      const cy = size / 2;
+      const r = 104;
+      const count = MOTIVATIONS.length;
+      const points = MOTIVATIONS.map((axis, i) => {
+        const angle = (-Math.PI / 2) + (i * 2 * Math.PI / count);
+        const val = (motivations[axis.key] || 0) / 100;
+        const x = cx + Math.cos(angle) * r * val;
+        const y = cy + Math.sin(angle) * r * val;
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+
+      const rings = [0.25, 0.5, 0.75, 1].map((scale) => {
+        const pts = MOTIVATIONS.map((_, i) => {
+          const angle = (-Math.PI / 2) + (i * 2 * Math.PI / count);
+          return (cx + Math.cos(angle) * r * scale).toFixed(1) + ',' + (cy + Math.sin(angle) * r * scale).toFixed(1);
+        }).join(' ');
+        return '<polygon points="' + pts + '" fill="none" stroke="#e0dbd0" stroke-width="1"/>';
+      }).join('');
+
+      const spokes = MOTIVATIONS.map((axis, i) => {
+        const angle = (-Math.PI / 2) + (i * 2 * Math.PI / count);
+        const x2 = cx + Math.cos(angle) * r;
+        const y2 = cy + Math.sin(angle) * r;
+        const lx = cx + Math.cos(angle) * (r + 24);
+        const ly = cy + Math.sin(angle) * (r + 24);
+        return '<line x1="' + cx + '" y1="' + cy + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#e0dbd0" stroke-width="1"/>' +
+          '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="#5c5a54" font-family="Noto Sans JP, sans-serif">' + esc(axis.label) + '</text>';
+      }).join('');
+
+      return '<svg viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="読書意欲チャート">' +
+        rings + spokes +
+        '<polygon points="' + points + '" fill="rgba(61,107,140,0.22)" stroke="#3d6b8c" stroke-width="2"/>' +
+        '</svg>';
+    }
+
+    function renderSpectrumList(spectrums) {
+      return SPECTRUM_DEFS.map((def) => {
+        const value = spectrums[def.key];
+        const leftActive = value < 50;
+        const rightActive = value >= 50;
+        return '<div class="spectrum-item">' +
+          '<span class="spectrum-label' + (leftActive ? ' is-active' : '') + '">' + esc(def.left) + '</span>' +
+          '<div class="spectrum-track"><span class="spectrum-dot" style="left:' + value + '%"></span></div>' +
+          '<span class="spectrum-label spectrum-label--right' + (rightActive ? ' is-active' : '') + '">' + esc(def.right) + '</span>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderMotivationLegend(motivations) {
+      return MOTIVATIONS.map((item) => {
+        const score = Math.round(motivations[item.key] || 0);
+        return '<div class="legend-item"><strong>' + esc(item.label) + '（' + score + '）</strong> <span>' + esc(item.desc) + '</span></div>';
+      }).join('');
+    }
+
+    function renderResult(result) {
+      const type = result.type;
+      const strongTags = result.strongTags.length ? result.strongTags : result.tags.slice(0, 4);
+
+      els.resultMain.innerHTML =
+        '<p class="result-type">' + esc(type.headline) + ' ' + esc(type.fullName) + '</p>' +
+        '<p class="result-body">' + esc(type.desc) + '</p>' +
+        '<p class="result-highlight">読書傾向では「' + esc(result.highlight.label) + '」が特にはっきり出ています。</p>' +
+        '<p class="result-sub">' + esc(result.summary) + '</p>' +
+        '<div class="score-cards">' +
+          '<div class="score-card"><div class="score-card-label">主軸の読書欲</div><div class="score-card-value">' +
+            esc(result.mainMotivation.label) + '（' + Math.round(result.mainMotivation.score) + '）</div></div>' +
+          '<div class="score-card"><div class="score-card-label">副軸の読書欲</div><div class="score-card-value">' +
+            esc(result.subMotivation.label) + '（' + Math.round(result.subMotivation.score) + '）</div></div>' +
+        '</div>' +
+        '<p class="result-section-title">強く出た読書傾向</p>' +
+        '<div class="tags">' + strongTags.map((t) => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' +
+        '<div class="insight-box">' +
+          '<p class="insight-box-title">あなたに合いそうなジャンル傾向</p>' +
+          '<p class="insight-box-body">' + esc(type.genreRec) + '</p>' +
+          '<div class="insight-chips">' + type.chips.map((chip) => '<span class="insight-chip">' + esc(chip) + '</span>').join('') + '</div>' +
+        '</div>' +
+        '<div class="insight-box">' +
+          '<p class="insight-box-title">読み方のヒント</p>' +
+          '<p class="insight-box-body">' + esc(type.readRec) + '</p>' +
+        '</div>';
+
+      els.resultSide.innerHTML =
+        '<div class="chart-card">' +
+          '<p class="chart-card-title">読書意欲チャート</p>' +
+          '<div class="radar-wrap">' + renderRadar(result.motivations) + '</div>' +
+        '</div>' +
+        '<div class="spectrum-card">' +
+          '<p class="spectrum-card-title">読書スタイルのスペクトル</p>' +
+          '<div class="spectrum-list">' + renderSpectrumList(result.spectrums) + '</div>' +
+        '</div>' +
+        '<div class="legend-card">' +
+          '<p class="legend-card-title">読書意欲チャートの見方</p>' +
+          '<div class="legend-list">' + renderMotivationLegend(result.motivations) + '</div>' +
+        '</div>';
+    }
+
+    function runDiagnosis() {
+      if (books.length < MIN_BOOKS) return;
+      const result = analyzeBooks(books);
+      renderResult(result);
+      els.result.classList.add('is-visible');
+      els.recSection.hidden = false;
+      els.recLead.textContent = 'おすすめを探しています…';
+      els.recList.innerHTML = '<li class="rec-empty">ブクログの本棚から探しています…</li>';
+      els.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      fetchRecommendations(result).then((recs) => {
+        renderRecommendations(recs, result);
+      });
+    }
+
+    els.booklogBtn.addEventListener('click', importBooklog);
+    els.diagnoseBtn.addEventListener('click', runDiagnosis);
+    els.clearBtn.addEventListener('click', () => {
+      if (!books.length || !confirm('登録した本をすべて消しますか？')) return;
+      books = [];
+      renderBooks();
+      els.result.classList.remove('is-visible');
+      els.recSection.hidden = true;
+      setStatus('');
+    });
+    els.recList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.rec-add-btn');
+      if (!btn || !els.recList._recs) return;
+      const rec = els.recList._recs[Number(btn.dataset.recIndex)];
+      if (!rec) return;
+      addBook({
+        id: rec.id || rec.olKey,
+        title: rec.title,
+        authors: rec.authors,
+        year: rec.year,
+        subjects: rec.subjects,
+        coverUrl: rec.coverUrl || null,
+        booklogUrl: rec.booklogUrl || '',
+        source: 'booklog',
+      });
+      btn.disabled = true;
+      btn.textContent = '追加済';
+    });
+    els.bookList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.remove-btn');
+      if (!btn) return;
+      books.splice(Number(btn.dataset.index), 1);
+      renderBooks();
+    });
+
+    renderBooks();
+  </script>
+</body>
+</html>

@@ -18,7 +18,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/export.css">
   <link rel="stylesheet" href="../shared/editor-title.css">
-  <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
       --bg: #ffffff;
@@ -132,7 +131,7 @@
       gap: 0;
       background: var(--surface);
       border: 2px solid var(--border);
-      transition: border-color 0.15s, opacity 0.15s;
+      transition: border-color 0.15s, opacity 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
     }
 
     .scene-card:focus-within {
@@ -140,19 +139,28 @@
     }
 
     .scene-card.dragging {
-      opacity: 0.85;
+      opacity: 1;
       border-color: var(--ink);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-      position: relative;
-      z-index: 5;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+      z-index: 100;
+      transition: none !important;
+      pointer-events: none;
+    }
+
+    .scene-card.scene-placeholder {
+      border-style: dashed;
+      background: var(--bg);
+      box-shadow: none;
+      pointer-events: none;
     }
 
     .scene-side {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.75rem 0.5rem;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 0.2rem;
+      padding: 0.85rem 0.45rem 0.65rem 0.5rem;
       border-right: 2px solid var(--border);
       background: var(--invert);
       color: #fff;
@@ -162,7 +170,10 @@
       display: flex;
       flex-direction: column;
       gap: 3px;
-      padding: 0.35rem 0.5rem;
+      height: 28px;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 0 0.35rem;
       cursor: grab;
       border: none;
       background: transparent;
@@ -175,7 +186,8 @@
     }
 
     .drag-handle:hover { opacity: 0.65; }
-    .drag-handle:active { cursor: grabbing; }
+    .drag-handle:active,
+    .scene-list.is-dragging .drag-handle { cursor: grabbing; opacity: 1; }
 
     .drag-handle span {
       display: block;
@@ -189,60 +201,61 @@
       font-weight: 900;
       color: #fff;
       letter-spacing: 0.05em;
-      min-width: 1.5rem;
+      min-width: 1.1rem;
+      height: 28px;
+      line-height: 28px;
       text-align: center;
-    }
-
-    .move-btns {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .move-btn {
-      width: 24px;
-      height: 20px;
-      border: 2px solid #fff;
-      background: transparent;
-      color: #fff;
-      font-size: 0.65rem;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .move-btn:hover:not(:disabled) {
-      background: #fff;
-      color: #000;
-    }
-
-    .move-btn:disabled {
-      opacity: 0.25;
-      cursor: default;
+      align-items: center;
+      justify-content: center;
     }
 
     .scene-body {
-      padding: 0.85rem 1rem;
+      padding: 0.85rem 0.3rem 0.85rem 1rem;
       min-width: 0;
     }
 
+    .scene-body-head {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      min-width: 0;
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scene-actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 0.85rem 0.65rem 0.5rem 0;
+      background: var(--surface);
+    }
+
     .scene-title {
+      flex: 1;
+      min-width: 0;
       width: 100%;
       border: none;
-      border-bottom: 1px solid var(--border);
       background: transparent;
       font-family: inherit;
       font-size: 0.85rem;
       font-weight: 700;
       color: var(--ink);
-      padding: 0 0 0.4rem;
-      margin-bottom: 0.5rem;
+      height: 28px;
+      line-height: 28px;
+      padding: 0;
+      margin: 0;
       outline: none;
     }
 
     .scene-title::placeholder { color: #888; font-weight: 500; }
-    .scene-title:focus { border-color: var(--ink); }
+    .scene-title:focus { outline: none; }
+
+    .scene-body-head:focus-within {
+      border-bottom-color: var(--ink);
+    }
 
     .scene-text {
       width: 100%;
@@ -260,18 +273,17 @@
 
     .scene-text::placeholder { color: #888; }
 
-    .scene-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 0.5rem;
-    }
-
     .char-count {
+      flex-shrink: 0;
       font-size: 0.72rem;
       font-weight: 700;
       color: var(--ink);
       letter-spacing: 0.03em;
+      white-space: nowrap;
+      height: 28px;
+      line-height: 28px;
+      display: flex;
+      align-items: center;
     }
 
     .char-count.warn {
@@ -288,29 +300,93 @@
       outline-offset: 2px;
     }
 
-    .scene-actions {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 0.5rem;
-      border-left: 2px solid var(--border);
-      background: var(--surface);
-    }
-
-    .delete-btn {
+    .collapse-btn {
+      flex-shrink: 0;
       width: 28px;
       height: 28px;
       border: 2px solid var(--border);
       background: var(--surface);
       color: var(--ink);
-      font-size: 1rem;
+      font-size: 0.6rem;
       line-height: 1;
       cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: background 0.15s, color 0.15s;
     }
 
-    .delete-btn:hover {
+    .collapse-btn:hover {
       background: var(--invert);
+      color: #fff;
+    }
+
+    .collapse-icon {
+      display: block;
+      transition: transform 0.15s;
+    }
+
+    .scene-card.is-collapsed .collapse-icon {
+      transform: rotate(-90deg);
+    }
+
+    .scene-card.is-collapsed .scene-detail {
+      display: none;
+    }
+
+    .scene-card.is-collapsed {
+      align-items: center;
+    }
+
+    .scene-card.is-collapsed .scene-side {
+      align-items: center;
+      padding: 0.65rem 0.45rem 0.65rem 0.5rem;
+    }
+
+    .scene-card.is-collapsed .scene-body {
+      padding: 0.65rem 0.3rem 0.65rem 1rem;
+    }
+
+    .scene-card.is-collapsed .scene-body-head {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .scene-card.is-collapsed .scene-title {
+      margin-bottom: 0;
+      border-bottom: none;
+      padding: 0;
+      height: 28px;
+      line-height: 28px;
+    }
+
+    .scene-card.is-collapsed .char-count {
+      line-height: 28px;
+    }
+
+    .scene-card.is-collapsed .scene-actions {
+      padding: 0.65rem 0.65rem 0.65rem 0;
+      justify-content: center;
+    }
+
+    .delete-btn {
+      width: 28px;
+      height: 28px;
+      border: 2px solid #c62828;
+      background: #fff;
+      color: #c62828;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .delete-btn:hover {
+      background: #c62828;
+      border-color: #c62828;
       color: #fff;
     }
 
@@ -442,6 +518,10 @@
       user-select: none;
     }
 
+    .scene-list.is-dragging .scene-card:not(.dragging) {
+      opacity: 0.38;
+    }
+
     @media (max-width: 520px) {
       .header-top { flex-direction: column; }
       .header-actions { padding-top: 0; }
@@ -464,7 +544,6 @@
         </div>
       </div>
       <div class="stats">
-        <span class="save-indicator" id="save-indicator"></span>
         <span>シーン <strong id="scene-count">0</strong></span>
         <span>合計 <strong id="total-chars">0</strong> 字</span>
       </div>
@@ -500,6 +579,7 @@
 
   <script src="../shared/export.js"></script>
   <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-undo.js"></script>
   <script>
     const STORAGE_KEY = 'scene-scenes-v1';
     const LEGACY_STORAGE_KEY = 'beat-scenes-v1';
@@ -507,6 +587,29 @@
 
     let data = { title: '', scenes: [] };
     let saveTimer = null;
+    const undo = TadekuEditorUndo.createStack({ limit: 50 });
+
+    function getEditorState() {
+      return data;
+    }
+
+    function applyEditorState(state) {
+      data = state;
+      document.getElementById('work-title').value = data.title || '';
+      render();
+      scheduleSave();
+    }
+
+    function pushUndo() {
+      undo.push(getEditorState);
+    }
+
+    function isEditingText() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === 'TEXTAREA' || (tag === 'INPUT' && el.type === 'text');
+    }
 
     function sceneCharCount() {
       return data.scenes.reduce((s, sc) => s + sc.body.length, 0);
@@ -530,23 +633,22 @@
         if (raw) data = JSON.parse(raw);
       } catch (_) {}
       if (!Array.isArray(data.scenes)) data.scenes = [];
+      if (typeof data.title !== 'string') data.title = '';
+      data.scenes.forEach(sc => {
+        if (sc.collapsed == null) sc.collapsed = false;
+      });
       if (!data.scenes.length) data.scenes = [makeScene()];
     }
 
     function makeScene() {
-      return { id: uid(), title: '', body: '' };
+      return { id: uid(), title: '', body: '', collapsed: false };
     }
 
     function scheduleSave() {
-      const el = document.getElementById('save-indicator');
-      el.textContent = '保存中…';
-      el.classList.remove('saved');
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         syncMeta();
-        el.textContent = '保存済み';
-        el.classList.add('saved');
       }, 400);
     }
 
@@ -567,37 +669,125 @@
       return '';
     }
 
+    function setSceneCollapsed(scene, card, collapsed) {
+      scene.collapsed = !!collapsed;
+      card.classList.toggle('is-collapsed', scene.collapsed);
+      const btn = card.querySelector('.collapse-btn');
+      const expanded = !scene.collapsed;
+      btn.setAttribute('aria-expanded', String(expanded));
+      const label = expanded ? '本文を閉じる' : '本文を開く';
+      btn.setAttribute('aria-label', label);
+      btn.title = label;
+    }
+
+    function clearCardMotion(list) {
+      list.querySelectorAll('.scene-card').forEach(card => {
+        card.style.transition = '';
+        card.style.transform = '';
+      });
+    }
+
+    function clearDragStyles(card) {
+      card.style.position = '';
+      card.style.left = '';
+      card.style.top = '';
+      card.style.width = '';
+      card.style.zIndex = '';
+      card.style.margin = '';
+      card.style.transition = '';
+      card.style.transform = '';
+      card.style.pointerEvents = '';
+    }
+
+    function pointerXY(ev) {
+      if (ev.touches && ev.touches[0]) {
+        return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+      }
+      if (ev.changedTouches && ev.changedTouches[0]) {
+        return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
+      }
+      return { x: ev.clientX, y: ev.clientY };
+    }
+
+    function flipReorder(list, mutate) {
+      const cards = [...list.querySelectorAll('.scene-card')];
+      const tops = new Map(cards.map(card => [card, card.getBoundingClientRect().top]));
+      mutate();
+      cards.forEach(card => {
+        if (card.classList.contains('dragging') || card.classList.contains('scene-placeholder')) return;
+        const prevTop = tops.get(card);
+        if (prevTop == null) return;
+        const dy = prevTop - card.getBoundingClientRect().top;
+        if (!dy) return;
+        card.style.transition = 'none';
+        card.style.transform = `translateY(${dy}px)`;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            card.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            card.style.transform = '';
+          });
+        });
+      });
+    }
+
+    function reorderPlaceholder(list, placeholder, probeY, prevProbeY) {
+      const draggingDown = prevProbeY == null || probeY >= prevProbeY;
+      const ratio = draggingDown ? 0.3 : 0.7;
+      const others = [...list.querySelectorAll('.scene-card:not(.dragging)')];
+      let next = null;
+      for (const other of others) {
+        if (other === placeholder) continue;
+        const rect = other.getBoundingClientRect();
+        if (probeY < rect.top + rect.height * ratio) { next = other; break; }
+      }
+      const wouldMove = next
+        ? placeholder.nextElementSibling !== next
+        : list.lastElementChild !== placeholder;
+      if (!wouldMove) return;
+
+      flipReorder(list, () => {
+        if (next) list.insertBefore(placeholder, next);
+        else list.appendChild(placeholder);
+      });
+    }
+
     function startPointerDrag(e, card, handle, list) {
       if (e.button != null && e.button > 0) return;
-      // タッチ環境ではポインターのキャプチャが DOM 移動で外れたり、
-      // OS にスクロールとして横取りされて pointermove が止まることがある。
-      // タッチイベントは開始要素で発火し続けるため、タッチ時は touch* を使う。
       const isTouch = e.pointerType === 'touch';
       e.preventDefault();
+
+      const startRect = card.getBoundingClientRect();
+      const pointer = pointerXY(e);
+      const offsetY = pointer.y - startRect.top;
+
+      const placeholder = document.createElement('article');
+      placeholder.className = 'scene-card scene-placeholder';
+      placeholder.setAttribute('aria-hidden', 'true');
+      placeholder.style.height = startRect.height + 'px';
+      list.insertBefore(placeholder, card);
+
       card.classList.add('dragging');
       list.classList.add('is-dragging');
+      card.style.position = 'fixed';
+      card.style.left = startRect.left + 'px';
+      card.style.top = startRect.top + 'px';
+      card.style.width = startRect.width + 'px';
+      card.style.zIndex = '100';
+      card.style.margin = '0';
+      card.style.transition = 'none';
+      card.style.transform = 'scale(1.015)';
 
-      const pointY = ev => {
-        if (ev.touches) return ev.touches[0] ? ev.touches[0].clientY : null;
-        if (ev.changedTouches) return ev.changedTouches[0] ? ev.changedTouches[0].clientY : null;
-        return ev.clientY;
-      };
+      let lastProbeY = null;
 
       const onMove = ev => {
         if (ev.cancelable) ev.preventDefault();
-        const y = pointY(ev);
-        if (y == null) return;
-        const others = [...list.querySelectorAll('.scene-card:not(.dragging)')];
-        let next = null;
-        for (const other of others) {
-          const rect = other.getBoundingClientRect();
-          if (y < rect.top + rect.height / 2) { next = other; break; }
-        }
-        if (next) {
-          if (card.nextElementSibling !== next) list.insertBefore(card, next);
-        } else if (list.lastElementChild !== card) {
-          list.appendChild(card);
-        }
+        const pt = pointerXY(ev);
+        if (pt.y == null) return;
+        const cardTop = pt.y - offsetY;
+        card.style.top = cardTop + 'px';
+        const probeY = cardTop + startRect.height * 0.5;
+        reorderPlaceholder(list, placeholder, probeY, lastProbeY);
+        lastProbeY = probeY;
       };
 
       const finish = () => {
@@ -610,16 +800,33 @@
           document.removeEventListener('pointerup', finish);
           document.removeEventListener('pointercancel', finish);
         }
-        card.classList.remove('dragging');
-        list.classList.remove('is-dragging');
 
-        const order = [...list.querySelectorAll('.scene-card')].map(c => c.dataset.id);
-        const changed = data.scenes.some((s, i) => s.id !== order[i]);
-        if (changed) {
-          data.scenes.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-          render();
-          scheduleSave();
-        }
+        const targetTop = placeholder.getBoundingClientRect().top;
+        let released = false;
+        const release = () => {
+          if (released) return;
+          released = true;
+          list.insertBefore(card, placeholder);
+          placeholder.remove();
+          card.classList.remove('dragging');
+          list.classList.remove('is-dragging');
+          clearDragStyles(card);
+          clearCardMotion(list);
+
+          const order = [...list.querySelectorAll('.scene-card')].map(c => c.dataset.id);
+          const changed = data.scenes.some((s, i) => s.id !== order[i]);
+          if (changed) {
+            data.scenes.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+            render();
+            scheduleSave();
+          }
+        };
+
+        card.style.transition = 'top 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s ease';
+        card.style.top = targetTop + 'px';
+        card.style.transform = 'scale(1)';
+        card.addEventListener('transitionend', release, { once: true });
+        setTimeout(release, 220);
       };
 
       if (isTouch) {
@@ -639,10 +846,11 @@
 
       data.scenes.forEach((scene, index) => {
         const card = document.createElement('article');
-        card.className = 'scene-card';
+        card.className = 'scene-card' + (scene.collapsed ? ' is-collapsed' : '');
         card.dataset.id = scene.id;
 
         const len = scene.body.length;
+        const expanded = !scene.collapsed;
 
         card.innerHTML = `
           <div class="scene-side">
@@ -650,16 +858,17 @@
               <span></span><span></span><span></span>
             </button>
             <div class="scene-num">${index + 1}</div>
-            <div class="move-btns">
-              <button class="move-btn" data-action="up" aria-label="上へ" ${index === 0 ? 'disabled' : ''}>▲</button>
-              <button class="move-btn" data-action="down" aria-label="下へ" ${index === data.scenes.length - 1 ? 'disabled' : ''}>▼</button>
-            </div>
           </div>
           <div class="scene-body">
-            <input class="scene-title" type="text" placeholder="シーン名（任意）" maxlength="40" value="${esc(scene.title)}" spellcheck="false">
-            <textarea class="scene-text" placeholder="このシーンで起きることを、${MAX_CHARS}字以内で。" maxlength="${MAX_CHARS + 20}">${esc(scene.body)}</textarea>
-            <div class="scene-footer">
+            <div class="scene-body-head">
+              <input class="scene-title" type="text" placeholder="シーン名（任意）" maxlength="40" value="${esc(scene.title)}" spellcheck="false">
               <span class="char-count ${charClass(len)}">${len} / ${MAX_CHARS}</span>
+              <button class="collapse-btn" type="button" aria-expanded="${expanded}" aria-label="${expanded ? '本文を閉じる' : '本文を開く'}" title="${expanded ? '本文を閉じる' : '本文を開く'}">
+                <span class="collapse-icon" aria-hidden="true">▼</span>
+              </button>
+            </div>
+            <div class="scene-detail">
+              <textarea class="scene-text" placeholder="このシーンで起きることを、${MAX_CHARS}字以内で。" maxlength="${MAX_CHARS + 20}">${esc(scene.body)}</textarea>
             </div>
           </div>
           <div class="scene-actions">
@@ -688,30 +897,28 @@
 
         autoResize(textarea);
 
+        card.querySelector('.collapse-btn').addEventListener('click', () => {
+          const next = !scene.collapsed;
+          setSceneCollapsed(scene, card, next);
+          scheduleSave();
+          if (!next) textarea.focus();
+        });
+
         card.querySelector('.delete-btn').addEventListener('click', () => {
           if (data.scenes.length <= 1) {
             scene.title = '';
             scene.body = '';
+            scene.collapsed = false;
             render();
             scheduleSave();
             return;
           }
           if (!confirm(`シーン ${index + 1} を削除しますか？`)) return;
+          pushUndo();
           data.scenes.splice(index, 1);
           render();
           scheduleSave();
           updateStats();
-        });
-
-        card.querySelectorAll('.move-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const dir = btn.dataset.action;
-            const target = dir === 'up' ? index - 1 : index + 1;
-            if (target < 0 || target >= data.scenes.length) return;
-            [data.scenes[index], data.scenes[target]] = [data.scenes[target], data.scenes[index]];
-            render();
-            scheduleSave();
-          });
         });
 
         const handle = card.querySelector('.drag-handle');
@@ -943,7 +1150,6 @@
       ExportUtils.downloadBlob(blob, filename);
     }
 
-    document.getElementById('work-title').value = data.title || '';
     document.getElementById('work-title').addEventListener('input', e => {
       data.title = e.target.value;
       scheduleSave();
@@ -955,7 +1161,7 @@
       scheduleSave();
       const cards = document.querySelectorAll('.scene-card');
       const last = cards[cards.length - 1];
-      last.querySelector('.scene-text').focus();
+      last.querySelector('.scene-title').focus();
       last.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 
@@ -972,7 +1178,13 @@
       scheduleSave();
     });
 
+    document.addEventListener('keydown', e => {
+      if (isEditingText()) return;
+      TadekuEditorUndo.tryHandleKey(e, undo, getEditorState, applyEditorState);
+    });
+
     load();
+    document.getElementById('work-title').value = data.title || '';
     syncMeta();
     render();
   </script>

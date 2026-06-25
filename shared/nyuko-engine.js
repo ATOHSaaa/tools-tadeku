@@ -44,18 +44,30 @@
     return null;
   }
 
+  function isDigitChar(ch) {
+    return /[0-9０-９]/.test(ch);
+  }
+
+  function normalizeAsciiDigits(str) {
+    return str.replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 0x30));
+  }
+
+  function toFullwidthDigits(str) {
+    return str.replace(/[0-9]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x30 + 0xFF10));
+  }
+
   function tokenizePlain(chunk) {
     const tokens = [];
     const chars = graphemes(chunk);
     let i = 0;
     while (i < chars.length) {
-      if (/\d/.test(chars[i])) {
+      if (isDigitChar(chars[i])) {
         let digits = '';
-        while (i < chars.length && /\d/.test(chars[i])) {
+        while (i < chars.length && isDigitChar(chars[i])) {
           digits += chars[i];
           i += 1;
         }
-        tokens.push({ kind: 'tcy', text: digits });
+        tokens.push({ kind: 'tcy', text: normalizeAsciiDigits(digits) });
         if (i < chars.length && /[a-zA-Z]/.test(chars[i])) {
           let unit = '';
           while (i < chars.length && /[a-zA-Z]/.test(chars[i]) && unit.length < 3) {
@@ -435,13 +447,18 @@
     if (/^[a-zA-Z]+$/.test(text) && text.length <= 3) {
       return uprightLatinCharsHtml(text);
     }
+    if (/^\d+$/.test(text)) {
+      const digitLenClass = text.length === 2
+        ? ' nyuko-tcy-digits-2'
+        : text.length === 3
+          ? ' nyuko-tcy-digits-3'
+          : '';
+      return '<span class="nyuko-tcy nyuko-tcy-digits' + digitLenClass + '">' + esc(text) + '</span>';
+    }
     if (text.length === 1) {
       return '<span class="nyuko-digit">' + esc(text) + '</span>';
     }
-    const digitKind = /^\d+$/.test(text)
-      ? ' nyuko-tcy-digits' + (text.length === 3 ? ' nyuko-tcy-digits-3' : '')
-      : '';
-    return '<span class="nyuko-tcy' + digitKind + '">' + esc(text) + '</span>';
+    return '<span class="nyuko-tcy">' + esc(text) + '</span>';
   }
 
   function latinSpanHtml(text, vertical) {
@@ -453,11 +470,61 @@
     return '<span class="nyuko-latin">' + esc(text) + '</span>';
   }
 
+  function bodyDigitHtml(text, useTcy) {
+    if (!useTcy) return esc(text);
+    if (!/^\d+$/.test(text)) return tcySpanHtml(text, true);
+    let inner;
+    if (text.length === 1) {
+      inner = esc(toFullwidthDigits(text));
+    } else {
+      const digitLenClass = text.length === 2
+        ? ' nyuko-tcy-digits-2'
+        : text.length === 3
+          ? ' nyuko-tcy-digits-3'
+          : '';
+      inner = '<span class="nyuko-tcy nyuko-tcy-digits' + digitLenClass + '">' + esc(text) + '</span>';
+    }
+    return '<span class="nyuko-body-digit">' + inner + '</span>';
+  }
+
   function inlinePlainToHtml(text, vertical) {
     const useTcy = vertical !== false;
     let html = '';
     tokenizePlain(text).forEach((tok) => {
       if (tok.kind === 'tcy' && useTcy) {
+        html += bodyDigitHtml(tok.text, true);
+      } else if (tok.kind === 'latin') {
+        html += latinSpanHtml(tok.text, vertical);
+      } else {
+        html += esc(tok.text);
+      }
+    });
+    return html;
+  }
+
+  function headingDigitSpanHtml(text) {
+    let inner;
+    if (text.length === 1) {
+      inner = esc(toFullwidthDigits(text));
+    } else {
+      const digitLenClass = text.length === 2
+        ? ' nyuko-tcy-digits-2'
+        : text.length === 3
+          ? ' nyuko-tcy-digits-3'
+          : '';
+      inner = '<span class="nyuko-tcy nyuko-tcy-digits' + digitLenClass + '">' + esc(text) + '</span>';
+    }
+    return '<span class="nyuko-heading-digit">' + inner + '</span>';
+  }
+
+  // 題字の数字: 1桁は全角そのまま、2桁以上は縦中横（同一枠で包む）
+  function inlinePlainToHtmlHeading(text, vertical) {
+    if (vertical === false) return inlinePlainToHtml(text, false);
+    let html = '';
+    tokenizePlain(text).forEach((tok) => {
+      if (tok.kind === 'tcy' && /^\d+$/.test(tok.text)) {
+        html += headingDigitSpanHtml(tok.text);
+      } else if (tok.kind === 'tcy') {
         html += tcySpanHtml(tok.text, true);
       } else if (tok.kind === 'latin') {
         html += latinSpanHtml(tok.text, vertical);
@@ -486,13 +553,13 @@
       if (a.t === 'newline') {
         html += '<br>';
       } else if (a.t === 'tcy') {
-        html += tcySpanHtml(a.text, useTcy);
+        html += bodyDigitHtml(a.text, useTcy);
       } else if (a.t === 'latin') {
         html += latinSpanHtml(a.text, vertical);
       } else if (a.t === 'ruby') {
         html += '<ruby>' + esc(a.base) + '<rt>' + esc(a.ruby) + '</rt></ruby>';
       } else if (a.t === 'heading') {
-        html += '<span class="nyuko-heading nyuko-heading-' + a.level + '">' + inlinePlainToHtml(a.text, vertical) + '</span>';
+        html += '<span class="nyuko-heading nyuko-heading-' + a.level + '">' + inlinePlainToHtmlHeading(a.text, vertical) + '</span>';
       }
     }
     flush();
