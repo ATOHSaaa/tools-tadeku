@@ -279,16 +279,23 @@
         return index >= 0 ? KANJI_DIGITS[index] : digit;
       }
 
+      // genko の行頭禁則（KINSOKU_END）と同じ開き括弧・約物
+      const NO_INDENT_LINE_START = new Set([...'(（[［｛{〔〈《「『【〘〖｟«']);
+
+      function isNoIndentLineStart(line) {
+        return line.length > 0 && NO_INDENT_LINE_START.has(line[0]);
+      }
+
       function indentLine(line) {
         if (!line.trim()) return line;
-        if (line.startsWith('「') || line.startsWith('『')) return line;
+        if (isNoIndentLineStart(line)) return line;
         if (line.startsWith('　')) return line;
         return '　' + line;
       }
 
       function unindentLine(line) {
         if (!line.trim()) return line;
-        if (line.startsWith('「') || line.startsWith('『')) return line;
+        if (isNoIndentLineStart(line)) return line;
         if (line.startsWith('　')) return line.slice(1);
         return line;
       }
