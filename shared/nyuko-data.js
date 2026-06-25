@@ -193,14 +193,42 @@
     return h + 'H（' + gapMm.toFixed(2) + 'mm・行送り ' + leadingPt.toFixed(1) + 'pt）';
   }
 
-  function computeGutter(format, pageCount) {
-    let extra = 0;
-    if (pageCount >= 300) extra = 2;
-    else if (pageCount >= 150) extra = 1;
+  function computeGutter(format) {
+    return Object.assign({}, format, { gutterNote: '' });
+  }
+
+  const MARGIN_MIN_MM = 5;
+  const MARGIN_MIN_BODY_MM = 35;
+
+  function effectiveMargins(format, overrides) {
+    const src = overrides || {};
+    return {
+      top: Number.isFinite(src.top) ? src.top : format.marginTop,
+      bottom: Number.isFinite(src.bottom) ? src.bottom : format.marginBottom,
+      inner: Number.isFinite(src.inner) ? src.inner : format.marginInner,
+      outer: Number.isFinite(src.outer) ? src.outer : format.marginOuter,
+    };
+  }
+
+  function applyMargins(format, margins) {
+    const m = margins || effectiveMargins(format, null);
     return {
       ...format,
-      marginInner: format.marginInner + extra,
-      gutterNote: extra > 0 ? `（${pageCount}頁のためノド+${extra}mm）` : '',
+      marginTop: m.top,
+      marginBottom: m.bottom,
+      marginInner: m.inner,
+      marginOuter: m.outer,
+    };
+  }
+
+  function marginLimitsForFormat(format) {
+    const vertMax = Math.max(MARGIN_MIN_MM, format.height - MARGIN_MIN_BODY_MM - MARGIN_MIN_MM);
+    const horizMax = Math.max(MARGIN_MIN_MM, format.width - MARGIN_MIN_BODY_MM - MARGIN_MIN_MM);
+    return {
+      top: { min: MARGIN_MIN_MM, max: vertMax },
+      bottom: { min: MARGIN_MIN_MM, max: vertMax },
+      inner: { min: MARGIN_MIN_MM, max: horizMax },
+      outer: { min: MARGIN_MIN_MM, max: horizMax },
     };
   }
 
@@ -277,6 +305,9 @@
     bodySize,
     summaryText,
     computeGutter,
+    effectiveMargins,
+    applyMargins,
+    marginLimitsForFormat,
     resolveDraftSettings,
     bleedMmFromSetting,
     BLEED_OPTIONS,

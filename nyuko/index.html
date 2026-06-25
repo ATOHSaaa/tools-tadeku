@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="../shared/nyuko-data.js"></script>
+  <script src="../shared/nyuko-data.js?v=4"></script>
   <script src="../shared/nyuko-engine.js"></script>
   <style>
     :root {
@@ -387,6 +387,11 @@
     .import-btn:hover {
       border-color: var(--ink);
       background: var(--surface);
+    }
+
+    .import-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
     }
 
     .import-bar {
@@ -965,6 +970,70 @@
       min-width: 2.5rem;
     }
 
+    .preview-page-nav {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .preview-page-btn {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .preview-page-btn:hover:not(:disabled) {
+      border-color: var(--ink);
+    }
+
+    .preview-page-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .preview-page-indicator {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 3.5rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .preview-fullscreen-btn {
+      display: none;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      min-height: 2rem;
+    }
+
+    .preview-fullscreen-btn:hover {
+      border-color: var(--ink);
+    }
+
+    .preview-single-focus {
+      min-height: 100%;
+      align-items: center;
+    }
+
     .preview-grid {
       display: flex;
       flex-direction: column;
@@ -1432,7 +1501,7 @@
 
       .mobile-pane-bar {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 0;
         flex-shrink: 0;
         background: var(--surface);
@@ -1518,6 +1587,49 @@
         display: flex;
       }
 
+      body[data-mobile-pane="split"] .main {
+        display: flex;
+        flex-direction: column;
+      }
+
+      body[data-mobile-pane="split"] .sidebar {
+        display: flex;
+        flex: 1 1 42%;
+        min-height: 0;
+      }
+
+      body[data-mobile-pane="split"] .workspace-wrap {
+        display: flex;
+        flex: 0 1 50%;
+        min-height: 11rem;
+        border-top: 2px solid var(--pane-divider);
+      }
+
+      .preview-page-nav {
+        display: flex;
+      }
+
+      .preview-view-btn[data-preview-view="spread"] {
+        display: none;
+      }
+
+      body[data-mobile-pane="split"] .preview-view-toggle,
+      body[data-mobile-pane="split"] .workspace-toolbar label[for="zoom-slider"],
+      body[data-mobile-pane="split"] .zoom-slider,
+      body[data-mobile-pane="split"] .zoom-rate,
+      body[data-mobile-pane="split"] #zoom-actual-btn {
+        display: none;
+      }
+
+      body[data-mobile-pane="split"] .preview-fullscreen-btn {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      body[data-mobile-pane="preview"] .preview-fullscreen-btn {
+        display: none;
+      }
+
       .tab {
         min-height: 2.75rem;
         padding: 0.65rem 0.35rem;
@@ -1540,6 +1652,7 @@
       .preview-scroll {
         padding: 0.75rem;
         -webkit-overflow-scrolling: touch;
+        touch-action: pan-y pinch-zoom;
       }
 
       .zoom-slider {
@@ -1590,7 +1703,7 @@
   </style>
   <link rel="stylesheet" href="../shared/site-link.css">
 </head>
-<body data-mobile-pane="edit">
+<body data-mobile-pane="split">
   <div class="app">
     <header class="header">
       <div class="header-left">
@@ -1603,8 +1716,9 @@
     </header>
 
     <div class="mobile-pane-bar" role="tablist" aria-label="表示切替">
-      <button type="button" class="mobile-pane-btn active" data-mobile-pane="edit" role="tab" aria-selected="true">編集</button>
+      <button type="button" class="mobile-pane-btn" data-mobile-pane="edit" role="tab" aria-selected="false">編集</button>
       <button type="button" class="mobile-pane-btn" data-mobile-pane="preview" role="tab" aria-selected="false">プレビュー</button>
+      <button type="button" class="mobile-pane-btn active" data-mobile-pane="split" role="tab" aria-selected="true">分割</button>
     </div>
 
     <div class="main" id="main">
@@ -1635,6 +1749,27 @@
           <div>
             <div class="section-label">塗り足し</div>
             <div class="toggle-group" id="bleed-group"></div>
+          </div>
+          <div>
+            <div class="section-label">余白（天・地・ノド・小口）</div>
+            <p class="pages-note">単位は mm。</p>
+            <div class="spacing-field">
+              <div class="spacing-field-head">天 <span id="margin-top-value">16mm</span></div>
+              <input type="range" id="margin-top-slider" min="5" max="40" step="1" value="16" aria-label="天の余白">
+            </div>
+            <div class="spacing-field">
+              <div class="spacing-field-head">地 <span id="margin-bottom-value">16mm</span></div>
+              <input type="range" id="margin-bottom-slider" min="5" max="40" step="1" value="16" aria-label="地の余白">
+            </div>
+            <div class="spacing-field">
+              <div class="spacing-field-head">ノド <span id="margin-inner-value">13mm</span></div>
+              <input type="range" id="margin-inner-slider" min="5" max="35" step="1" value="13" aria-label="ノドの余白">
+            </div>
+            <div class="spacing-field">
+              <div class="spacing-field-head">小口 <span id="margin-outer-value">10mm</span></div>
+              <input type="range" id="margin-outer-slider" min="5" max="35" step="1" value="10" aria-label="小口の余白">
+            </div>
+            <button type="button" class="import-btn" id="margin-reset-btn">判型の標準に戻す</button>
           </div>
           <div>
             <div class="section-label">フォント</div>
@@ -1786,6 +1921,12 @@
             <button type="button" class="zoom-fit-btn active" id="zoom-fit-btn">フィット</button>
             <button type="button" class="zoom-fit-btn" id="zoom-actual-btn">100%</button>
           </div>
+          <div class="preview-page-nav" id="preview-page-nav" aria-label="頁送り">
+            <button type="button" class="preview-page-btn" id="preview-page-prev" aria-label="前の頁">‹</button>
+            <span class="preview-page-indicator" id="preview-page-indicator">1 / 1</span>
+            <button type="button" class="preview-page-btn" id="preview-page-next" aria-label="次の頁">›</button>
+          </div>
+          <button type="button" class="preview-fullscreen-btn" id="preview-fullscreen-btn">全画面</button>
         </div>
         <div class="preview-scroll" id="preview-scroll">
           <div class="preview-grid" id="preview-grid"></div>
@@ -1806,8 +1947,52 @@
 
   <script>
     (function () {
-      const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, computeGutter, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
+      const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
       const { paginate, assembleLayout, createLayoutPage, exportPrint, pageDimensions } = window.NyukoEngine;
+
+      const MARGIN_MIN_MM = 5;
+      const MARGIN_MIN_BODY_MM = 35;
+
+      function effectiveMarginsLocal(format, overrides) {
+        const src = overrides || {};
+        return {
+          top: Number.isFinite(src.top) ? src.top : format.marginTop,
+          bottom: Number.isFinite(src.bottom) ? src.bottom : format.marginBottom,
+          inner: Number.isFinite(src.inner) ? src.inner : format.marginInner,
+          outer: Number.isFinite(src.outer) ? src.outer : format.marginOuter,
+        };
+      }
+
+      function applyMarginsLocal(format, margins) {
+        const m = margins || effectiveMarginsLocal(format, null);
+        return Object.assign({}, format, {
+          marginTop: m.top,
+          marginBottom: m.bottom,
+          marginInner: m.inner,
+          marginOuter: m.outer,
+        });
+      }
+
+      function marginLimitsForFormatLocal(format) {
+        const vertMax = Math.max(MARGIN_MIN_MM, format.height - MARGIN_MIN_BODY_MM - MARGIN_MIN_MM);
+        const horizMax = Math.max(MARGIN_MIN_MM, format.width - MARGIN_MIN_BODY_MM - MARGIN_MIN_MM);
+        return {
+          top: { min: MARGIN_MIN_MM, max: vertMax },
+          bottom: { min: MARGIN_MIN_MM, max: vertMax },
+          inner: { min: MARGIN_MIN_MM, max: horizMax },
+          outer: { min: MARGIN_MIN_MM, max: horizMax },
+        };
+      }
+
+      const effectiveMargins = typeof window.NyukoData.effectiveMargins === 'function'
+        ? window.NyukoData.effectiveMargins
+        : effectiveMarginsLocal;
+      const applyMargins = typeof window.NyukoData.applyMargins === 'function'
+        ? window.NyukoData.applyMargins
+        : applyMarginsLocal;
+      const marginLimitsForFormat = typeof window.NyukoData.marginLimitsForFormat === 'function'
+        ? window.NyukoData.marginLimitsForFormat
+        : marginLimitsForFormatLocal;
 
       const STORAGE_KEY = 'nyuko-draft-v1';
       const ZOOM_MIN = 5;
@@ -1822,6 +2007,10 @@
       const state = {
         formatId: 'a6',
         bleed: 'on',
+        marginTop: null,
+        marginBottom: null,
+        marginInner: null,
+        marginOuter: null,
         fontId: 'literary',
         nonbulePosition: 'spread',
         columnCount: 1,
@@ -1834,6 +2023,7 @@
         previewView: 'spread',
         zoomMode: 'fit',
         zoom: 0.3,
+        previewFocusPage: 1,
         layout: { pages: [], pageCount: 0, charCount: 0, chapters: [] },
         toc: [],
         pageSpacers: Object.assign({}, DEFAULT_PAGE_SPACERS),
@@ -1882,10 +2072,23 @@
         zoomInBtn: document.getElementById('zoom-in-btn'),
         zoomFitBtn: document.getElementById('zoom-fit-btn'),
         zoomActualBtn: document.getElementById('zoom-actual-btn'),
+        previewPagePrev: document.getElementById('preview-page-prev'),
+        previewPageNext: document.getElementById('preview-page-next'),
+        previewPageIndicator: document.getElementById('preview-page-indicator'),
+        previewFullscreenBtn: document.getElementById('preview-fullscreen-btn'),
         btnExportPdf: document.getElementById('btn-export-pdf'),
         btnClear: document.getElementById('btn-clear'),
         formatGroup: document.getElementById('format-group'),
         bleedGroup: document.getElementById('bleed-group'),
+        marginTopSlider: document.getElementById('margin-top-slider'),
+        marginTopValue: document.getElementById('margin-top-value'),
+        marginBottomSlider: document.getElementById('margin-bottom-slider'),
+        marginBottomValue: document.getElementById('margin-bottom-value'),
+        marginInnerSlider: document.getElementById('margin-inner-slider'),
+        marginInnerValue: document.getElementById('margin-inner-value'),
+        marginOuterSlider: document.getElementById('margin-outer-slider'),
+        marginOuterValue: document.getElementById('margin-outer-value'),
+        marginResetBtn: document.getElementById('margin-reset-btn'),
         nonbuleGroup: document.getElementById('nonbule-group'),
         columnGroup: document.getElementById('column-group'),
         columnSection: document.getElementById('column-section'),
@@ -1912,6 +2115,56 @@
         pageSectionToc: document.getElementById('page-section-toc'),
         pageSectionColophon: document.getElementById('page-section-colophon'),
       };
+
+      function isMobileLayout() {
+        return SPLIT_MOBILE_MQ.matches;
+      }
+
+      function useFocusPagePreview() {
+        return isMobileLayout();
+      }
+
+      function clampFocusPage() {
+        const max = state.layout.pageCount || 1;
+        state.previewFocusPage = Math.min(Math.max(1, state.previewFocusPage), max);
+      }
+
+      function updatePageNavUI() {
+        clampFocusPage();
+        const total = state.layout.pageCount || 0;
+        if (els.previewPageIndicator) {
+          els.previewPageIndicator.textContent = total
+            ? state.previewFocusPage + ' / ' + total
+            : '—';
+        }
+        if (els.previewPagePrev) {
+          els.previewPagePrev.disabled = state.previewFocusPage <= 1 || !total;
+        }
+        if (els.previewPageNext) {
+          els.previewPageNext.disabled = state.previewFocusPage >= total || !total;
+        }
+      }
+
+      function setPreviewFocusPage(page, options) {
+        const opts = options || {};
+        const max = state.layout.pageCount || 1;
+        state.previewFocusPage = Math.min(Math.max(1, page), max);
+        updatePageNavUI();
+        if (opts.renderNow) renderPreview();
+      }
+
+      function applyMobilePreviewDefaults() {
+        if (!isMobileLayout()) return;
+        if (state.previewView !== 'single') {
+          state.previewView = 'single';
+          els.previewViewBtns.forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.previewView === 'single');
+          });
+        }
+        if (state.zoomMode === 'fit') fitPreviewZoom();
+        updatePageNavUI();
+        renderPreview();
+      }
 
       function hasTocContent() {
         return tocData().some((entry) => String(entry.title || '').trim());
@@ -2025,7 +2278,89 @@
         });
       }
 
-      function currentFormat() { return FORMATS[state.formatId]; }
+      function currentFormat() {
+        return FORMATS[state.formatId] || FORMATS.a6;
+      }
+
+      function marginOverrides() {
+        return {
+          top: state.marginTop,
+          bottom: state.marginBottom,
+          inner: state.marginInner,
+          outer: state.marginOuter,
+        };
+      }
+
+      function effectiveFormat() {
+        return applyMargins(currentFormat(), effectiveMargins(currentFormat(), marginOverrides()));
+      }
+
+      function resetMarginOverrides() {
+        state.marginTop = null;
+        state.marginBottom = null;
+        state.marginInner = null;
+        state.marginOuter = null;
+        updateMarginsUI();
+      }
+
+      function normalizeMarginOverrides() {
+        const format = currentFormat();
+        const pairs = [
+          ['top', 'marginTop'],
+          ['bottom', 'marginBottom'],
+          ['inner', 'marginInner'],
+          ['outer', 'marginOuter'],
+        ];
+        pairs.forEach(([key, stateKey]) => {
+          if (state[stateKey] == null) return;
+          const limits = marginLimitsForFormat(format);
+          const lim = limits[key];
+          state[stateKey] = Math.min(lim.max, Math.max(lim.min, state[stateKey]));
+        });
+      }
+
+      function updateMarginsUI() {
+        const format = currentFormat();
+        const margins = effectiveMargins(format, marginOverrides());
+        const limits = marginLimitsForFormat(format);
+        const fields = [
+          { key: 'top', slider: els.marginTopSlider, valueEl: els.marginTopValue },
+          { key: 'bottom', slider: els.marginBottomSlider, valueEl: els.marginBottomValue },
+          { key: 'inner', slider: els.marginInnerSlider, valueEl: els.marginInnerValue },
+          { key: 'outer', slider: els.marginOuterSlider, valueEl: els.marginOuterValue },
+        ];
+        fields.forEach(({ key, slider, valueEl }) => {
+          if (!slider || !valueEl) return;
+          const lim = limits[key];
+          const val = margins[key];
+          slider.min = String(lim.min);
+          slider.max = String(lim.max);
+          slider.value = String(val);
+          valueEl.textContent = val + 'mm';
+        });
+        if (els.marginResetBtn) {
+          const customized = state.marginTop != null || state.marginBottom != null
+            || state.marginInner != null || state.marginOuter != null;
+          els.marginResetBtn.disabled = !customized;
+        }
+      }
+
+      function setMargin(key, rawValue) {
+        const value = Number(rawValue);
+        if (!Number.isFinite(value)) return;
+        const format = currentFormat();
+        const limits = marginLimitsForFormat(format);
+        const lim = limits[key];
+        const clamped = Math.min(lim.max, Math.max(lim.min, value));
+        if (key === 'top') state.marginTop = clamped;
+        else if (key === 'bottom') state.marginBottom = clamped;
+        else if (key === 'inner') state.marginInner = clamped;
+        else if (key === 'outer') state.marginOuter = clamped;
+        updateMarginsUI();
+        saveDraft();
+        render();
+      }
+
       function currentFont() { return FONTS[state.fontId]; }
       function effectiveFont() {
         const f = currentFont();
@@ -2206,6 +2541,10 @@
           text: els.editor.value,
           formatId: state.formatId,
           bleed: state.bleed,
+          marginTop: state.marginTop,
+          marginBottom: state.marginBottom,
+          marginInner: state.marginInner,
+          marginOuter: state.marginOuter,
           fontId: state.fontId,
           nonbulePosition: state.nonbulePosition,
           columnCount: state.columnCount,
@@ -2243,6 +2582,10 @@
 
         state.formatId = 'a6';
         state.bleed = 'on';
+        state.marginTop = null;
+        state.marginBottom = null;
+        state.marginInner = null;
+        state.marginOuter = null;
         state.fontId = 'literary';
         state.nonbulePosition = 'spread';
         state.columnCount = 1;
@@ -2255,6 +2598,7 @@
         state.previewView = 'spread';
         state.zoomMode = 'fit';
         state.zoom = 0.3;
+        state.previewFocusPage = 1;
         state.toc = [];
         state.pageSpacers = Object.assign({}, DEFAULT_PAGE_SPACERS);
         state.layout = { pages: [], pageCount: 0, charCount: 0, chapters: [] };
@@ -2267,6 +2611,7 @@
         updateTocFontSizeUI();
         updatePageSpacersUI();
         renderTocList();
+        updateMarginsUI();
         saveDraft();
         render();
       }
@@ -2325,6 +2670,15 @@
           const resolved = resolveDraftSettings(data);
           state.formatId = resolved.formatId;
           state.bleed = resolved.bleed;
+          if (typeof data.marginTop === 'number' && Number.isFinite(data.marginTop)) state.marginTop = data.marginTop;
+          else state.marginTop = null;
+          if (typeof data.marginBottom === 'number' && Number.isFinite(data.marginBottom)) state.marginBottom = data.marginBottom;
+          else state.marginBottom = null;
+          if (typeof data.marginInner === 'number' && Number.isFinite(data.marginInner)) state.marginInner = data.marginInner;
+          else state.marginInner = null;
+          if (typeof data.marginOuter === 'number' && Number.isFinite(data.marginOuter)) state.marginOuter = data.marginOuter;
+          else state.marginOuter = null;
+          normalizeMarginOverrides();
           if (data.fontId === 'readable') state.fontId = 'standard';
           else if (data.fontId && FONTS[data.fontId]) state.fontId = data.fontId;
           if (data.nonbulePosition && NONBULE_POSITIONS.some((p) => p.id === data.nonbulePosition)) {
@@ -2542,6 +2896,7 @@
           btn.textContent = format.label;
           btn.addEventListener('click', () => {
             state.formatId = id;
+            resetMarginOverrides();
             saveDraft();
             buildFormatGroup();
             render();
@@ -2569,15 +2924,10 @@
       }
 
       function buildBodyLayout() {
-        const baseFormat = currentFormat();
+        const baseFormat = effectiveFormat();
         const font = effectiveFont();
         const opts = spacingOptions();
-        let bodyLayout = paginate(els.editor.value, baseFormat, font, opts);
-        const adjusted = computeGutter(baseFormat, bodyLayout.pageCount || 1);
-        if (adjusted.marginInner !== baseFormat.marginInner) {
-          bodyLayout = paginate(els.editor.value, adjusted, font, opts);
-        }
-        return bodyLayout;
+        return paginate(els.editor.value, baseFormat, font, opts);
       }
 
       function buildFullLayout() {
@@ -2596,6 +2946,8 @@
         state.layout = buildFullLayout();
         updateLayoutMeta();
         updateTocMeta();
+        clampFocusPage();
+        updatePageNavUI();
         if (state.zoomMode === 'fit') fitPreviewZoom();
         renderPreview();
       }
@@ -2612,6 +2964,7 @@
 
       function renderSettings() {
         buildFormatGroup();
+        updateMarginsUI();
         buildToggleGroup(els.bleedGroup, BLEED_OPTIONS, state.bleed, (id) => {
           state.bleed = id;
           saveDraft();
@@ -2641,11 +2994,7 @@
       }
 
       function activeFormat() {
-        const base = currentFormat();
-        const count = state.layout && (state.layout.bodyPageCount || state.layout.pageCount)
-          ? (state.layout.bodyPageCount || state.layout.pageCount)
-          : 1;
-        return computeGutter(base, count || 1);
+        return effectiveFormat();
       }
 
       function renderPreview() {
@@ -2660,6 +3009,20 @@
           empty.className = 'preview-empty';
           empty.textContent = '原稿を入力すると、PDF出力と同じ縦組みレイアウトでここに表示されます。';
           els.previewGrid.appendChild(empty);
+          updatePageNavUI();
+          return;
+        }
+
+        if (useFocusPagePreview()) {
+          clampFocusPage();
+          const idx = state.previewFocusPage - 1;
+          const row = document.createElement('div');
+          row.className = 'preview-single preview-single-focus';
+          row.appendChild(createLayoutPage(
+            state.layout.pages[idx], format, font, bleedMm, scale, idx + 1, renderOptions()
+          ));
+          els.previewGrid.appendChild(row);
+          updatePageNavUI();
           return;
         }
 
@@ -3320,6 +3683,69 @@
         saveDraft();
       }, { passive: false });
 
+      (function setupPointerPinchZoom() {
+        const activePointers = new Map();
+        let pinchStartDistance = 0;
+        let pinchStartZoom = 1;
+
+        function pointerDistance(a, b) {
+          const dx = a.clientX - b.clientX;
+          const dy = a.clientY - b.clientY;
+          return Math.hypot(dx, dy);
+        }
+
+        els.previewScroll.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.buttons !== 1) return;
+          activePointers.set(e.pointerId, e);
+          if (activePointers.size === 2) {
+            const pts = Array.from(activePointers.values());
+            pinchStartDistance = pointerDistance(pts[0], pts[1]);
+            pinchStartZoom = state.zoom;
+          }
+        });
+
+        els.previewScroll.addEventListener('pointermove', (e) => {
+          if (!activePointers.has(e.pointerId)) return;
+          activePointers.set(e.pointerId, e);
+          if (activePointers.size !== 2 || pinchStartDistance <= 0) return;
+          e.preventDefault();
+          const pts = Array.from(activePointers.values());
+          const dist = pointerDistance(pts[0], pts[1]);
+          setManualZoomRatio(pinchStartZoom * (dist / pinchStartDistance));
+          schedulePinchSave();
+        }, { passive: false });
+
+        function endPointer(e) {
+          activePointers.delete(e.pointerId);
+          if (activePointers.size < 2) pinchStartDistance = 0;
+        }
+
+        els.previewScroll.addEventListener('pointerup', endPointer);
+        els.previewScroll.addEventListener('pointercancel', endPointer);
+      })();
+
+      (function setupPreviewSwipeNav() {
+        let swipeStartX = 0;
+        let swipeStartY = 0;
+
+        els.previewScroll.addEventListener('touchstart', (e) => {
+          if (e.touches.length !== 1) return;
+          swipeStartX = e.touches[0].clientX;
+          swipeStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        els.previewScroll.addEventListener('touchend', (e) => {
+          if (!useFocusPagePreview()) return;
+          const touch = e.changedTouches[0];
+          if (!touch) return;
+          const dx = touch.clientX - swipeStartX;
+          const dy = touch.clientY - swipeStartY;
+          if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+          if (dx < 0) setPreviewFocusPage(state.previewFocusPage + 1, { renderNow: true });
+          else setPreviewFocusPage(state.previewFocusPage - 1, { renderNow: true });
+        }, { passive: true });
+      })();
+
       els.zoomFitBtn.addEventListener('click', () => {
         state.zoomMode = 'fit';
         fitPreviewZoom();
@@ -3338,6 +3764,18 @@
       els.previewViewBtns.forEach((btn) => {
         btn.addEventListener('click', () => setPreviewView(btn.dataset.previewView));
       });
+
+      if (els.previewPagePrev) {
+        els.previewPagePrev.addEventListener('click', () => {
+          setPreviewFocusPage(state.previewFocusPage - 1, { renderNow: true });
+        });
+      }
+
+      if (els.previewPageNext) {
+        els.previewPageNext.addEventListener('click', () => {
+          setPreviewFocusPage(state.previewFocusPage + 1, { renderNow: true });
+        });
+      }
 
       PAGE_SPACER_INPUTS.forEach((id) => {
         els[id].addEventListener('input', commitPageSpacers);
@@ -3382,6 +3820,26 @@
         saveDraft();
         render();
       });
+
+      if (els.marginTopSlider) {
+        els.marginTopSlider.addEventListener('input', () => setMargin('top', els.marginTopSlider.value));
+      }
+      if (els.marginBottomSlider) {
+        els.marginBottomSlider.addEventListener('input', () => setMargin('bottom', els.marginBottomSlider.value));
+      }
+      if (els.marginInnerSlider) {
+        els.marginInnerSlider.addEventListener('input', () => setMargin('inner', els.marginInnerSlider.value));
+      }
+      if (els.marginOuterSlider) {
+        els.marginOuterSlider.addEventListener('input', () => setMargin('outer', els.marginOuterSlider.value));
+      }
+      if (els.marginResetBtn) {
+        els.marginResetBtn.addEventListener('click', () => {
+          resetMarginOverrides();
+          saveDraft();
+          render();
+        });
+      }
 
       window.addEventListener('resize', () => {
         if (state.zoomMode !== 'fit') return;
@@ -3454,10 +3912,6 @@
         const MOBILE_KEY = 'nyuko-mobile-pane';
         const paneBtns = document.querySelectorAll('.mobile-pane-btn');
 
-        function isMobileLayout() {
-          return MOBILE_MQ.matches;
-        }
-
         function setMobilePane(pane, options) {
           const opts = options || {};
           document.body.dataset.mobilePane = pane;
@@ -3469,9 +3923,8 @@
           if (opts.save !== false) {
             try { localStorage.setItem(MOBILE_KEY, pane); } catch (_) {}
           }
-          if (isMobileLayout() && pane === 'preview') {
-            if (state.zoomMode === 'fit') fitPreviewZoom();
-            renderPreview();
+          if (!opts.skipPreviewUpdate && isMobileLayout() && (pane === 'preview' || pane === 'split')) {
+            applyMobilePreviewDefaults();
           }
         }
 
@@ -3479,19 +3932,25 @@
           btn.addEventListener('click', () => setMobilePane(btn.dataset.mobilePane));
         });
 
+        if (els.previewFullscreenBtn) {
+          els.previewFullscreenBtn.addEventListener('click', () => setMobilePane('preview'));
+        }
+
         try {
           const saved = localStorage.getItem(MOBILE_KEY);
-          if (saved === 'edit' || saved === 'preview') {
-            setMobilePane(saved, { save: false });
+          if (saved === 'edit' || saved === 'preview' || saved === 'split') {
+            setMobilePane(saved, { save: false, skipPreviewUpdate: true });
           } else {
-            setMobilePane('edit', { save: false });
+            setMobilePane('split', { save: false, skipPreviewUpdate: true });
           }
         } catch (_) {
-          setMobilePane('edit', { save: false });
+          setMobilePane('split', { save: false, skipPreviewUpdate: true });
         }
 
         MOBILE_MQ.addEventListener('change', () => {
-          if (isMobileLayout() && document.body.dataset.mobilePane === 'preview' && state.zoomMode === 'fit') {
+          if (isMobileLayout()) {
+            applyMobilePreviewDefaults();
+          } else if (state.zoomMode === 'fit') {
             fitPreviewZoom();
             renderPreview();
           }
@@ -3631,6 +4090,8 @@
       renderTocList();
       render();
       restoreSidebarLayout();
+      if (isMobileLayout()) applyMobilePreviewDefaults();
+      updatePageNavUI();
 
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => render());
