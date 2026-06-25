@@ -36,3 +36,25 @@
   opacity: 0.45;
   font-weight: 500;
 }
+
+.page-title {
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 0.35rem;
+}
+
+.page-title .brand-home {
+  color: inherit;
+  opacity: 0.55;
+}
+
+.page-title .brand-home:hover {
+  opacity: 1;
+}
+
+.page-title .brand-sep {
+  opacity: 0.45;
+  font-weight: 500;
+}

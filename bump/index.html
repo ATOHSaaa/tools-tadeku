@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="俳句の二物衝撃（取り合わせ）用ツール。季語と事柄をランダムにぶつけて、句のヒントや情景の組み合わせを引き出します。">
+  <title>BUMP — 二物衝撃ガチャ | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #1a1a1a;
+      --surface: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .header {
+      margin-bottom: 1.5rem;
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .season-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.75rem;
+    }
+
+    .season-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      width: 100%;
+    }
+
+    .season-bar-label {
+      grid-column: 1;
+      justify-self: end;
+      padding-right: 0.6rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .season-filter {
+      grid-column: 2;
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.45rem;
+    }
+
+    .season-btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .season-btn:hover {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .season-btn.is-active {
+      color: #fff;
+    }
+
+    .season-btn--all.is-active {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.7rem 1.5rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .bump-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .bump-action {
+      display: flex;
+      justify-content: center;
+    }
+
+    .bump-stage {
+      margin-top: 1.75rem;
+    }
+
+    .bump-row {
+      --bump-gap: 2.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: var(--bump-gap);
+      align-items: start;
+      position: relative;
+    }
+
+    .bump-row::after {
+      content: '×';
+      position: absolute;
+      left: 50%;
+      top: calc(var(--card-height, 9rem) / 2);
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--muted);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .card-slot {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: 280px;
+      min-width: 0;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: var(--card-height, 9rem);
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .card-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 2px solid var(--border);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .season-badge {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.15rem 0.45rem;
+      border: 1.5px solid currentColor;
+      line-height: 1.2;
+    }
+
+    .card-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 0.85rem;
+      text-align: center;
+    }
+
+    .card-text {
+      font-size: clamp(1.15rem, 4vw, 1.5rem);
+      font-weight: 900;
+      line-height: 1.45;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-all;
+      transition: opacity 0.12s;
+    }
+
+    .card-text.is-changing {
+      opacity: 0;
+    }
+
+    @media (max-width: 520px) {
+      .bump-row {
+        --bump-gap: 1.75rem;
+        grid-template-columns: 1fr;
+        row-gap: 2.5rem;
+      }
+
+      .bump-row::after {
+        top: calc(var(--card-height, 9rem) / 2);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Bump</h1>
+      <p class="lead">俳句の「二物衝撃（取り合わせ）」。異なる季語と事柄をぶつけて、ぶつかった先にだけ現れる情景や情動を探ります。</p>
+    </header>
+
+    <div class="season-block">
+      <div class="season-bar">
+        <span class="season-bar-label">季語：</span>
+        <div class="season-filter" role="group" aria-label="季語の季節を固定">
+          <button type="button" class="season-btn season-btn--all is-active" data-season="" aria-pressed="true">全て</button>
+          <button type="button" class="season-btn" data-season="春" aria-pressed="false">春</button>
+          <button type="button" class="season-btn" data-season="夏" aria-pressed="false">夏</button>
+          <button type="button" class="season-btn" data-season="秋" aria-pressed="false">秋</button>
+          <button type="button" class="season-btn" data-season="冬" aria-pressed="false">冬</button>
+        </div>
+      </div>
+      <div class="bump-action">
+        <button type="button" class="btn" id="bump">BUMP</button>
+      </div>
+    </div>
+
+    <div class="bump-stage" id="stage" aria-live="polite"></div>
+  </div>
+
+  <script src="../shared/bump-data.js"></script>
+  <script>
+    (function () {
+      const data = window.BUMP_DATA || {};
+      const seasonColors = data.seasons || {};
+      const kigoPool = (data.kigo || []).slice();
+      const thingPool = (data.things || []).slice();
+      const stageEl = document.getElementById('stage');
+
+      const state = {
+        kigo: { word: '', season: '' },
+        thing: { word: '' },
+        seasonFilter: null,
+      };
+
+      let lockedCardHeight = 0;
+
+      function pickRandom(pool) {
+        if (!pool.length) return '';
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      function pickKigo(excludeWord) {
+        let pool = state.seasonFilter
+          ? kigoPool.filter((item) => item.season === state.seasonFilter)
+          : kigoPool.slice();
+        if (excludeWord) {
+          pool = pool.filter((item) => item.word !== excludeWord);
+        }
+        if (!pool.length) {
+          pool = state.seasonFilter
+            ? kigoPool.filter((item) => item.season === state.seasonFilter)
+            : kigoPool.slice();
+        }
+        return pickRandom(pool) || kigoPool[0] || { word: '—', season: '春' };
+      }
+
+      function pickThing(excludeWord) {
+        const pool = excludeWord
+          ? thingPool.filter((word) => word !== excludeWord)
+          : thingPool;
+        return pickRandom(pool) || thingPool[0] || '—';
+      }
+
+      function seasonStyle(season) {
+        const color = seasonColors[season] || '#6b6b6b';
+        return `color:${color};border-color:${color}`;
+      }
+
+      function seasonActiveStyle(season) {
+        const color = seasonColors[season] || '#6b6b6b';
+        return `background:${color};border-color:${color};color:#fff`;
+      }
+
+      function updateSeasonButtons() {
+        document.querySelectorAll('.season-btn').forEach((btn) => {
+          const season = btn.dataset.season;
+          const isAll = !season;
+          const active = isAll ? !state.seasonFilter : state.seasonFilter === season;
+          btn.classList.toggle('is-active', active);
+          if (active && !isAll) {
+            btn.style.cssText = seasonActiveStyle(season);
+          } else {
+            btn.style.cssText = '';
+          }
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      }
+
+      function setSeasonFilter(season) {
+        const next = season || null;
+        if (state.seasonFilter === next) return;
+        state.seasonFilter = next;
+        updateSeasonButtons();
+        drawKigo(true);
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function lockCardDimensions() {
+        if (lockedCardHeight) return;
+        const cards = stageEl.querySelectorAll('.card');
+        if (!cards.length) return;
+        cards.forEach((card) => {
+          lockedCardHeight = Math.max(lockedCardHeight, card.offsetHeight);
+        });
+        document.documentElement.style.setProperty('--card-height', `${lockedCardHeight}px`);
+        stageEl.querySelectorAll('.card').forEach((card) => {
+          card.style.minHeight = `${lockedCardHeight}px`;
+        });
+      }
+
+      function setCardText(cardEl, text, animate) {
+        const textEl = cardEl.querySelector('.card-text');
+        if (!textEl) return;
+        if (animate) {
+          textEl.classList.add('is-changing');
+          window.setTimeout(() => {
+            textEl.textContent = text;
+            textEl.classList.remove('is-changing');
+          }, 120);
+          return;
+        }
+        textEl.textContent = text;
+      }
+
+      function updateSeasonBadge(cardEl, season) {
+        const badge = cardEl.querySelector('.season-badge');
+        if (!badge) return;
+        badge.textContent = season || '春';
+        badge.style.cssText = seasonStyle(season || '春');
+      }
+
+      function drawKigo(animate) {
+        const next = pickKigo(state.kigo.word);
+        state.kigo.word = next.word;
+        state.kigo.season = next.season;
+        const card = stageEl.querySelector('[data-slot="kigo"]');
+        if (!card) return;
+        setCardText(card, next.word, animate);
+        updateSeasonBadge(card, next.season);
+      }
+
+      function drawThing(animate) {
+        const next = pickThing(state.thing.word);
+        state.thing.word = next;
+        const card = stageEl.querySelector('[data-slot="thing"]');
+        if (!card) return;
+        setCardText(card, next, animate);
+      }
+
+      function bump(animate) {
+        drawKigo(animate);
+        drawThing(animate);
+      }
+
+      function renderCard(slot, label, value, showSeason, season) {
+        const seasonBadge = showSeason
+          ? `<span class="season-badge" style="${seasonStyle(season)}">${escapeHtml(season || '春')}</span>`
+          : '';
+        return `
+          <div class="card-slot">
+            <article class="card" data-slot="${slot}">
+              <div class="card-label">
+                <span>${label}</span>
+                ${seasonBadge}
+              </div>
+              <div class="card-body">
+                <p class="card-text">${escapeHtml(value || '—')}</p>
+              </div>
+            </article>
+          </div>
+        `;
+      }
+
+      function render() {
+        stageEl.innerHTML = `
+          <div class="bump-row">
+            <div class="bump-col">
+              ${renderCard('kigo', '季語', state.kigo.word, true, state.kigo.season)}
+            </div>
+            <div class="bump-col">
+              ${renderCard('thing', '事柄', state.thing.word, false)}
+            </div>
+          </div>
+        `;
+        requestAnimationFrame(lockCardDimensions);
+      }
+
+      document.getElementById('bump').addEventListener('click', () => bump(true));
+
+      document.querySelector('.season-filter').addEventListener('click', (event) => {
+        const btn = event.target.closest('.season-btn');
+        if (!btn) return;
+        setSeasonFilter(btn.dataset.season || null);
+      });
+
+      bump(false);
+      render();
+      updateSeasonButtons();
+    })();
+  </script>
+</body>
+</html>

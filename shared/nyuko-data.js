@@ -126,8 +126,8 @@
   ];
 
   const CHAPTER_MODES = [
-    { id: 'recto', label: '章タイトルを必ず右ページに' },
-    { id: 'break-before', label: '章タイトルの直前で改ページ' },
+    { id: 'recto', label: '章タイトルを必ず右頁に' },
+    { id: 'break-before', label: '章タイトルの直前で改頁' },
     { id: 'none', label: '何もしない' },
   ];
 
@@ -200,7 +200,7 @@
     return {
       ...format,
       marginInner: format.marginInner + extra,
-      gutterNote: extra > 0 ? `（${pageCount}ページのためノド+${extra}mm）` : '',
+      gutterNote: extra > 0 ? `（${pageCount}頁のためノド+${extra}mm）` : '',
     };
   }
 
@@ -224,7 +224,7 @@
       size: format.label,
       margins: `天${format.marginTop} / 地${format.marginBottom} / ノド${format.marginInner}${format.gutterNote || ''} / 小口${format.marginOuter}`,
       font: `${font.size}pt / 行送り ${formatLineHeightLabel(h, font.size)}`,
-      grid: `1行 ${format.colsPerLine}字 / 1ページ ${format.linesPerPage}行`,
+      grid: `1行 ${format.colsPerLine}字 / 1頁 ${format.linesPerPage}行`,
       columns: cols === 2 ? `2段（段間 ${DEFAULT_COLUMN_GAP_MM}mm）` : '1段',
       body: `版面 ${body.width.toFixed(1)}×${body.height.toFixed(1)}mm`,
       bleed,

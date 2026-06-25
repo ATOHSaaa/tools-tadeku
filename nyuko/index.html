@@ -24,6 +24,7 @@
       --ink: #1a1a1a;
       --muted: #5a5a5a;
       --border: #d4d0c8;
+      --pane-divider: #a8a196;
       --surface: #ffffff;
       --accent: var(--ink);
       --accent-soft: #e8e6e1;
@@ -85,7 +86,7 @@
 
     .header-right {
       position: fixed;
-      top: 0.7rem;
+      top: 0.45rem;
       right: 1rem;
       z-index: 100;
       display: flex;
@@ -123,9 +124,15 @@
 
     .main {
       display: grid;
-      grid-template-columns: var(--sidebar-width, 360px) 6px 1fr;
+      grid-template-columns: var(--sidebar-width, 360px) 8px 1fr;
+      grid-template-areas: "sidebar-primary resizer-workspace workspace";
       min-height: 0;
       min-width: 0;
+    }
+
+    .main.has-secondary-sidebar {
+      grid-template-columns: var(--sidebar-width, 360px) 8px var(--secondary-sidebar-width, 280px) 8px 1fr;
+      grid-template-areas: "sidebar-primary resizer-primary-secondary sidebar-secondary resizer-workspace workspace";
     }
 
     .sidebar {
@@ -134,32 +141,50 @@
       min-height: 0;
       min-width: 0;
       background: var(--surface);
-      border-right: 1px solid var(--border);
+      border-right: 2px solid var(--pane-divider);
     }
 
-    .sidebar-resizer {
+    .sidebar-primary { grid-area: sidebar-primary; }
+
+    .sidebar-secondary {
+      grid-area: sidebar-secondary;
+    }
+
+    .sidebar-secondary[hidden] {
+      display: none !important;
+    }
+
+    .pane-resizer {
       position: relative;
       cursor: col-resize;
-      background: var(--border);
+      background: var(--pane-divider);
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35), inset -1px 0 0 rgba(0, 0, 0, 0.08);
       touch-action: none;
     }
 
-    .sidebar-resizer::before {
+    .pane-resizer-primary-secondary { grid-area: resizer-primary-secondary; }
+
+    .pane-resizer-workspace { grid-area: resizer-workspace; }
+
+    .pane-resizer[hidden] {
+      display: none !important;
+    }
+
+    .pane-resizer::before {
       content: "";
       position: absolute;
       inset: 0 -4px;
     }
 
-    .sidebar-resizer:hover,
-    .sidebar-resizer.dragging,
-    .sidebar-resizer:focus-visible {
+    .pane-resizer:hover,
+    .pane-resizer.dragging,
+    .pane-resizer:focus-visible {
       background: var(--accent);
       outline: none;
     }
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
@@ -183,6 +208,138 @@
       border-bottom-color: var(--accent);
     }
 
+    .tab.is-drag-source {
+      visibility: hidden;
+    }
+
+    .tab.is-dragging {
+      cursor: grabbing;
+    }
+
+    .tab-drag-ghost {
+      position: fixed;
+      z-index: 300;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 0.5rem;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--pane-divider);
+      border-bottom: 2px solid var(--accent);
+      border-radius: 8px 8px 4px 4px;
+      box-shadow:
+        0 10px 28px rgba(26, 26, 26, 0.22),
+        0 3px 8px rgba(26, 26, 26, 0.12);
+      white-space: nowrap;
+      text-align: center;
+      box-sizing: border-box;
+      transform: scale(1.03);
+      transition: box-shadow 0.12s, transform 0.12s;
+    }
+
+    .tab-drag-ghost.is-visible {
+      display: flex;
+    }
+
+    .tab-drag-ghost.is-lifted {
+      transform: scale(1.05) rotate(-1.5deg);
+      box-shadow:
+        0 16px 36px rgba(26, 26, 26, 0.28),
+        0 4px 10px rgba(26, 26, 26, 0.14);
+    }
+
+    body.is-tab-dragging {
+      cursor: grabbing;
+    }
+
+    body.is-tab-dragging .tab {
+      cursor: grabbing;
+    }
+
+    .sidebar.is-drop-target .tabs {
+      background: rgba(26, 26, 26, 0.05);
+    }
+
+    .tab-insert-indicator {
+      position: fixed;
+      z-index: 299;
+      width: 3px;
+      margin-left: -1px;
+      background: var(--ink);
+      border-radius: 2px;
+      pointer-events: none;
+      display: none;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45);
+    }
+
+    .tab-insert-indicator.is-visible {
+      display: block;
+    }
+
+    .split-drop-overlay.is-active .split-drop-zone {
+      transition: background 0.12s, border-color 0.12s, opacity 0.12s;
+    }
+
+    .sidebar-panels {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .split-drop-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      pointer-events: none;
+      display: none;
+    }
+
+    .split-drop-overlay.is-active {
+      display: block;
+      pointer-events: auto;
+    }
+
+    .split-drop-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: rgba(26, 26, 26, 0.08);
+      border: 2px dashed rgba(26, 26, 26, 0.22);
+      box-sizing: border-box;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .split-drop-zone::after {
+      content: attr(data-label);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .split-drop-zone.is-hovered {
+      background: rgba(26, 26, 26, 0.14);
+      border-color: var(--ink);
+    }
+
+    .split-drop-zone.is-hovered::after {
+      color: var(--ink);
+    }
+
     .panel {
       display: none;
       flex: 1;
@@ -193,7 +350,8 @@
 
     .panel.active { display: flex; flex-direction: column; gap: 1rem; }
 
-    #panel-edit.active .editor-area {
+    #panel-edit.active .editor-area,
+    .sidebar-secondary #panel-edit .editor-area {
       flex: 1;
       min-height: 120px;
     }
@@ -421,6 +579,7 @@
     }
 
     .workspace-wrap {
+      grid-area: workspace;
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -927,9 +1086,42 @@
       text-justify: inter-character;
     }
 
+    .nyuko-digit {
+      text-orientation: upright;
+      letter-spacing: 0;
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-digit {
+      display: inline-block;
+      line-height: 1;
+    }
+
     .nyuko-tcy {
       text-combine-upright: all;
       -webkit-text-combine: horizontal;
+      letter-spacing: 0;
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-tcy {
+      display: inline-block;
+      line-height: 1;
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-tcy-digits {
+      transform: translateX(0);
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-tcy-digits-3 {
+      transform: translateX(0.06em);
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-latin-char {
+      transform: translateX(0.06em);
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-latin {
+      display: inline-block;
+      transform: translateX(0.06em);
     }
 
     .nyuko-page-body ruby {
@@ -950,7 +1142,7 @@
     }
 
     .nyuko-heading-chapter {
-      font-size: 1.3em;
+      font-size: 1.5em;
       letter-spacing: 0.2em;
       padding-left: 1.35em;
     }
@@ -963,6 +1155,13 @@
 
     .nyuko-page-body.cols-2 .nyuko-heading-chapter {
       column-span: all;
+    }
+
+    .nyuko-page-body.writing-vertical .nyuko-heading,
+    .nyuko-page-body.writing-vertical .nyuko-heading-chapter,
+    .nyuko-page-body.writing-vertical .nyuko-heading-section {
+      padding-left: 0;
+      padding-top: 0;
     }
 
     .nyuko-page-body.writing-horizontal .nyuko-heading {
@@ -1056,6 +1255,7 @@
     .nyuko-toc-horizontal .nyuko-toc-item {
       width: 100%;
       margin-inline-end: 0;
+      padding-left: 1.2em;
     }
 
     .nyuko-toc-horizontal .nyuko-toc-item-title {
@@ -1252,7 +1452,17 @@
         min-height: 0;
       }
 
-      .sidebar-resizer { display: none; }
+      .pane-resizer { display: none; }
+
+      .sidebar-secondary,
+      .split-drop-overlay {
+        display: none !important;
+      }
+
+      .main.has-secondary-sidebar {
+        grid-template-columns: 1fr;
+        grid-template-areas: "sidebar-primary" "workspace";
+      }
 
       body[data-mobile-pane="edit"] .sidebar {
         display: flex;
@@ -1359,22 +1569,23 @@
       <button type="button" class="mobile-pane-btn" data-mobile-pane="preview" role="tab" aria-selected="false">プレビュー</button>
     </div>
 
-    <div class="main">
-      <aside class="sidebar">
-        <div class="tabs" role="tablist">
-          <button type="button" class="tab active" data-tab="edit" role="tab" aria-selected="true">テキスト</button>
-          <button type="button" class="tab" data-tab="settings" role="tab" aria-selected="false">設定</button>
-          <button type="button" class="tab" data-tab="toc" role="tab" aria-selected="false">目次</button>
-          <button type="button" class="tab" data-tab="okutsuke" role="tab" aria-selected="false">奥付</button>
-          <button type="button" class="tab" data-tab="pages" role="tab" aria-selected="false">ページ</button>
+    <div class="main" id="main">
+      <aside class="sidebar sidebar-primary" id="sidebar-primary">
+        <div class="tabs" id="tabs-primary" role="tablist">
+          <button type="button" class="tab active" data-tab="edit" role="tab" aria-selected="true" title="ドラッグして移動">本文</button>
+          <button type="button" class="tab" data-tab="settings" role="tab" aria-selected="false" title="ドラッグして移動">設定</button>
+          <button type="button" class="tab" data-tab="toc" role="tab" aria-selected="false" title="ドラッグして移動">目次</button>
+          <button type="button" class="tab" data-tab="okutsuke" role="tab" aria-selected="false" title="ドラッグして移動">奥付</button>
+          <button type="button" class="tab" data-tab="pages" role="tab" aria-selected="false" title="ドラッグして移動">頁</button>
         </div>
 
+        <div class="sidebar-panels" id="sidebar-panels-primary">
         <div class="panel active" id="panel-edit" role="tabpanel">
           <div class="import-bar">
             <input type="file" id="import-file" accept=".txt,.md,text/plain">
             <button type="button" class="import-btn" id="import-btn">インポート</button>
           </div>
-          <textarea class="editor-area" id="editor" placeholder="テキストを入力または貼り付け" spellcheck="false"></textarea>
+          <textarea class="editor-area" id="editor" placeholder="本文を入力または貼り付け" spellcheck="false"></textarea>
           <div class="editor-meta" id="editor-meta">0字 / 計0p</div>
         </div>
 
@@ -1425,35 +1636,35 @@
         </div>
 
         <div class="panel" id="panel-pages" role="tabpanel">
-          <p class="pages-note">本文の前後に白ページを挿入できます。目次がある場合は、目次の前後にも設定できます。目次・奥付は各タブに内容がある場合のみ載ります。</p>
+          <p class="pages-note">本文の前後に白頁を挿入できます。目次がある場合は、目次の前後にも設定できます。目次・奥付は各タブに内容がある場合のみ載ります。</p>
           <div class="page-structure">
             <div class="page-blank-field" id="page-block-before-body">
-              <label for="blank-before-body" id="label-blank-before-body">空白ページ（本文前）</label>
+              <label for="blank-before-body" id="label-blank-before-body">空白頁（本文前）</label>
               <div class="page-blank-input-wrap">
-                <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="-1" aria-label="1ページ減らす">−</button>
-                <input type="number" id="blank-before-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白ページ数">
-                <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="1" aria-label="1ページ増やす">+</button>
-                <span>ページ</span>
+                <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="-1" aria-label="1頁減らす">−</button>
+                <input type="number" id="blank-before-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白頁数">
+                <button type="button" class="page-blank-step" data-spacer="beforeBody" data-delta="1" aria-label="1頁増やす">+</button>
+                <span>頁</span>
               </div>
             </div>
             <div class="page-section-row" id="page-section-toc">目次</div>
             <div class="page-blank-field" id="page-block-after-toc" hidden>
-              <label for="blank-after-toc">空白ページ（目次後）</label>
+              <label for="blank-after-toc">空白頁（目次後）</label>
               <div class="page-blank-input-wrap">
-                <button type="button" class="page-blank-step" data-spacer="afterToc" data-delta="-1" aria-label="1ページ減らす">−</button>
-                <input type="number" id="blank-after-toc" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="目次後の空白ページ数">
-                <button type="button" class="page-blank-step" data-spacer="afterToc" data-delta="1" aria-label="1ページ増やす">+</button>
-                <span>ページ</span>
+                <button type="button" class="page-blank-step" data-spacer="afterToc" data-delta="-1" aria-label="1頁減らす">−</button>
+                <input type="number" id="blank-after-toc" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="目次後の空白頁数">
+                <button type="button" class="page-blank-step" data-spacer="afterToc" data-delta="1" aria-label="1頁増やす">+</button>
+                <span>頁</span>
               </div>
             </div>
             <div class="page-section-row" id="page-section-body">本文</div>
             <div class="page-blank-field" id="page-block-after-body">
-              <label for="blank-after-body">空白ページ</label>
+              <label for="blank-after-body">空白頁</label>
               <div class="page-blank-input-wrap">
-                <button type="button" class="page-blank-step" data-spacer="afterBodyTail" data-delta="-1" aria-label="1ページ減らす">−</button>
-                <input type="number" id="blank-after-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白ページ数">
-                <button type="button" class="page-blank-step" data-spacer="afterBodyTail" data-delta="1" aria-label="1ページ増やす">+</button>
-                <span>ページ</span>
+                <button type="button" class="page-blank-step" data-spacer="afterBodyTail" data-delta="-1" aria-label="1頁減らす">−</button>
+                <input type="number" id="blank-after-body" min="0" max="99" step="1" value="0" inputmode="numeric" aria-label="空白頁数">
+                <button type="button" class="page-blank-step" data-spacer="afterBodyTail" data-delta="1" aria-label="1頁増やす">+</button>
+                <span>頁</span>
               </div>
             </div>
             <div class="page-section-row" id="page-section-colophon">奥付</div>
@@ -1461,7 +1672,7 @@
         </div>
 
         <div class="panel" id="panel-toc" role="tabpanel">
-          <p class="toc-note">目次の項目を手入力するか、原稿の <code>##</code> 章見出しから拾えます。頁欄の数字はそのまま目次に表示されます。「章から拾う」では、本文の頁に目次より前のページ数を加えた値が入ります。</p>
+          <p class="toc-note">目次の項目を手入力するか、原稿の <code>##</code> 章見出しから拾えます。頁欄の数字はそのまま目次に表示されます。「章から拾う」では、本文の頁に目次より前の頁数を加えた値が入ります。</p>
           <div class="spacing-field">
             <div class="spacing-field-head">文字サイズ <span id="toc-font-size-value">8.5pt</span></div>
             <input type="range" id="toc-font-size-slider" min="6" max="16" step="0.5" value="8.5">
@@ -1475,7 +1686,7 @@
         </div>
 
         <div class="panel" id="panel-okutsuke" role="tabpanel">
-          <p class="colophon-note">奥付ページに載せる情報を入力します。</p>
+          <p class="colophon-note">奥付頁に載せる情報を入力します。</p>
           <div class="colophon-field">
             <label for="colophon-title">書名</label>
             <input type="text" id="colophon-title" autocomplete="off">
@@ -1508,15 +1719,23 @@
             <input type="url" id="colophon-website" autocomplete="off" inputmode="url" placeholder="https://">
           </div>
         </div>
+        </div>
       </aside>
 
-      <div class="sidebar-resizer" id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="サイドバーの幅を調整" tabindex="0"></div>
+      <div class="pane-resizer pane-resizer-primary-secondary" id="resizer-primary-secondary" role="separator" aria-orientation="vertical" aria-label="左サイドバーの幅を調整" tabindex="0" hidden></div>
+
+      <aside class="sidebar sidebar-secondary" id="sidebar-secondary" hidden>
+        <div class="tabs" id="tabs-secondary" role="tablist"></div>
+        <div class="sidebar-panels" id="sidebar-panels-secondary"></div>
+      </aside>
+
+      <div class="pane-resizer pane-resizer-workspace" id="resizer-workspace" role="separator" aria-orientation="vertical" aria-label="サイドバーとプレビューの幅を調整" tabindex="0"></div>
 
       <section class="workspace-wrap">
         <div class="workspace-toolbar">
           <div class="preview-view-toggle" role="group" aria-label="表示形式">
             <button type="button" class="preview-view-btn active" data-preview-view="spread">見開き</button>
-            <button type="button" class="preview-view-btn" data-preview-view="single">1ページ</button>
+            <button type="button" class="preview-view-btn" data-preview-view="single">1頁</button>
           </div>
           <label for="zoom-slider">拡大</label>
           <input type="range" class="zoom-slider" id="zoom-slider" min="5" max="200" value="30">
@@ -1536,6 +1755,14 @@
       </section>
     </div>
   </div>
+
+  <div class="split-drop-overlay" id="split-drop-overlay" aria-hidden="true">
+    <div class="split-drop-zone" data-drop-target="primary" data-label="左サイドバー" id="split-drop-primary"></div>
+    <div class="split-drop-zone" data-drop-target="secondary" data-label="右サイドバー" id="split-drop-secondary"></div>
+  </div>
+
+  <div class="tab-drag-ghost" id="tab-drag-ghost" aria-hidden="true"></div>
+  <div class="tab-insert-indicator" id="tab-insert-indicator" aria-hidden="true"></div>
 
   <div id="nyuko-export-host" aria-hidden="true"></div>
 
@@ -1572,11 +1799,30 @@
         layout: { pages: [], pageCount: 0, charCount: 0, chapters: [] },
         toc: [],
         pageSpacers: Object.assign({}, DEFAULT_PAGE_SPACERS),
+        primaryActiveTab: 'edit',
+        secondaryActiveTab: null,
       };
 
       const PAGE_SPACER_INPUTS = ['blankBeforeBody', 'blankAfterToc', 'blankAfterBody'];
+      const SIDEBAR_LAYOUT_KEY = 'nyuko-sidebar-layout';
+      const SPLIT_PANE_KEY = 'nyuko-split-pane-tab';
+      const SPLIT_MOBILE_MQ = window.matchMedia('(max-width: 860px)');
 
       const els = {
+        main: document.getElementById('main'),
+        sidebarPrimary: document.getElementById('sidebar-primary'),
+        sidebarSecondary: document.getElementById('sidebar-secondary'),
+        resizerPrimarySecondary: document.getElementById('resizer-primary-secondary'),
+        resizerWorkspace: document.getElementById('resizer-workspace'),
+        tabsPrimary: document.getElementById('tabs-primary'),
+        tabsSecondary: document.getElementById('tabs-secondary'),
+        sidebarPanelsPrimary: document.getElementById('sidebar-panels-primary'),
+        sidebarPanelsSecondary: document.getElementById('sidebar-panels-secondary'),
+        splitDropOverlay: document.getElementById('split-drop-overlay'),
+        splitDropPrimary: document.getElementById('split-drop-primary'),
+        splitDropSecondary: document.getElementById('split-drop-secondary'),
+        tabDragGhost: document.getElementById('tab-drag-ghost'),
+        tabInsertIndicator: document.getElementById('tab-insert-indicator'),
         editor: document.getElementById('editor'),
         importBtn: document.getElementById('import-btn'),
         importFile: document.getElementById('import-file'),
@@ -1652,7 +1898,7 @@
         els.pageSectionColophon.hidden = !hasColophonFilled();
         els.pageBlockAfterToc.hidden = !hasToc;
         if (els.labelBlankBeforeBody) {
-          els.labelBlankBeforeBody.textContent = hasToc ? '空白ページ（目次前）' : '空白ページ（本文前）';
+          els.labelBlankBeforeBody.textContent = hasToc ? '空白頁（目次前）' : '空白頁（本文前）';
         }
         updatePageSpacersUI();
       }
@@ -1887,7 +2133,7 @@
       function pagesBeforeBodyCount() {
         const spacers = pageSpacersData();
         let count = spacers.beforeToc + spacers.afterToc;
-        count += 1; // 目次ページ
+        count += 1; // 目次頁
         return count;
       }
 
@@ -1941,7 +2187,7 @@
       }
 
       function clearAll() {
-        if (!confirm('テキスト・設定・目次・奥付をすべて初期化しますか？')) return;
+        if (!confirm('本文・設定・目次・奥付をすべて初期化しますか？')) return;
 
         flushPending();
         try {
@@ -2459,23 +2705,507 @@
         }
       }
 
+      function getSidebarForTab(tabId) {
+        if (els.tabsSecondary.querySelector('.tab[data-tab="' + tabId + '"]')) return 'secondary';
+        return 'primary';
+      }
+
+      function hasSecondarySidebar() {
+        return els.tabsSecondary.querySelectorAll('.tab').length > 0;
+      }
+
+      function updateTabGridCounts() {
+        [els.tabsPrimary, els.tabsSecondary].forEach((tabs) => {
+          const count = tabs.querySelectorAll('.tab').length;
+          tabs.style.gridTemplateColumns = count ? 'repeat(' + count + ', 1fr)' : '';
+        });
+      }
+
+      function updatePaneLayout() {
+        const secondaryTabs = Array.from(els.tabsSecondary.querySelectorAll('.tab'));
+        if (els.tabsPrimary.querySelectorAll('.tab').length === 0 && secondaryTabs.length > 0) {
+          secondaryTabs.forEach((tab) => {
+            els.tabsPrimary.appendChild(tab);
+            const panel = document.getElementById('panel-' + tab.dataset.tab);
+            if (panel) els.sidebarPanelsPrimary.appendChild(panel);
+          });
+          syncPanelOrder(els.tabsPrimary, els.sidebarPanelsPrimary);
+        }
+
+        const dualPane = els.tabsPrimary.querySelectorAll('.tab').length > 0
+          && els.tabsSecondary.querySelectorAll('.tab').length > 0;
+
+        els.sidebarSecondary.hidden = !dualPane;
+        if (els.resizerPrimarySecondary) els.resizerPrimarySecondary.hidden = !dualPane;
+        els.main.classList.toggle('has-secondary-sidebar', dualPane);
+        if (!dualPane) state.secondaryActiveTab = null;
+
+        if (!dualPane && !els.tabsPrimary.querySelector('.tab.active')) {
+          const first = els.tabsPrimary.querySelector('.tab');
+          if (first) activateTab(first.dataset.tab);
+        }
+      }
+
+      function activateTab(tabId) {
+        const sidebar = getSidebarForTab(tabId);
+        if (sidebar === 'primary') {
+          state.primaryActiveTab = tabId;
+          document.querySelectorAll('#tabs-primary .tab').forEach((t) => {
+            const active = t.dataset.tab === tabId;
+            t.classList.toggle('active', active);
+            t.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          document.querySelectorAll('#sidebar-panels-primary .panel').forEach((panel) => {
+            panel.classList.toggle('active', panel.id === 'panel-' + tabId);
+          });
+        } else {
+          state.secondaryActiveTab = tabId;
+          document.querySelectorAll('#tabs-secondary .tab').forEach((t) => {
+            const active = t.dataset.tab === tabId;
+            t.classList.toggle('active', active);
+            t.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          document.querySelectorAll('#sidebar-panels-secondary .panel').forEach((panel) => {
+            panel.classList.toggle('active', panel.id === 'panel-' + tabId);
+          });
+        }
+        saveSidebarLayout();
+      }
+
+      function syncPanelOrder(tabsContainer, panelsContainer) {
+        Array.from(tabsContainer.querySelectorAll('.tab')).forEach((tab) => {
+          const panel = document.getElementById('panel-' + tab.dataset.tab);
+          if (panel) panelsContainer.appendChild(panel);
+        });
+      }
+
+      function applyTabOrder(tabsContainer, panelsContainer, tabIds) {
+        const known = new Set(tabIds);
+        tabIds.forEach((tabId) => {
+          const tab = tabsContainer.querySelector('.tab[data-tab="' + tabId + '"]');
+          if (tab) tabsContainer.appendChild(tab);
+        });
+        Array.from(tabsContainer.querySelectorAll('.tab')).forEach((tab) => {
+          if (!known.has(tab.dataset.tab)) tabsContainer.appendChild(tab);
+        });
+        syncPanelOrder(tabsContainer, panelsContainer);
+      }
+
+      function readSidebarLayout() {
+        try {
+          const saved = localStorage.getItem(SIDEBAR_LAYOUT_KEY);
+          if (saved) return JSON.parse(saved);
+          const legacy = localStorage.getItem(SPLIT_PANE_KEY);
+          if (legacy) return { secondary: [legacy] };
+        } catch (_) {}
+        return null;
+      }
+
+      function saveSidebarLayout() {
+        try {
+          const primary = Array.from(els.tabsPrimary.querySelectorAll('.tab')).map((t) => t.dataset.tab);
+          const secondary = Array.from(els.tabsSecondary.querySelectorAll('.tab')).map((t) => t.dataset.tab);
+          localStorage.setItem(SIDEBAR_LAYOUT_KEY, JSON.stringify({
+            primary,
+            secondary,
+            primaryActive: state.primaryActiveTab,
+            secondaryActive: state.secondaryActiveTab,
+          }));
+        } catch (_) {}
+      }
+
+      function placeTabAt(tabId, targetSidebar, insertBeforeTab, options) {
+        const opts = Object.assign({ save: true, activate: true }, options || {});
+        if (SPLIT_MOBILE_MQ.matches) return;
+        const current = getSidebarForTab(tabId);
+        const tab = document.querySelector('.tab[data-tab="' + tabId + '"]');
+        const panel = document.getElementById('panel-' + tabId);
+        if (!tab || !panel) return;
+
+        const sourceTabs = current === 'primary' ? els.tabsPrimary : els.tabsSecondary;
+        const destTabs = targetSidebar === 'primary' ? els.tabsPrimary : els.tabsSecondary;
+        const destPanels = targetSidebar === 'primary' ? els.sidebarPanelsPrimary : els.sidebarPanelsSecondary;
+        const wasActive = tab.classList.contains('active');
+
+        if (insertBeforeTab && insertBeforeTab.parentElement !== destTabs) insertBeforeTab = null;
+        if (insertBeforeTab === tab) insertBeforeTab = tab.nextElementSibling;
+        if (insertBeforeTab && insertBeforeTab.dataset && insertBeforeTab.dataset.tab === tabId) return;
+
+        if (insertBeforeTab) {
+          destTabs.insertBefore(tab, insertBeforeTab);
+        } else {
+          destTabs.appendChild(tab);
+        }
+        syncPanelOrder(destTabs, destPanels);
+
+        updatePaneLayout();
+        updateTabGridCounts();
+
+        if (wasActive && current !== targetSidebar) {
+          const remaining = Array.from(sourceTabs.querySelectorAll('.tab'));
+          if (remaining.length) activateTab(remaining[0].dataset.tab);
+        }
+
+        if (opts.activate) {
+          activateTab(tabId);
+        } else if (opts.save) {
+          saveSidebarLayout();
+        }
+
+        if (state.zoomMode === 'fit') { fitPreviewZoom(); renderPreview(); }
+      }
+
+      function moveTabToSidebar(tabId, target, options) {
+        placeTabAt(tabId, target, null, options);
+      }
+
+      function restoreAllTabsToPrimary() {
+        Array.from(els.tabsSecondary.querySelectorAll('.tab')).forEach((tab) => {
+          moveTabToSidebar(tab.dataset.tab, 'primary', { save: false, activate: false });
+        });
+        if (state.primaryActiveTab) activateTab(state.primaryActiveTab);
+        saveSidebarLayout();
+      }
+
+      function updateSplitDropZones() {
+        if (!els.sidebarPrimary || !els.splitDropPrimary || !els.splitDropSecondary) return;
+
+        const primaryRect = els.sidebarPrimary.getBoundingClientRect();
+        const secondaryW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--secondary-sidebar-width'), 10) || 280;
+
+        els.splitDropPrimary.style.left = primaryRect.left + 'px';
+        els.splitDropPrimary.style.width = primaryRect.width + 'px';
+
+        if (hasSecondarySidebar()) {
+          const secondaryRect = els.sidebarSecondary.getBoundingClientRect();
+          els.splitDropSecondary.style.left = secondaryRect.left + 'px';
+          els.splitDropSecondary.style.width = secondaryRect.width + 'px';
+        } else {
+          els.splitDropSecondary.style.left = primaryRect.right + 'px';
+          els.splitDropSecondary.style.width = secondaryW + 'px';
+        }
+      }
+
+      function restoreSidebarLayout() {
+        if (SPLIT_MOBILE_MQ.matches) return;
+        try {
+          const data = readSidebarLayout();
+          if (!data) {
+            saveSidebarLayout();
+            return;
+          }
+
+          if (Array.isArray(data.secondary)) {
+            data.secondary.forEach((tabId) => {
+              if (document.querySelector('.tab[data-tab="' + tabId + '"]') && getSidebarForTab(tabId) === 'primary') {
+                moveTabToSidebar(tabId, 'secondary', { save: false, activate: false });
+              }
+            });
+          }
+
+          if (Array.isArray(data.primary)) {
+            applyTabOrder(els.tabsPrimary, els.sidebarPanelsPrimary, data.primary);
+          }
+          if (Array.isArray(data.secondary)) {
+            applyTabOrder(els.tabsSecondary, els.sidebarPanelsSecondary, data.secondary);
+          }
+
+          updatePaneLayout();
+          updateTabGridCounts();
+
+          if (data.primaryActive && getSidebarForTab(data.primaryActive) === 'primary') {
+            activateTab(data.primaryActive);
+          } else if (els.tabsPrimary.querySelector('.tab.active')) {
+            state.primaryActiveTab = els.tabsPrimary.querySelector('.tab.active').dataset.tab;
+          }
+          if (data.secondaryActive && getSidebarForTab(data.secondaryActive) === 'secondary') {
+            activateTab(data.secondaryActive);
+          }
+        } catch (_) {
+          saveSidebarLayout();
+        }
+      }
+
+      function resolveTabDropTarget(x, y, dragTabId) {
+        const bars = [
+          { sidebar: 'primary', el: els.tabsPrimary, sidebarEl: els.sidebarPrimary },
+          { sidebar: 'secondary', el: els.tabsSecondary, sidebarEl: els.sidebarSecondary },
+        ];
+
+        for (const bar of bars) {
+          if (bar.sidebar === 'secondary' && !hasSecondarySidebar() && bar.el.querySelectorAll('.tab').length === 0) continue;
+          const rect = bar.el.getBoundingClientRect();
+          if (rect.height <= 0) continue;
+          if (y < rect.top || y > rect.bottom || x < rect.left || x > rect.right) continue;
+
+          const tabs = Array.from(bar.el.querySelectorAll('.tab')).filter((t) => t.dataset.tab !== dragTabId);
+          let insertBeforeTab = null;
+          for (const tab of tabs) {
+            const tabRect = tab.getBoundingClientRect();
+            if (x < tabRect.left + tabRect.width / 2) {
+              insertBeforeTab = tab;
+              break;
+            }
+          }
+          return { sidebar: bar.sidebar, insertBeforeTab, inTabBar: true };
+        }
+
+        const primaryRect = els.sidebarPrimary.getBoundingClientRect();
+        if (x >= primaryRect.left && x <= primaryRect.right && y >= primaryRect.top && y <= primaryRect.bottom) {
+          return { sidebar: 'primary', insertBeforeTab: null, inTabBar: false };
+        }
+
+        if (hasSecondarySidebar()) {
+          const secondaryRect = els.sidebarSecondary.getBoundingClientRect();
+          if (x >= secondaryRect.left && x <= secondaryRect.right && y >= secondaryRect.top && y <= secondaryRect.bottom) {
+            return { sidebar: 'secondary', insertBeforeTab: null, inTabBar: false };
+          }
+        } else {
+          const secondaryW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--secondary-sidebar-width'), 10) || 280;
+          const ghostLeft = primaryRect.right;
+          if (x >= ghostLeft && x <= ghostLeft + secondaryW && y >= primaryRect.top && y <= primaryRect.bottom) {
+            return { sidebar: 'secondary', insertBeforeTab: null, inTabBar: false };
+          }
+        }
+
+        return null;
+      }
+
       function render() {
         renderSettings();
         updatePageStructureUI();
         refreshPreview();
       }
 
-      document.querySelectorAll('.tab').forEach((tab) => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.tab').forEach((t) => {
-            t.classList.toggle('active', t === tab);
-            t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+      (function setupTabSplit() {
+        if (!els.sidebarSecondary || !els.splitDropOverlay) return;
+
+        updateTabGridCounts();
+        updateSplitDropZones();
+
+        const DRAG_THRESHOLD = 8;
+        let tabDrag = null;
+        let suppressTabClick = false;
+
+        function setDragMode(on) {
+          document.querySelectorAll('.tab').forEach((tab) => {
+            tab.classList.toggle('is-tab-draggable', on && !SPLIT_MOBILE_MQ.matches);
           });
-          document.querySelectorAll('.panel').forEach((panel) => {
-            panel.classList.toggle('active', panel.id === 'panel-' + tab.dataset.tab);
+        }
+
+        function showDropOverlay(show) {
+          els.splitDropOverlay.classList.toggle('is-active', show);
+          els.splitDropOverlay.setAttribute('aria-hidden', show ? 'false' : 'true');
+          if (!show) {
+            els.splitDropPrimary.classList.remove('is-hovered');
+            els.splitDropSecondary.classList.remove('is-hovered');
+          }
+        }
+
+        function isTabDragVisualActive() {
+          return document.body.classList.contains('is-tab-dragging')
+            || (els.tabDragGhost && els.tabDragGhost.classList.contains('is-visible'));
+        }
+
+        function clearTabDragVisuals() {
+          document.querySelectorAll('.tab.is-drag-source, .tab.is-dragging').forEach((tab) => {
+            tab.classList.remove('is-drag-source', 'is-dragging');
           });
+          if (els.tabDragGhost) {
+            els.tabDragGhost.classList.remove('is-visible', 'is-lifted');
+            els.tabDragGhost.style.left = '';
+            els.tabDragGhost.style.top = '';
+            els.tabDragGhost.style.width = '';
+            els.tabDragGhost.textContent = '';
+            els.tabDragGhost.setAttribute('aria-hidden', 'true');
+          }
+          if (els.tabInsertIndicator) {
+            els.tabInsertIndicator.classList.remove('is-visible');
+            els.tabInsertIndicator.setAttribute('aria-hidden', 'true');
+          }
+          els.sidebarPrimary.classList.remove('is-drop-target');
+          els.sidebarSecondary.classList.remove('is-drop-target');
+          document.body.classList.remove('is-tab-dragging');
+          document.body.style.userSelect = '';
+        }
+
+        function highlightSidebarDropTarget(drop) {
+          els.sidebarPrimary.classList.toggle('is-drop-target', !!(drop && drop.sidebar === 'primary'));
+          els.sidebarSecondary.classList.toggle('is-drop-target', !!(drop && drop.sidebar === 'secondary'));
+        }
+
+        function updateInsertIndicator(drop) {
+          if (!els.tabInsertIndicator || !drop || !drop.inTabBar) {
+            if (els.tabInsertIndicator) {
+              els.tabInsertIndicator.classList.remove('is-visible');
+              els.tabInsertIndicator.setAttribute('aria-hidden', 'true');
+            }
+            return;
+          }
+
+          const destTabs = drop.sidebar === 'primary' ? els.tabsPrimary : els.tabsSecondary;
+          let x;
+          let top;
+          let height;
+
+          if (drop.insertBeforeTab) {
+            const rect = drop.insertBeforeTab.getBoundingClientRect();
+            x = rect.left;
+            top = rect.top;
+            height = rect.height;
+          } else {
+            const tabs = destTabs.querySelectorAll('.tab:not(.is-drag-source)');
+            if (tabs.length) {
+              const rect = tabs[tabs.length - 1].getBoundingClientRect();
+              x = rect.right;
+              top = rect.top;
+              height = rect.height;
+            } else {
+              const rect = destTabs.getBoundingClientRect();
+              x = rect.left + 12;
+              top = rect.top;
+              height = rect.height;
+            }
+          }
+
+          els.tabInsertIndicator.style.left = (x - 1) + 'px';
+          els.tabInsertIndicator.style.top = top + 'px';
+          els.tabInsertIndicator.style.height = height + 'px';
+          els.tabInsertIndicator.classList.add('is-visible');
+          els.tabInsertIndicator.setAttribute('aria-hidden', 'false');
+        }
+
+        function updateTabDragGhost(x, y) {
+          if (!tabDrag || !els.tabDragGhost) return;
+          els.tabDragGhost.style.left = (x - tabDrag.offsetX) + 'px';
+          els.tabDragGhost.style.top = (y - tabDrag.offsetY) + 'px';
+          const lifted = y > tabDrag.startY + 12;
+          els.tabDragGhost.classList.toggle('is-lifted', lifted);
+        }
+
+        function startTabDragVisuals(e) {
+          const rect = tabDrag.tab.getBoundingClientRect();
+          tabDrag.offsetX = e.clientX - rect.left;
+          tabDrag.offsetY = e.clientY - rect.top;
+
+          tabDrag.tab.classList.add('is-drag-source', 'is-dragging');
+          document.body.classList.add('is-tab-dragging');
+          document.body.style.userSelect = 'none';
+
+          els.tabDragGhost.textContent = tabDrag.tab.textContent.trim();
+          els.tabDragGhost.style.width = rect.width + 'px';
+          els.tabDragGhost.classList.add('is-visible');
+          els.tabDragGhost.setAttribute('aria-hidden', 'false');
+          updateTabDragGhost(e.clientX, e.clientY);
+
+          try { tabDrag.tab.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+
+        function endTabDragSession(drag, e) {
+          if (!drag || !drag.active) {
+            if (isTabDragVisualActive()) clearTabDragVisuals();
+            return;
+          }
+
+          const drop = resolveTabDropTarget(e.clientX, e.clientY, drag.tabId);
+          suppressTabClick = true;
+          clearTabDragVisuals();
+
+          if (drag.tab) {
+            try { drag.tab.releasePointerCapture(e.pointerId); } catch (_) {}
+          }
+
+          if (drop) placeTabAt(drag.tabId, drop.sidebar, drop.insertBeforeTab);
+        }
+
+        function finishTabDrag(e) {
+          if (!tabDrag) {
+            if (isTabDragVisualActive()) clearTabDragVisuals();
+            return;
+          }
+          if (tabDrag.pointerId !== e.pointerId) {
+            if (tabDrag.active) {
+              const drag = tabDrag;
+              tabDrag = null;
+              endTabDragSession(drag, e);
+            }
+            return;
+          }
+          const drag = tabDrag;
+          tabDrag = null;
+          endTabDragSession(drag, e);
+        }
+
+        function onTabPointerDown(e) {
+          const tab = e.target.closest('.tab');
+          if (!tab || SPLIT_MOBILE_MQ.matches || e.button !== 0) return;
+          tabDrag = {
+            tab,
+            tabId: tab.dataset.tab,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            active: false,
+          };
+        }
+
+        function onTabClick(e) {
+          const tab = e.target.closest('.tab');
+          if (!tab) return;
+          if (suppressTabClick) {
+            suppressTabClick = false;
+            e.preventDefault();
+            return;
+          }
+          activateTab(tab.dataset.tab);
+        }
+
+        els.tabsPrimary.addEventListener('pointerdown', onTabPointerDown);
+        els.tabsSecondary.addEventListener('pointerdown', onTabPointerDown);
+        els.tabsPrimary.addEventListener('click', onTabClick);
+        els.tabsSecondary.addEventListener('click', onTabClick);
+
+        window.addEventListener('pointermove', (e) => {
+          if (!tabDrag || tabDrag.pointerId !== e.pointerId) return;
+          const dist = Math.hypot(e.clientX - tabDrag.startX, e.clientY - tabDrag.startY);
+          if (!tabDrag.active) {
+            if (dist < DRAG_THRESHOLD) return;
+            tabDrag.active = true;
+            startTabDragVisuals(e);
+          }
+          updateTabDragGhost(e.clientX, e.clientY);
+          const drop = resolveTabDropTarget(e.clientX, e.clientY, tabDrag.tabId);
+          updateInsertIndicator(drop);
+          highlightSidebarDropTarget(drop);
         });
-      });
+
+        window.addEventListener('pointerup', finishTabDrag, true);
+        window.addEventListener('pointercancel', finishTabDrag, true);
+
+        window.addEventListener('blur', () => {
+          if (!tabDrag || !tabDrag.active) return;
+          const drag = tabDrag;
+          tabDrag = null;
+          endTabDragSession(drag, { clientX: drag.startX, clientY: drag.startY, pointerId: drag.pointerId });
+        });
+
+        window.addEventListener('resize', () => {
+          setDragMode(true);
+          updateSplitDropZones();
+          if (SPLIT_MOBILE_MQ.matches && hasSecondarySidebar()) {
+            restoreAllTabsToPrimary();
+          }
+        });
+
+        SPLIT_MOBILE_MQ.addEventListener('change', () => {
+          setDragMode(true);
+          if (SPLIT_MOBILE_MQ.matches && hasSecondarySidebar()) {
+            restoreAllTabsToPrimary();
+          }
+        });
+
+        setDragMode(true);
+      })();
 
       els.editor.addEventListener('input', () => {
         scheduleTextRender();
@@ -2730,65 +3460,122 @@
         });
       })();
 
-      (function setupSidebarResizer() {
-        const resizer = document.getElementById('sidebar-resizer');
-        if (!resizer) return;
-        const SIDEBAR_KEY = 'nyuko-sidebar-width';
-        const DEFAULT_W = 360;
-        const MIN_W = 220;
-        const maxWidth = () => Math.min(560, Math.round(window.innerWidth * 0.6));
+      (function setupPaneResizers() {
+        if (!els.resizerWorkspace) return;
 
-        function applyWidth(px) {
-          const w = Math.max(MIN_W, Math.min(maxWidth(), Math.round(px)));
+        const RESIZER_W = 8;
+        const PRIMARY_KEY = 'nyuko-sidebar-width';
+        const SECONDARY_KEY = 'nyuko-secondary-sidebar-width';
+        const PRIMARY_DEFAULT = 360;
+        const SECONDARY_DEFAULT = 280;
+        const PRIMARY_MIN = 220;
+        const SECONDARY_MIN = 200;
+
+        function getPrimaryWidth() {
+          return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'), 10) || PRIMARY_DEFAULT;
+        }
+
+        function getSecondaryWidth() {
+          return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--secondary-sidebar-width'), 10) || SECONDARY_DEFAULT;
+        }
+
+        function maxPrimaryWidth() {
+          return Math.min(560, Math.round(window.innerWidth * 0.55));
+        }
+
+        function maxSecondaryWidth() {
+          const mainRect = els.main.getBoundingClientRect();
+          const resizerCount = hasSecondarySidebar() ? 2 : 1;
+          const reserved = getPrimaryWidth() + RESIZER_W * resizerCount + 280;
+          return Math.min(480, Math.max(SECONDARY_MIN, Math.round(mainRect.width - reserved)));
+        }
+
+        function applyPrimaryWidth(px) {
+          const w = Math.max(PRIMARY_MIN, Math.min(maxPrimaryWidth(), Math.round(px)));
           document.documentElement.style.setProperty('--sidebar-width', w + 'px');
           return w;
         }
 
-        try {
-          const saved = Number(localStorage.getItem(SIDEBAR_KEY));
-          if (Number.isFinite(saved) && saved >= MIN_W) applyWidth(saved);
-          else applyWidth(DEFAULT_W);
-        } catch (_) {
-          applyWidth(DEFAULT_W);
+        function applySecondaryWidth(px) {
+          const w = Math.max(SECONDARY_MIN, Math.min(maxSecondaryWidth(), Math.round(px)));
+          document.documentElement.style.setProperty('--secondary-sidebar-width', w + 'px');
+          return w;
         }
 
-        let dragging = false;
-        function onMove(e) {
-          if (!dragging) return;
-          const left = els.previewScroll.closest('.main').getBoundingClientRect().left;
-          applyWidth(e.clientX - left);
-        }
-        function onUp() {
-          if (!dragging) return;
-          dragging = false;
-          resizer.classList.remove('dragging');
-          document.body.style.userSelect = '';
-          document.body.style.cursor = '';
-          window.removeEventListener('pointermove', onMove);
-          window.removeEventListener('pointerup', onUp);
-          const cur = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim();
-          try { localStorage.setItem(SIDEBAR_KEY, String(parseInt(cur, 10) || DEFAULT_W)); } catch (_) {}
+        function afterResize() {
           if (state.zoomMode === 'fit') { fitPreviewZoom(); renderPreview(); }
         }
-        resizer.addEventListener('pointerdown', (e) => {
-          dragging = true;
-          resizer.classList.add('dragging');
-          document.body.style.userSelect = 'none';
-          document.body.style.cursor = 'col-resize';
-          window.addEventListener('pointermove', onMove);
-          window.addEventListener('pointerup', onUp);
-          e.preventDefault();
+
+        try {
+          const savedPrimary = Number(localStorage.getItem(PRIMARY_KEY));
+          if (Number.isFinite(savedPrimary) && savedPrimary >= PRIMARY_MIN) applyPrimaryWidth(savedPrimary);
+          else applyPrimaryWidth(PRIMARY_DEFAULT);
+        } catch (_) {
+          applyPrimaryWidth(PRIMARY_DEFAULT);
+        }
+
+        try {
+          const savedSecondary = Number(localStorage.getItem(SECONDARY_KEY));
+          if (Number.isFinite(savedSecondary) && savedSecondary >= SECONDARY_MIN) applySecondaryWidth(savedSecondary);
+          else applySecondaryWidth(SECONDARY_DEFAULT);
+        } catch (_) {
+          applySecondaryWidth(SECONDARY_DEFAULT);
+        }
+
+        function bindResizer(resizerEl, onDrag, onSave) {
+          if (!resizerEl) return;
+          let dragging = false;
+
+          function onMove(e) {
+            if (!dragging) return;
+            onDrag(e);
+          }
+
+          function onUp() {
+            if (!dragging) return;
+            dragging = false;
+            resizerEl.classList.remove('dragging');
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            onSave();
+            afterResize();
+          }
+
+          resizerEl.addEventListener('pointerdown', (e) => {
+            dragging = true;
+            resizerEl.classList.add('dragging');
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp);
+            e.preventDefault();
+          });
+        }
+
+        bindResizer(els.resizerPrimarySecondary, (e) => {
+          const mainRect = els.main.getBoundingClientRect();
+          applyPrimaryWidth(e.clientX - mainRect.left);
+        }, () => {
+          try { localStorage.setItem(PRIMARY_KEY, String(getPrimaryWidth())); } catch (_) {}
         });
-        resizer.addEventListener('keydown', (e) => {
-          const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'), 10) || DEFAULT_W;
-          let next = cur;
-          if (e.key === 'ArrowLeft') next = cur - 16;
-          else if (e.key === 'ArrowRight') next = cur + 16;
-          else return;
-          e.preventDefault();
-          const applied = applyWidth(next);
-          try { localStorage.setItem(SIDEBAR_KEY, String(applied)); } catch (_) {}
-          if (state.zoomMode === 'fit') { fitPreviewZoom(); renderPreview(); }
+
+        bindResizer(els.resizerWorkspace, (e) => {
+          const mainRect = els.main.getBoundingClientRect();
+          if (hasSecondarySidebar()) {
+            applySecondaryWidth(e.clientX - mainRect.left - getPrimaryWidth() - RESIZER_W);
+          } else {
+            applyPrimaryWidth(e.clientX - mainRect.left);
+          }
+        }, () => {
+          try {
+            if (hasSecondarySidebar()) {
+              localStorage.setItem(SECONDARY_KEY, String(getSecondaryWidth()));
+            } else {
+              localStorage.setItem(PRIMARY_KEY, String(getPrimaryWidth()));
+            }
+          } catch (_) {}
         });
       })();
 
@@ -2805,6 +3592,7 @@
       updatePageSpacersUI();
       renderTocList();
       render();
+      restoreSidebarLayout();
 
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => render());

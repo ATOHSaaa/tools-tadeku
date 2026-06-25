@@ -47,20 +47,46 @@
   function tokenizePlain(chunk) {
     const tokens = [];
     const chars = graphemes(chunk);
-    for (let i = 0; i < chars.length; i++) {
-      const ch = chars[i];
-      const next = chars[i + 1];
-      // 2桁数字は縦中横で1マスに、1桁数字は縦中横（正立1文字）にする
-      if (/\d/.test(ch) && next && /\d/.test(next)) {
-        tokens.push({ kind: 'tcy', text: ch + next });
-        i += 1;
+    let i = 0;
+    while (i < chars.length) {
+      if (/\d/.test(chars[i])) {
+        let digits = '';
+        while (i < chars.length && /\d/.test(chars[i])) {
+          digits += chars[i];
+          i += 1;
+        }
+        tokens.push({ kind: 'tcy', text: digits });
+        if (i < chars.length && /[a-zA-Z]/.test(chars[i])) {
+          let unit = '';
+          while (i < chars.length && /[a-zA-Z]/.test(chars[i]) && unit.length < 3) {
+            unit += chars[i];
+            i += 1;
+          }
+          if (unit) tokens.push({ kind: 'tcy', text: unit });
+        }
         continue;
       }
-      if (/\d/.test(ch)) {
-        tokens.push({ kind: 'tcy', text: ch });
-        continue;
+      if (/[a-zA-Z]/.test(chars[i])) {
+        let latin = '';
+        while (i < chars.length) {
+          const c = chars[i];
+          if (/[a-zA-Z]/.test(c)) {
+            latin += c;
+            i += 1;
+          } else if (c === ' ' && latin.length > 0 && i + 1 < chars.length && /[a-zA-Z]/.test(chars[i + 1])) {
+            latin += c;
+            i += 1;
+          } else {
+            break;
+          }
+        }
+        if (latin) {
+          tokens.push({ kind: 'latin', text: latin });
+          continue;
+        }
       }
-      tokens.push({ kind: 'char', text: ch });
+      tokens.push({ kind: 'char', text: chars[i] });
+      i += 1;
     }
     return tokens;
   }
@@ -248,11 +274,12 @@
   }
 
   // --- 原稿 → atom 列（流し込み用の線形ストリーム） ---
-  //   atom.t: 'char' | 'tcy' | 'ruby' | 'indent' | 'newline' | 'pagebreak' | 'heading'
+  //   atom.t: 'char' | 'tcy' | 'latin' | 'ruby' | 'indent' | 'newline' | 'pagebreak' | 'heading'
 
   function tokenToAtom(tok) {
     if (tok.kind === 'ruby') return { t: 'ruby', base: tok.base, ruby: tok.ruby };
     if (tok.kind === 'tcy') return { t: 'tcy', text: tok.text };
+    if (tok.kind === 'latin') return { t: 'latin', text: tok.text };
     return { t: 'char', text: tok.text };
   }
 
@@ -333,17 +360,19 @@
           if (chapterMode === 'break-before' || chapterMode === 'recto') {
             chapterBreak();
           }
-          gapBeforeHeading(2);
+          gapBeforeHeading(1);
           atoms.push({ t: 'heading', level: 'chapter', text: parsed.text });
-          lineGap(2);
+          atoms.push({ t: 'newline' });
+          columnDirty = false;
           hasBodyContent = false;
           return;
         }
         if (parsed.type === 'section') {
           afterBlank = false;
-          gapBeforeHeading(2);
+          gapBeforeHeading(1);
           atoms.push({ t: 'heading', level: 'section', text: parsed.text });
-          lineGap(2);
+          atoms.push({ t: 'newline' });
+          columnDirty = false;
           hasBodyContent = false;
           return;
         }
@@ -389,12 +418,49 @@
       .replace(/>/g, '&gt;');
   }
 
+  function uprightLatinCharsHtml(text) {
+    let html = '';
+    graphemes(text).forEach((ch) => {
+      if (/[a-zA-Z]/.test(ch)) {
+        html += '<span class="nyuko-digit nyuko-latin-char">' + esc(ch) + '</span>';
+      } else {
+        html += esc(ch);
+      }
+    });
+    return html;
+  }
+
+  function tcySpanHtml(text, useTcy) {
+    if (!useTcy) return esc(text);
+    if (/^[a-zA-Z]+$/.test(text) && text.length <= 3) {
+      return uprightLatinCharsHtml(text);
+    }
+    if (text.length === 1) {
+      return '<span class="nyuko-digit">' + esc(text) + '</span>';
+    }
+    const digitKind = /^\d+$/.test(text)
+      ? ' nyuko-tcy-digits' + (text.length === 3 ? ' nyuko-tcy-digits-3' : '')
+      : '';
+    return '<span class="nyuko-tcy' + digitKind + '">' + esc(text) + '</span>';
+  }
+
+  function latinSpanHtml(text, vertical) {
+    if (vertical === false) return esc(text);
+    const letterCount = (text.match(/[a-zA-Z]/g) || []).length;
+    if (letterCount <= 3 && /^[a-zA-Z\s]+$/.test(text)) {
+      return uprightLatinCharsHtml(text);
+    }
+    return '<span class="nyuko-latin">' + esc(text) + '</span>';
+  }
+
   function inlinePlainToHtml(text, vertical) {
     const useTcy = vertical !== false;
     let html = '';
     tokenizePlain(text).forEach((tok) => {
       if (tok.kind === 'tcy' && useTcy) {
-        html += '<span class="nyuko-tcy">' + esc(tok.text) + '</span>';
+        html += tcySpanHtml(tok.text, true);
+      } else if (tok.kind === 'latin') {
+        html += latinSpanHtml(tok.text, vertical);
       } else {
         html += esc(tok.text);
       }
@@ -420,8 +486,9 @@
       if (a.t === 'newline') {
         html += '<br>';
       } else if (a.t === 'tcy') {
-        if (useTcy) html += '<span class="nyuko-tcy">' + esc(a.text) + '</span>';
-        else html += esc(a.text);
+        html += tcySpanHtml(a.text, useTcy);
+      } else if (a.t === 'latin') {
+        html += latinSpanHtml(a.text, vertical);
       } else if (a.t === 'ruby') {
         html += '<ruby>' + esc(a.base) + '<rt>' + esc(a.ruby) + '</rt></ruby>';
       } else if (a.t === 'heading') {
@@ -438,6 +505,7 @@
       const a = atoms[i];
       if (a.t === 'char') n += a.text && a.text.trim() ? 1 : 0;
       else if (a.t === 'tcy') n += a.text ? a.text.length : 0;
+      else if (a.t === 'latin') n += graphemes(a.text).length;
       else if (a.t === 'ruby') n += graphemes(a.base).length;
       else if (a.t === 'heading') n += graphemes(a.text).length;
     }
@@ -747,8 +815,8 @@
       html += '<div class="nyuko-toc-item">';
       html += '<span class="nyuko-toc-item-title">' + esc(title) + '</span>';
       if (displayPage) {
-        const pageHtml = !horizontal && displayPage.length <= 2
-          ? '<span class="nyuko-tcy">' + esc(displayPage) + '</span>'
+        const pageHtml = !horizontal
+          ? tcySpanHtml(displayPage, true)
           : esc(displayPage);
         html += '<span class="nyuko-toc-item-leader" aria-hidden="true"></span>';
         html += '<span class="nyuko-toc-item-page">' + pageHtml + '</span>';
