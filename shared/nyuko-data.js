@@ -80,17 +80,19 @@
   };
 
   const FONTS = {
+    shippori: {
+      id: 'shippori',
+      label: 'しっぽり明朝',
+      family: '"Shippori Mincho", "Zen Old Mincho", serif',
+      googleCssFamily: 'Shippori+Mincho:wght@400;700',
+      size: 8.5,
+      lineHeight: 1.55,
+    },
     literary: {
       id: 'literary',
       label: 'Zen Old Mincho',
       family: '"Zen Old Mincho", "Shippori Mincho", serif',
-      size: 8.5,
-      lineHeight: 1.55,
-    },
-    shippori: {
-      id: 'shippori',
-      label: 'Shippori Mincho',
-      family: '"Shippori Mincho", "Zen Old Mincho", serif',
+      googleCssFamily: 'Zen+Old+Mincho:wght@400;700',
       size: 8.5,
       lineHeight: 1.55,
     },
@@ -98,6 +100,7 @@
       id: 'standard',
       label: 'Noto Serif JP',
       family: '"Noto Serif JP", serif',
+      googleCssFamily: 'Noto+Serif+JP:wght@400;700',
       size: 9,
       lineHeight: 1.5,
     },
@@ -105,6 +108,7 @@
       id: 'gothic',
       label: 'Noto Sans JP',
       family: '"Noto Sans JP", sans-serif',
+      googleCssFamily: 'Noto+Sans+JP:wght@400;700',
       size: 9,
       lineHeight: 1.5,
     },
@@ -199,6 +203,15 @@
 
   const MARGIN_MIN_MM = 5;
   const MARGIN_MIN_BODY_MM = 35;
+  /** 判型標準の地余白における、本文下端〜ノンブルの固定間隔（mm） */
+  const NONBULE_BODY_GAP_RATIO = 0.58;
+
+  function nonbuleBodyGapMm(format) {
+    const baseKey = format.baseKey || format.id;
+    const base = BASE_FORMATS[baseKey];
+    const refBottom = base ? base.marginBottom : format.marginBottom;
+    return refBottom * NONBULE_BODY_GAP_RATIO;
+  }
 
   function effectiveMargins(format, overrides) {
     const src = overrides || {};
@@ -308,6 +321,8 @@
     effectiveMargins,
     applyMargins,
     marginLimitsForFormat,
+    nonbuleBodyGapMm,
+    NONBULE_BODY_GAP_RATIO,
     resolveDraftSettings,
     bleedMmFromSetting,
     BLEED_OPTIONS,

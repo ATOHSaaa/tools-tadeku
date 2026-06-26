@@ -15,9 +15,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="../shared/nyuko-data.js?v=4"></script>
-  <script src="../shared/nyuko-engine.js"></script>
+  <script src="../shared/nyuko-data.js?v=7"></script>
+  <script src="../shared/export.js"></script>
+  <script src="../shared/nyuko-engine.js?v=5"></script>
   <style>
     :root {
       --bg: #f0eeea;
@@ -1101,9 +1101,6 @@
 
     .nyuko-page-trim {
       position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
       border: 1px dashed rgba(26, 26, 26, 0.45);
       pointer-events: none;
       box-sizing: border-box;
@@ -1125,9 +1122,7 @@
       width: 100%;
       height: 100%;
       box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: block;
     }
 
     .nyuko-page-body {
@@ -1451,19 +1446,37 @@
       box-shadow: none;
     }
 
-    #nyuko-print-root { display: none; }
+    #nyuko-print-root {
+      position: fixed;
+      left: -200vw;
+      top: 0;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      visibility: hidden;
+      pointer-events: none;
+      z-index: -1;
+    }
 
     @media print {
       html, body {
         background: #fff !important;
         height: auto !important;
         overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
       body > .app { display: none !important; }
       #nyuko-export-host { display: none !important; }
       #nyuko-print-root {
         display: block !important;
         position: static !important;
+        left: auto !important;
+        top: auto !important;
+        visibility: visible !important;
+        overflow: visible !important;
+        width: auto !important;
+        height: auto !important;
       }
       #nyuko-print-root .nyuko-page {
         margin: 0 !important;
@@ -1948,7 +1961,7 @@
   <script>
     (function () {
       const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
-      const { paginate, assembleLayout, createLayoutPage, exportPrint, pageDimensions } = window.NyukoEngine;
+      const { paginate, assembleLayout, createLayoutPage, exportPdf, exportPrint, pageDimensions } = window.NyukoEngine;
 
       const MARGIN_MIN_MM = 5;
       const MARGIN_MIN_BODY_MM = 35;
@@ -3895,7 +3908,7 @@
 
       async function handleExportPdf() {
         try {
-          await runExport(els.btnExportPdf, () => exportPrint(
+          await runExport(els.btnExportPdf, () => exportPdf(
             state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
             exportLayoutOptions()
           ));

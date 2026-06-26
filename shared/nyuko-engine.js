@@ -977,12 +977,38 @@
     };
   }
 
+  function resolvePageInsets(format, pageNumber, writingDirection, scale) {
+    const s = scale || 1;
+    const top = mmToPx(format.marginTop) * s;
+    const bottom = mmToPx(format.marginBottom) * s;
+    const inner = mmToPx(format.marginInner) * s;
+    const outer = mmToPx(format.marginOuter) * s;
+    const odd = pageNumber % 2 === 1;
+
+    if (isHorizontal(writingDirection)) {
+      return {
+        top,
+        bottom,
+        left: odd ? inner : outer,
+        right: odd ? outer : inner,
+      };
+    }
+
+    return {
+      top,
+      bottom,
+      left: odd ? outer : inner,
+      right: odd ? inner : outer,
+    };
+  }
+
   function appendPageChrome(page, bodyEl, format, bleedMm, scale, pageNumber, options) {
     const opts = options || {};
     const nonbulePosition = opts.nonbulePosition || 'spread';
     const isPreview = Boolean(opts.preview);
     const dims = pageDimensions(format, bleedMm, scale);
-    const body = window.NyukoData.bodySize(format);
+    const bleedPx = mmToPx(bleedMm || 0) * scale;
+    const inset = resolvePageInsets(format, pageNumber, opts.writingDirection, scale);
 
     page.className = 'nyuko-page' + (isPreview ? ' nyuko-page-preview' : '');
     page.dataset.page = String(pageNumber);
@@ -991,13 +1017,21 @@
 
     const bleed = document.createElement('div');
     bleed.className = 'nyuko-page-bleed';
-    bleed.style.padding = mmToPx(bleedMm || 0) * scale + 'px';
+    bleed.style.position = 'relative';
+    bleed.style.boxSizing = 'border-box';
+    bleed.style.paddingTop = (bleedPx + inset.top) + 'px';
+    bleed.style.paddingRight = (bleedPx + inset.right) + 'px';
+    bleed.style.paddingBottom = (bleedPx + inset.bottom) + 'px';
+    bleed.style.paddingLeft = (bleedPx + inset.left) + 'px';
 
     if (isPreview) {
       const trim = document.createElement('div');
       trim.className = 'nyuko-page-trim';
+      trim.style.left = bleedPx + 'px';
+      trim.style.top = bleedPx + 'px';
       trim.style.width = mmToPx(format.width) * scale + 'px';
       trim.style.height = mmToPx(format.height) * scale + 'px';
+      trim.style.transform = 'none';
       bleed.appendChild(trim);
     }
 
@@ -1005,32 +1039,30 @@
     page.appendChild(bleed);
 
     if (pageNumber > 0 && !opts.hidePageNumber) {
-      const bleedPx = mmToPx(bleedMm || 0) * scale;
-      const trimW = mmToPx(format.width) * scale;
-      const trimH = mmToPx(format.height) * scale;
-      const bodyW = mmToPx(body.width) * scale;
-      const bodyH = mmToPx(body.height) * scale;
-      const sideGap = Math.max(0, (trimW - bodyW) / 2);
-      const vGap = Math.max(0, (trimH - bodyH) / 2);
-
       const label = document.createElement('div');
       label.className = 'nyuko-page-label';
       label.textContent = String(pageNumber);
       label.style.fontSize = (8 * scale) + 'pt';
-      label.style.bottom = (bleedPx + vGap * 0.42) + 'px';
+      const gapPx = mmToPx(
+        (window.NyukoData && window.NyukoData.nonbuleBodyGapMm)
+          ? window.NyukoData.nonbuleBodyGapMm(format)
+          : format.marginBottom * 0.58
+      ) * scale;
+      const offsetFromTrim = Math.max(0, inset.bottom - gapPx);
+      label.style.bottom = (bleedPx + offsetFromTrim) + 'px';
       if (nonbulePosition === 'center') {
         label.style.left = '50%';
         label.style.transform = 'translateX(-50%)';
       } else if (isHorizontal(opts.writingDirection)) {
         if (pageNumber % 2 === 1) {
-          label.style.left = (bleedPx + sideGap) + 'px';
+          label.style.left = (bleedPx + inset.left * 0.55) + 'px';
         } else {
-          label.style.right = (bleedPx + sideGap) + 'px';
+          label.style.right = (bleedPx + inset.right * 0.55) + 'px';
         }
       } else if (pageNumber % 2 === 1) {
-        label.style.right = (bleedPx + sideGap) + 'px';
+        label.style.right = (bleedPx + inset.right * 0.55) + 'px';
       } else {
-        label.style.left = (bleedPx + sideGap) + 'px';
+        label.style.left = (bleedPx + inset.left * 0.55) + 'px';
       }
       page.appendChild(label);
     }
@@ -1123,10 +1155,14 @@
     });
   }
 
-  function prepareExportHost(host) {
+  function prepareExportHost(host, dims) {
     host.innerHTML = '';
     host.classList.add('is-exporting');
     host.removeAttribute('style');
+    if (dims) {
+      host.style.width = dims.widthPx + 'px';
+      host.style.height = dims.heightPx + 'px';
+    }
   }
 
   function clearExportHost(host) {
@@ -1156,6 +1192,30 @@
     return htmlToImageModule;
   }
 
+  function applyExportPageSize(pageEl, dims) {
+    pageEl.style.width = dims.widthPx + 'px';
+    pageEl.style.height = dims.heightPx + 'px';
+    pageEl.style.boxSizing = 'border-box';
+    pageEl.style.flexShrink = '0';
+  }
+
+  let fontEmbedCSSCache;
+  async function getFontEmbedCSS() {
+    if (fontEmbedCSSCache !== undefined) return fontEmbedCSSCache;
+    let css = '';
+    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    for (const link of links) {
+      const href = link.href;
+      if (!href || !/fonts\.(googleapis|gstatic)\.com/.test(href)) continue;
+      try {
+        const res = await fetch(href);
+        if (res.ok) css += await res.text() + '\n';
+      } catch (_) {}
+    }
+    fontEmbedCSSCache = css || null;
+    return fontEmbedCSSCache;
+  }
+
   async function capturePageElement(pageEl) {
     await waitForExportReady();
     const rect = pageEl.getBoundingClientRect();
@@ -1166,12 +1226,15 @@
     }
 
     const htmlToImage = await loadHtmlToImage();
-
-    return htmlToImage.toCanvas(pageEl, {
+    const fontEmbedCSS = await getFontEmbedCSS();
+    const captureOpts = {
       pixelRatio: 2,
       backgroundColor: '#ffffff',
       cacheBust: true,
-    });
+    };
+    if (fontEmbedCSS) captureOpts.fontEmbedCSS = fontEmbedCSS;
+
+    return htmlToImage.toCanvas(pageEl, captureOpts);
   }
 
   function canvasToJpgBlob(canvas) {
@@ -1180,38 +1243,199 @@
     });
   }
 
+  let pdfLibModule = null;
+  let googleFontUrlCache = {};
+
+  async function loadPdfLib() {
+    if (pdfLibModule) return pdfLibModule;
+    const [pdfLib, fontkitMod] = await Promise.all([
+      import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),
+      import('https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/+esm'),
+    ]);
+    pdfLibModule = {
+      PDFDocument: pdfLib.PDFDocument,
+      fontkit: fontkitMod.default || fontkitMod,
+    };
+    return pdfLibModule;
+  }
+
+  function parseGoogleFontFaceUrls(css) {
+    const map = {};
+    const re = /@font-face\s*\{([^}]+)\}/g;
+    let match;
+    while ((match = re.exec(css))) {
+      const block = match[1];
+      const weightMatch = block.match(/font-weight:\s*(\d+)/);
+      const urlMatch = block.match(/url\((https:\/\/[^)]+\.(?:woff2|woff|ttf|otf))\)/);
+      if (!urlMatch) continue;
+      const weight = weightMatch ? Number(weightMatch[1]) : 400;
+      map[weight] = urlMatch[1];
+    }
+    return map;
+  }
+
+  async function fetchGoogleFontFileMap(googleCssFamily) {
+    if (googleFontUrlCache[googleCssFamily]) return googleFontUrlCache[googleCssFamily];
+    const cssUrl = 'https://fonts.googleapis.com/css2?family=' + googleCssFamily + '&display=swap';
+    const css = await fetch(cssUrl).then((res) => {
+      if (!res.ok) throw new Error('font css fetch failed');
+      return res.text();
+    });
+    const map = parseGoogleFontFaceUrls(css);
+    googleFontUrlCache[googleCssFamily] = map;
+    return map;
+  }
+
+  async function preloadExportFonts(pdfDoc, fontId) {
+    const fonts = window.NyukoData && window.NyukoData.FONTS;
+    const meta = (fonts && fonts[fontId]) || (fonts && fonts.standard);
+    if (!meta || !meta.googleCssFamily) throw new Error('font metadata missing');
+    const urlMap = await fetchGoogleFontFileMap(meta.googleCssFamily);
+    const registry = {};
+    for (const weight of [400, 700]) {
+      const url = urlMap[weight] || urlMap[400];
+      if (!url) continue;
+      const bytes = await fetch(url).then((res) => {
+        if (!res.ok) throw new Error('font file fetch failed');
+        return res.arrayBuffer();
+      });
+      registry[weight] = await pdfDoc.embedFont(bytes, { subset: true });
+    }
+    if (!registry[400]) throw new Error('font embed failed');
+    return registry;
+  }
+
+  function isVisibleTextNode(node) {
+    const parent = node.parentElement;
+    if (!parent) return false;
+    const style = window.getComputedStyle(parent);
+    return style.visibility !== 'hidden' && style.display !== 'none';
+  }
+
+  function pushTextRangeItem(range, segment, style, pageRect, items) {
+    if (!segment) return;
+    if (!/\S/.test(segment) && segment !== '\u3000') return;
+    const rects = range.getClientRects();
+    if (!rects.length) return;
+    const rect = rects[0];
+    if (!rect.width && !rect.height) return;
+    const fontSizePx = parseFloat(style.fontSize);
+    if (!fontSizePx) return;
+    const weight = parseInt(style.fontWeight, 10);
+    items.push({
+      text: segment,
+      x: rect.left - pageRect.left,
+      y: rect.top - pageRect.top,
+      width: rect.width,
+      height: rect.height,
+      fontSizePx,
+      weight: Number.isFinite(weight) && weight >= 700 ? 700 : 400,
+    });
+  }
+
+  function appendTextNodeGlyphs(node, text, pageRect, items) {
+    const style = window.getComputedStyle(node.parentElement);
+    const range = document.createRange();
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter('ja', { granularity: 'grapheme' });
+      let cursor = 0;
+      for (const part of segmenter.segment(text)) {
+        const segment = part.segment;
+        const start = text.indexOf(segment, cursor);
+        if (start < 0) {
+          cursor += segment.length;
+          continue;
+        }
+        range.setStart(node, start);
+        range.setEnd(node, start + segment.length);
+        cursor = start + segment.length;
+        pushTextRangeItem(range, segment, style, pageRect, items);
+      }
+      return;
+    }
+    for (let i = 0; i < text.length; i++) {
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      pushTextRangeItem(range, text[i], style, pageRect, items);
+    }
+  }
+
+  function collectPageTextItems(pageEl) {
+    const pageRect = pageEl.getBoundingClientRect();
+    const items = [];
+    pageEl.querySelectorAll('.nyuko-page-body, .nyuko-page-label').forEach((target) => {
+      const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (!isVisibleTextNode(node)) continue;
+        const text = node.textContent;
+        if (!text) continue;
+        appendTextNodeGlyphs(node, text, pageRect, items);
+      }
+    });
+    return items;
+  }
+
+  function drawPageTextToPdf(page, items, pageRect, fontRegistry) {
+    const pageWidthPt = page.getWidth();
+    const pageHeightPt = page.getHeight();
+    const scaleX = pageWidthPt / pageRect.width;
+    const scaleY = pageHeightPt / pageRect.height;
+    const pxToPt = 72 / 96;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const font = item.weight >= 700 && fontRegistry[700] ? fontRegistry[700] : fontRegistry[400];
+      const sizePt = item.fontSizePx * pxToPt;
+      const xPt = item.x * scaleX;
+      const yFromTopPt = (item.y + item.height * 0.86) * scaleY;
+      const yPt = pageHeightPt - yFromTopPt;
+      page.drawText(item.text, {
+        x: xPt,
+        y: yPt,
+        size: sizePt,
+        font,
+      });
+    }
+  }
+
   async function exportPdf(layout, format, font, bleedMm, title, options) {
     const opts = options || {};
     const pageOpts = buildExportRenderOptions(opts);
-    const { jsPDF } = window.jspdf;
     const dims = pageDimensions(format, bleedMm, 1);
-    const pdf = new jsPDF({
-      orientation: dims.widthMm > dims.heightMm ? 'landscape' : 'portrait',
-      unit: 'mm',
-      format: [dims.widthMm, dims.heightMm],
-    });
+    const widthPt = dims.widthMm * 72 / 25.4;
+    const heightPt = dims.heightMm * 72 / 25.4;
+
+    const { PDFDocument } = await loadPdfLib();
+    const pdfDoc = await PDFDocument.create();
+    pdfDoc.registerFontkit(pdfLibModule.fontkit);
+    const fontRegistry = await preloadExportFonts(pdfDoc, font.id || 'standard');
 
     const host = document.getElementById('nyuko-export-host');
     if (!host) throw new Error('export host missing');
-    prepareExportHost(host);
+    prepareExportHost(host, dims);
 
     try {
       for (let i = 0; i < layout.pages.length; i++) {
         const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, pageOpts);
         pageEl.classList.add('nyuko-page-export');
-        pageEl.style.width = dims.widthMm + 'mm';
-        pageEl.style.height = dims.heightMm + 'mm';
+        applyExportPageSize(pageEl, dims);
         mountExportPage(host, pageEl);
+        await waitForExportReady();
+        void pageEl.offsetHeight;
 
-        const canvas = await capturePageElement(pageEl);
-        if (i > 0) pdf.addPage([dims.widthMm, dims.heightMm]);
-        const img = canvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(img, 'JPEG', 0, 0, dims.widthMm, dims.heightMm);
+        const pageRect = pageEl.getBoundingClientRect();
+        const pdfPage = pdfDoc.addPage([widthPt, heightPt]);
+        const items = collectPageTextItems(pageEl);
+        drawPageTextToPdf(pdfPage, items, pageRect, fontRegistry);
         host.removeChild(pageEl);
       }
 
       const base = (title || '無題').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '無題';
-      pdf.save(base + '.pdf');
+      const pdfBytes = await pdfDoc.save();
+      const download = window.ExportUtils && window.ExportUtils.downloadBlob;
+      if (!download) throw new Error('ExportUtils missing');
+      download(new Blob([pdfBytes], { type: 'application/pdf' }), base + '.pdf');
     } finally {
       clearExportHost(host);
     }
@@ -1223,7 +1447,7 @@
     const host = document.getElementById('nyuko-export-host');
     if (!host) throw new Error('export host missing');
 
-    prepareExportHost(host);
+    prepareExportHost(host, dims);
     const dims = pageDimensions(format, bleedMm, 1);
     const blobs = [];
 
@@ -1231,8 +1455,7 @@
       for (let i = 0; i < layout.pages.length; i++) {
         const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, pageOpts);
         pageEl.classList.add('nyuko-page-export');
-        pageEl.style.width = dims.widthMm + 'mm';
-        pageEl.style.height = dims.heightMm + 'mm';
+        applyExportPageSize(pageEl, dims);
         mountExportPage(host, pageEl);
 
         const canvas = await capturePageElement(pageEl);
@@ -1265,10 +1488,30 @@
     }
   }
 
-  function exportPrint(layout, format, font, bleedMm, title, options) {
+  function ensurePrintStyles() {
+    let style = document.getElementById('nyuko-print-hide-style');
+    if (style) return;
+    style = document.createElement('style');
+    style.id = 'nyuko-print-hide-style';
+    style.textContent =
+      '@media print {' +
+      'html, body { background: #fff !important; height: auto !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }' +
+      'body > .app { display: none !important; }' +
+      '#nyuko-export-host { display: none !important; }' +
+      '#nyuko-print-root { display: block !important; visibility: visible !important; position: static !important; left: auto !important; top: auto !important; overflow: visible !important; width: auto !important; height: auto !important; }' +
+      '#nyuko-print-root .nyuko-page { margin: 0 !important; box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; break-after: page; page-break-after: always; }' +
+      '#nyuko-print-root .nyuko-page:last-child { break-after: auto; page-break-after: auto; }' +
+      '#nyuko-print-root .nyuko-page, #nyuko-print-root .nyuko-page-bleed, #nyuko-print-root .nyuko-page-body, #nyuko-print-root .nyuko-page-label { -webkit-print-color-adjust: exact; print-color-adjust: exact; }' +
+      '}';
+    document.head.appendChild(style);
+  }
+
+  async function exportPrint(layout, format, font, bleedMm, title, options) {
     const opts = options || {};
     const pageOpts = buildExportRenderOptions(opts);
     const dims = pageDimensions(format, bleedMm, 1);
+
+    ensurePrintStyles();
 
     let root = document.getElementById('nyuko-print-root');
     if (!root) {
@@ -1282,9 +1525,7 @@
     for (let i = 0; i < layout.pages.length; i++) {
       const pageEl = createLayoutPage(layout.pages[i], format, font, bleedMm, 1, i + 1, pageOpts);
       pageEl.classList.add('nyuko-print-page');
-      // 印刷時に @page と寸法が完全一致するよう mm 指定にする（余白ページ防止）
-      pageEl.style.width = dims.widthMm + 'mm';
-      pageEl.style.height = dims.heightMm + 'mm';
+      applyExportPageSize(pageEl, dims);
       root.appendChild(pageEl);
     }
 
@@ -1296,6 +1537,9 @@
     }
     sizeStyle.textContent =
       '@page { size: ' + dims.widthMm + 'mm ' + dims.heightMm + 'mm; margin: 0; }';
+
+    await waitForExportReady();
+    void root.offsetHeight;
 
     const base = (title || '無題').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '無題';
     const prevTitle = document.title;
