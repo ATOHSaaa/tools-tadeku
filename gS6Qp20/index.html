@@ -1961,7 +1961,7 @@
   <script>
     (function () {
       const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
-      const { paginate, assembleLayout, createLayoutPage, exportPdf, exportPrint, pageDimensions } = window.NyukoEngine;
+      const { paginate, assembleLayout, createLayoutPage, exportPrint, pageDimensions } = window.NyukoEngine;
 
       const MARGIN_MIN_MM = 5;
       const MARGIN_MIN_BODY_MM = 35;
@@ -3908,12 +3908,12 @@
 
       async function handleExportPdf() {
         try {
-          await runExport(els.btnExportPdf, () => exportPdf(
+          await runExport(els.btnExportPdf, () => exportPrint(
             state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
             exportLayoutOptions()
           ));
         } catch (err) {
-          alert('PDFの生成に失敗しました。');
+          alert('印刷の準備に失敗しました。');
         }
       }
 
