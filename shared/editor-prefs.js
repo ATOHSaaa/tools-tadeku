@@ -17,11 +17,12 @@
     { id: 'genko', name: 'Genko', path: 'genko/' },
     { id: 'length', name: 'Length', path: 'length/' },
     { id: 'seam', name: 'Seam', path: 'seam/' },
+    { id: 'echo', name: 'Echo', path: 'echo/' },
   ];
 
   const RESUME_EXCLUDED = new Set(['scene']);
   const RESUME_EDITORS = EDITORS.filter((e) => !RESUME_EXCLUDED.has(e.id));
-  const LIBRARY_EDITOR_IDS = ['plain', 'stoic', 'tachometer', 'interval', 'cue', 'genko', 'length', 'seam'];
+  const LIBRARY_EDITOR_IDS = ['plain', 'stoic', 'tachometer', 'interval', 'cue', 'genko', 'length', 'seam', 'echo'];
   const LIBRARY_EDITORS = LIBRARY_EDITOR_IDS
     .map((id) => EDITORS.find((e) => e.id === id))
     .filter(Boolean);

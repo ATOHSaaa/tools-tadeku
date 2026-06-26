@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="200字以内に2回以上現れる語を色分けしてハイライトする推敲エディタ。近い反復語の見落としを防ぎ、小説原稿の推敲を助けます。">
+  <title>Echo — 反復語を見つける | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-title.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --muted: #4a4a4a;
+      --highlight: #fde8d0;
+      --accent: #e8913a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .header-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.85rem 1.25rem 0.65rem;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .stats strong {
+      font-weight: 900;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem 1.1rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .window-line {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .window-line span {
+      letter-spacing: 0.04em;
+    }
+
+    .window-input {
+      width: 3.5rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 0.25rem 0.35rem;
+      outline: none;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .window-input::-webkit-outer-spin-button,
+    .window-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .window-input:focus {
+      outline: none;
+    }
+
+    .window-slider {
+      flex: 1;
+      min-width: 5rem;
+      max-width: 14rem;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .exclude-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.75rem;
+      white-space: nowrap;
+    }
+
+    .exclude-label {
+      letter-spacing: 0.04em;
+    }
+
+    .exclude-opt {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .exclude-opt input {
+      width: 0.9rem;
+      height: 0.9rem;
+      margin: 0;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .editor-backdrop .echo-0 { background: #fde8d0; }
+    .editor-backdrop .echo-1 { background: #d4e8fc; }
+    .editor-backdrop .echo-2 { background: #d4f0dc; }
+    .editor-backdrop .echo-3 { background: #ecd4f0; }
+    .editor-backdrop .echo-4 { background: #f0ecd4; }
+
+    .editor-backdrop [class^="echo-"] {
+      border-radius: 2px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .editor-backdrop-clip {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .editor-backdrop,
+    #editor {
+      width: 100%;
+      margin: 0;
+      padding: 1.5rem 1.75rem;
+      border: none;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      resize: none;
+    }
+
+    .editor-backdrop {
+      color: transparent;
+      background: var(--bg);
+      will-change: transform;
+    }
+
+    #editor {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      overflow: auto;
+      overscroll-behavior: contain;
+      background: transparent;
+      color: var(--ink);
+      caret-color: var(--ink);
+      outline: none;
+      z-index: 2;
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/site-link.css">
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="header-stack">
+        <div class="header-top">
+          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Echo</div>
+          <div class="stats">
+            <span>文字数 <strong id="char-count">0</strong></span>
+          </div>
+        </div>
+        <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
+      </div>
+      <div class="toolbar">
+        <div class="window-line">
+          <span>反復の範囲：</span>
+          <input type="number" class="window-input" id="window-input" value="200" min="0" max="500" inputmode="numeric" aria-label="反復の範囲（字）">
+          <span>字以内</span>
+        </div>
+        <input type="range" class="window-slider" id="window-slider" min="0" max="500" step="1" value="200" aria-label="反復の範囲（字）">
+        <div class="exclude-line">
+          <span class="exclude-label">除外：</span>
+          <label class="exclude-opt"><input type="checkbox" id="exclude-first-person"><span>一人称</span></label>
+          <label class="exclude-opt"><input type="checkbox" id="exclude-second-person"><span>二人称</span></label>
+          <label class="exclude-opt"><input type="checkbox" id="exclude-third-person"><span>三人称</span></label>
+          <label class="exclude-opt"><input type="checkbox" id="exclude-demonstrative"><span>指示代名詞</span></label>
+        </div>
+      </div>
+    </header>
+    <div class="editor-wrap">
+      <div class="editor-backdrop-clip" aria-hidden="true">
+        <div class="editor-backdrop" id="backdrop"></div>
+      </div>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
+  <script>
+    const STORAGE_KEY = 'echo-window';
+    const EXCLUDE_PREFS_KEY = 'echo-exclude-prefs';
+    const EXCLUDE_FIRST_PERSON_KEY = 'echo-exclude-first-person';
+    const DEFAULT_WINDOW = 200;
+    const WINDOW_MIN = 0;
+    const WINDOW_MAX = 500;
+    const ECHO_COLOR_COUNT = 5;
+    const KANJI_CHAR = /[\u4e00-\u9fff\u3400-\u4dbf\u30a0-\u30ff\uFF66-\uFF9F々]/;
+    const KATAKANA_RE = /[ァ-ヴー]{2,}/y;
+    const ALPHA_RE = /[a-zA-Z]{2,}/y;
+    const PARTICLE_PREFIX = /^(?:から|まで|より|って|など|だけ|ばかり|くらい|ほど|は|が|を|に|の|で|と|も|へ|や)/;
+    const AUXILIARY_SUFFIX = /^(?:て|た|だ|な|く|り|け|ね|わ|さ|ば|む|る|す|ず|う|お|っ|ん|ます|した|して|れる|られる|ない|なく|ので|のに|から|まで|より|とも|では|には|では|って|など|だけ|ばかり|くらい|ほど)$/;
+
+    const KNOWN_HIRAGANA_WORDS = [
+      'あいつ', 'こいつ', 'そいつ', 'どいつ', 'あそこ', 'こちら', 'そちら', 'あちら', 'どちら',
+      'こっち', 'そっち', 'あっち', 'どっち',
+      'これ', 'それ', 'あれ', 'どれ', 'この', 'その', 'あの', 'どの', 'ここ', 'そこ', 'どこ',
+    ].sort((a, b) => b.length - a.length);
+
+    const STOP_WORDS = new Set([
+      'もの', 'こと', 'ため', 'など', 'しか', 'だけ', 'まま', 'あまり',
+      'とても', 'ちょっと', 'すこし', 'もっと', 'やはり', 'けれど', 'けど',
+      'から', 'まで', 'ので', 'のに', 'して', 'すれば', 'でした', 'ます',
+      'である', 'ない', 'ある', 'いる', 'なる', 'する', 'できる', 'れる', 'られる',
+      'そして', 'しかし', 'だから', 'それで', 'また', 'さらに', 'ただ', 'もう',
+      'よう', 'みたい', 'くらい', 'ほど', 'について', 'に対して',
+    ]);
+
+    const EXCLUDE_SETS = {
+      firstPerson: new Set([
+        '私', '俺', '僕', '自分', '己', '余', '朕', '拙', '某', 'うち',
+        'わたし', 'ワタシ', 'おれ', 'オレ', 'ぼく', 'ボク', 'わたくし', 'ワタクシ', 'あたし', 'アタシ',
+      ]),
+      secondPerson: new Set([
+        '君', '汝', '爾', '你', 'お前', 'おまえ', 'オマエ', 'あなた', 'アナタ', 'あんた', 'きみ', 'キミ',
+      ]),
+      thirdPerson: new Set([
+        '彼', '彼女', '彼ら', 'かれ', 'カレ', 'かのじょ', 'カノジョ', 'かれら', 'カレラ',
+      ]),
+      demonstrative: new Set([
+        'これ', 'それ', 'あれ', 'どれ', 'ここ', 'そこ', 'あそこ', 'どこ',
+        'この', 'その', 'あの', 'どの', 'こちら', 'そちら', 'あちら', 'どちら',
+        'こっち', 'そっち', 'あっち', 'どっち', 'こいつ', 'そいつ', 'あいつ', 'どいつ',
+      ]),
+    };
+
+    const PARTICLES = new Set([
+      'は', 'が', 'を', 'に', 'へ', 'で', 'と', 'から', 'まで', 'より', 'の', 'も', 'や', 'か', 'ね', 'よ', 'わ', 'さ',
+      'ぞ', 'ぜ', 'ざ', 'ば', 'こそ', 'さえ', 'すら', 'なら', 'なり', 'だの', 'とか', 'やら', 'かい', 'だい', 'かしら', 'かな',
+      'ので', 'のに', 'には', 'では', 'とは', 'とも', 'でも', 'だけ', 'ばかり', 'くらい', 'ほど', 'など', 'なんか', 'なんて',
+      'って', 'っけ', 'だって',
+      'について', 'に対して', 'において', 'によって', 'にとって', 'に比べ', 'を通じ', 'を通して', 'をめぐ', 'を中心',
+      'という', 'といった', 'として', 'ととも', 'とともに', 'とおり', 'とおりに', 'どおり', 'どおりに', 'というか', 'というより',
+      'ながら', 'けれど', 'けれども', 'だけど', 'だけれど', 'ものの', 'とはいえ', 'といえども', 'うえで', 'うえに', 'うちに',
+      'あいだ', 'あとで', 'まえに', 'おわりに', 'はじめに', 'にわた', 'にわたって', 'にかけ', 'にかけて', 'に沿', 'に沿って',
+      'に基づ', 'に基づいて', 'に伴', 'に伴って', 'に応じ', 'に応じて', 'に関', 'に関して', 'に関わ', 'に関わらず',
+      'に加え', 'に加えて', 'に向け', 'に向けて', 'に限', 'に限らず', 'に限って', 'を除', 'を除いて', 'をはじめ', 'をはじめとして',
+    ]);
+
+    const PARTICLE_PHRASE_PREFIX = /^(?:という|として|について|において|によって|に対して|にとって|ながら|けれども|けれど|だけれど|だけど|ものの|では|には|から|まで|より|だけ|ばかり|くらい|ほど|など|とも|でも|のに|ので|を通じ|を通して|に沿|に基づ|に応じ|に関|に加え|に向け|に限|を除|をはじめ|うえで|うえに|うちに|あいだ|あとで|まえに|ととも|とおり|どおり|にわた|にかけ|に伴|をめぐ|を中心)/;
+
+    const EXCLUDE_INPUTS = {
+      firstPerson: null,
+      secondPerson: null,
+      thirdPerson: null,
+      demonstrative: null,
+    };
+
+    const editor = document.getElementById('editor');
+    const workTitle = document.getElementById('work-title');
+    const backdrop = document.getElementById('backdrop');
+    const charCountEl = document.getElementById('char-count');
+    const windowInput = document.getElementById('window-input');
+    const windowSlider = document.getElementById('window-slider');
+    EXCLUDE_INPUTS.firstPerson = document.getElementById('exclude-first-person');
+    EXCLUDE_INPUTS.secondPerson = document.getElementById('exclude-second-person');
+    EXCLUDE_INPUTS.thirdPerson = document.getElementById('exclude-third-person');
+    EXCLUDE_INPUTS.demonstrative = document.getElementById('exclude-demonstrative');
+
+    TadekuEditorPrefs.trackEditor('echo');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'echo',
+      () => ({ title: workTitle.value, body: editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          workTitle.value = title || '';
+          editor.value = body || '';
+          render();
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
+        },
+      },
+    );
+
+    function scheduleSave() {
+      library.scheduleSave();
+    }
+
+    function loadWindow() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const n = saved !== null ? parseInt(saved, 10) : DEFAULT_WINDOW;
+      return Number.isFinite(n) ? clampWindow(n) : DEFAULT_WINDOW;
+    }
+
+    function saveWindow(value) {
+      localStorage.setItem(STORAGE_KEY, String(value));
+    }
+
+    function clampWindow(n) {
+      if (!Number.isFinite(n)) return DEFAULT_WINDOW;
+      return Math.min(WINDOW_MAX, Math.max(WINDOW_MIN, Math.round(n)));
+    }
+
+    function syncWindowControls(value) {
+      windowInput.value = value;
+      windowSlider.value = value;
+    }
+
+    function getWindow() {
+      return clampWindow(parseInt(windowInput.value, 10));
+    }
+
+    function setWindow(n, { save = true } = {}) {
+      const value = clampWindow(n);
+      syncWindowControls(value);
+      if (save) saveWindow(value);
+      render();
+    }
+
+    function defaultExcludePrefs() {
+      return {
+        firstPerson: false,
+        secondPerson: false,
+        thirdPerson: false,
+        demonstrative: false,
+      };
+    }
+
+    function loadExcludePrefs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(EXCLUDE_PREFS_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+          return { ...defaultExcludePrefs(), ...saved };
+        }
+        const legacy = JSON.parse(localStorage.getItem(EXCLUDE_FIRST_PERSON_KEY) || 'null');
+        if (legacy && typeof legacy === 'object' && 'excludeFirstPerson' in legacy) {
+          return { ...defaultExcludePrefs(), firstPerson: legacy.excludeFirstPerson === true };
+        }
+      } catch (_) {}
+      return defaultExcludePrefs();
+    }
+
+    function saveExcludePrefs() {
+      localStorage.setItem(EXCLUDE_PREFS_KEY, JSON.stringify({
+        firstPerson: EXCLUDE_INPUTS.firstPerson.checked,
+        secondPerson: EXCLUDE_INPUTS.secondPerson.checked,
+        thirdPerson: EXCLUDE_INPUTS.thirdPerson.checked,
+        demonstrative: EXCLUDE_INPUTS.demonstrative.checked,
+      }));
+    }
+
+    function syncExcludeControls(prefs) {
+      EXCLUDE_INPUTS.firstPerson.checked = prefs.firstPerson;
+      EXCLUDE_INPUTS.secondPerson.checked = prefs.secondPerson;
+      EXCLUDE_INPUTS.thirdPerson.checked = prefs.thirdPerson;
+      EXCLUDE_INPUTS.demonstrative.checked = prefs.demonstrative;
+    }
+
+    function isParticle(text) {
+      const norm = tokenNorm(text);
+      if (PARTICLES.has(text) || PARTICLES.has(norm)) return true;
+      return PARTICLE_PHRASE_PREFIX.test(text);
+    }
+
+    function isExcludedByPrefs(text) {
+      const norm = tokenNorm(text);
+      for (const key of Object.keys(EXCLUDE_SETS)) {
+        if (!EXCLUDE_INPUTS[key].checked) continue;
+        const set = EXCLUDE_SETS[key];
+        if (set.has(text) || set.has(norm)) return true;
+      }
+      return false;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function canonicalizeCompoundNorm(text) {
+      return text
+        .replace(/([思])(いだ)/g, '$1出')
+        .replace(/([踏引])(みこ)/g, '$1込')
+        .replace(/([引])(っぱ)/g, '$1張');
+    }
+
+    function tokenNorm(text) {
+      const canonical = canonicalizeCompoundNorm(text);
+      const kanjiParts = canonical.match(/[\u4e00-\u9fff\u3400-\u4dbf\u30a0-\u30ff\uFF66-\uFF9F々]+/g);
+      if (kanjiParts && kanjiParts.length >= 2) {
+        return kanjiParts.join('').toLowerCase();
+      }
+      if (kanjiParts && kanjiParts.length === 1) {
+        return kanjiParts[0].toLowerCase();
+      }
+      return canonical.toLowerCase();
+    }
+
+    function isValidToken(text) {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+      if (STOP_WORDS.has(text) || STOP_WORDS.has(lower)) return false;
+      if (isParticle(text)) return false;
+      if (isExcludedByPrefs(text)) return false;
+      if (text.length >= 2) return true;
+      return /[\u4e00-\u9fff\u3400-\u4dbf\u30a0-\u30ff\uFF66-\uFF9F々]/.test(text);
+    }
+
+    function isKanjiChar(ch) {
+      return KANJI_CHAR.test(ch);
+    }
+
+    function readTrailingOkurigana(rest) {
+      if (!rest) return '';
+      const verbHead = /^[すずしさせそるりられろたてでむみめもうえおんいけげきぎくぐよわねっ]/;
+      const nounAttach = /^(?:こと|もの|とき|ため|ところ|はず|うち|ほう|かた|方|人|者)/;
+      let out = '';
+      for (let i = 0; i < Math.min(4, rest.length); i += 1) {
+        const ch = rest[i];
+        if (!/^[ぁ-んーっ]$/.test(ch)) break;
+        if (PARTICLE_PREFIX.test(ch)) break;
+        if (i === 0 && !verbHead.test(ch)) break;
+        if (i > 0 && nounAttach.test(rest.slice(i))) break;
+        if (i > 0 && /[しすさせそず]$/.test(out) && ch === 'て') break;
+        out += ch;
+      }
+      return out;
+    }
+
+    function readCompoundVerbTail(tail) {
+      const kanjiMatch = tail.match(/^([ぁ-んー]{1,3})([\u4e00-\u9fff\u3400-\u4dbf\u30a0-\u30ff\uFF66-\uFF9F々]+)/);
+      if (kanjiMatch) {
+        const bridge = kanjiMatch[1];
+        const secondKanji = kanjiMatch[2];
+        if (bridge === 'かな' || bridge === 'しく' || (bridge.length === 1 && /[かしく]/.test(bridge))) {
+          return null;
+        }
+        const trailing = readTrailingOkurigana(tail.slice(bridge.length + secondKanji.length));
+        return bridge + secondKanji + trailing;
+      }
+
+      const hiraMatch = tail.match(/^(いだ|みこ)/);
+      if (!hiraMatch) return null;
+
+      const trailing = readTrailingOkurigana(tail.slice(hiraMatch[0].length));
+      return hiraMatch[0] + trailing;
+    }
+
+    function readKanjiToken(text, index) {
+      if (!isKanjiChar(text[index])) return null;
+
+      let end = index;
+      while (end < text.length && isKanjiChar(text[end])) end += 1;
+
+      const kanji = text.slice(index, end);
+      const tail = text.slice(end);
+
+      if (!tail || PARTICLE_PREFIX.test(tail)) {
+        return { start: index, end, text: kanji };
+      }
+
+      const compoundTail = readCompoundVerbTail(tail);
+      if (compoundTail) {
+        return {
+          start: index,
+          end: end + compoundTail.length,
+          text: kanji + compoundTail,
+        };
+      }
+
+      if (tail.startsWith('い') && (tail.length === 1 || !isKanjiChar(tail[1]))) {
+        return { start: index, end: end + 1, text: kanji + 'い' };
+      }
+
+      if (tail.startsWith('え') && (tail.length === 1 || !isKanjiChar(tail[1]))) {
+        return { start: index, end: end + 1, text: kanji + 'え' };
+      }
+
+      const okuri = tail.match(/^[ぁ-んー]/);
+      if (okuri) {
+        const suffix = okuri[0];
+        if (!PARTICLE_PREFIX.test(suffix) && !AUXILIARY_SUFFIX.test(suffix)) {
+          return { start: index, end: end + suffix.length, text: kanji + suffix };
+        }
+      }
+
+      return { start: index, end, text: kanji };
+    }
+
+    function readPatternToken(text, index, pattern) {
+      pattern.lastIndex = index;
+      const match = pattern.exec(text);
+      if (!match || match.index !== index) return null;
+      return {
+        start: index,
+        end: index + match[0].length,
+        text: match[0],
+      };
+    }
+
+    function leadingParticleLength(text, index) {
+      const tail = text.slice(index);
+      const match = tail.match(PARTICLE_PREFIX);
+      return match ? match[0].length : 0;
+    }
+
+    function isTokenBoundary(text, end) {
+      if (end >= text.length) return true;
+      const tail = text.slice(end);
+      if (/^[\s、。！？…「『（—・]/.test(tail)) return true;
+      if (PARTICLE_PREFIX.test(tail)) return true;
+      if (/^(?:だ|です|でした|だった|じゃ|では|ない|なく)/.test(tail)) return true;
+      if (isKanjiChar(tail[0])) return true;
+      if (/[a-zA-Z0-9]/.test(tail[0])) return true;
+      if (/[ぁ-んァ-ヴー]/.test(tail[0])) return false;
+      return true;
+    }
+
+    function readKnownHiraganaWordToken(text, index) {
+      for (const word of KNOWN_HIRAGANA_WORDS) {
+        if (!text.startsWith(word, index)) continue;
+        const end = index + word.length;
+        if (!isTokenBoundary(text, end)) continue;
+        return { start: index, end, text: word };
+      }
+      return null;
+    }
+
+    function readHiraganaRunToken(text, index) {
+      if (!/[ぁ-ん]/.test(text[index])) return null;
+
+      let runEnd = index;
+      while (runEnd < text.length && /[ぁ-ん]/.test(text[runEnd])) runEnd += 1;
+
+      for (let i = index + 2; i <= runEnd; i += 1) {
+        const tail = text.slice(i);
+        if (PARTICLE_PREFIX.test(tail)) {
+          if (i - index >= 3) {
+            return { start: index, end: i, text: text.slice(index, i) };
+          }
+          return null;
+        }
+        if (/^[\s、。！？…「『（—・]/.test(tail)) {
+          if (i - index >= 3) {
+            return { start: index, end: i, text: text.slice(index, i) };
+          }
+          return null;
+        }
+        if (/^(?:だ|です|でした|だった|じゃ|では|ない|なく)/.test(tail)) {
+          if (i - index >= 3) {
+            return { start: index, end: i, text: text.slice(index, i) };
+          }
+          return null;
+        }
+      }
+
+      const length = runEnd - index;
+      if (length < 3) return null;
+
+      return {
+        start: index,
+        end: runEnd,
+        text: text.slice(index, runEnd),
+      };
+    }
+
+    function readHiraganaToken(text, index) {
+      return readKnownHiraganaWordToken(text, index) || readHiraganaRunToken(text, index);
+    }
+
+    function findTokens(text) {
+      const tokens = [];
+      let index = 0;
+
+      while (index < text.length) {
+        const kanjiToken = readKanjiToken(text, index);
+        if (kanjiToken) {
+          if (isValidToken(kanjiToken.text)) {
+            tokens.push({
+              text: kanjiToken.text,
+              norm: tokenNorm(kanjiToken.text),
+              start: kanjiToken.start,
+              end: kanjiToken.end,
+            });
+          }
+          index = kanjiToken.end;
+          continue;
+        }
+
+        const particleLen = leadingParticleLength(text, index);
+        if (particleLen > 0) {
+          index += particleLen;
+          continue;
+        }
+
+        const hiraganaToken = readHiraganaToken(text, index);
+        if (hiraganaToken && isValidToken(hiraganaToken.text)) {
+          tokens.push({
+            text: hiraganaToken.text,
+            norm: tokenNorm(hiraganaToken.text),
+            start: hiraganaToken.start,
+            end: hiraganaToken.end,
+          });
+          index = hiraganaToken.end;
+          continue;
+        }
+
+        const katakanaToken = readPatternToken(text, index, KATAKANA_RE)
+          || readPatternToken(text, index, ALPHA_RE);
+
+        if (katakanaToken && isValidToken(katakanaToken.text)) {
+          tokens.push({
+            text: katakanaToken.text,
+            norm: tokenNorm(katakanaToken.text),
+            start: katakanaToken.start,
+            end: katakanaToken.end,
+          });
+          index = katakanaToken.end;
+          continue;
+        }
+
+        index += 1;
+      }
+
+      return tokens;
+    }
+
+    function markCluster(cluster, spanMap) {
+      if (cluster.length < 2) return;
+
+      for (const token of cluster) {
+        const key = `${token.start}:${token.end}`;
+        spanMap.set(key, {
+          start: token.start,
+          end: token.end,
+          norm: token.norm,
+        });
+      }
+    }
+
+    function findEcho(text) {
+      if (!text.trim()) return { spans: [], count: 0 };
+
+      const tokens = findTokens(text);
+      if (!tokens.length) return { spans: [], count: 0 };
+
+      const spanMap = new Map();
+      const groups = new Map();
+
+      for (const token of tokens) {
+        if (!groups.has(token.norm)) groups.set(token.norm, []);
+        groups.get(token.norm).push(token);
+      }
+
+      for (const group of groups.values()) {
+        if (group.length < 2) continue;
+        group.sort((a, b) => a.start - b.start);
+
+        let cluster = [group[0]];
+
+        for (let i = 1; i < group.length; i++) {
+          const prev = group[i - 1];
+          const curr = group[i];
+          const gap = curr.start - prev.end;
+
+          if (gap <= getWindow()) {
+            cluster.push(curr);
+          } else {
+            markCluster(cluster, spanMap);
+            cluster = [curr];
+          }
+        }
+
+        markCluster(cluster, spanMap);
+      }
+
+      if (!spanMap.size) return { spans: [], count: 0 };
+
+      const normFirstStart = new Map();
+      for (const span of spanMap.values()) {
+        if (!normFirstStart.has(span.norm) || span.start < normFirstStart.get(span.norm)) {
+          normFirstStart.set(span.norm, span.start);
+        }
+      }
+
+      const normColor = new Map();
+      [...normFirstStart.entries()]
+        .sort((a, b) => a[1] - b[1])
+        .forEach(([norm], index) => {
+          normColor.set(norm, index % ECHO_COLOR_COUNT);
+        });
+
+      const spans = [...spanMap.values()]
+        .map((span) => ({
+          start: span.start,
+          end: span.end,
+          colorIndex: normColor.get(span.norm),
+        }))
+        .sort((a, b) => a.start - b.start);
+
+      return { spans, count: spans.length };
+    }
+
+    function render() {
+      const text = editor.value;
+      const { spans } = findEcho(text);
+
+      let html = '';
+      let cursor = 0;
+
+      for (const { start, end, colorIndex } of spans) {
+        if (cursor < start) {
+          html += escapeHtml(text.slice(cursor, start));
+        }
+        html += `<span class="echo-${colorIndex}">${escapeHtml(text.slice(start, end))}</span>`;
+        cursor = end;
+      }
+
+      if (cursor < text.length) {
+        html += escapeHtml(text.slice(cursor));
+      }
+
+      backdrop.innerHTML = html;
+      charCountEl.textContent = text.length;
+      syncScroll();
+    }
+
+    function syncScroll() {
+      backdrop.style.transform = `translate3d(${-editor.scrollLeft}px, ${-editor.scrollTop}px, 0)`;
+    }
+
+    let scrollSyncUntil = 0;
+    let scrollSyncRaf = 0;
+
+    function trackScrollSync() {
+      syncScroll();
+      scrollSyncUntil = performance.now() + 480;
+      if (scrollSyncRaf) return;
+      const tick = () => {
+        syncScroll();
+        if (performance.now() < scrollSyncUntil) {
+          scrollSyncRaf = requestAnimationFrame(tick);
+        } else {
+          scrollSyncRaf = 0;
+        }
+      };
+      scrollSyncRaf = requestAnimationFrame(tick);
+    }
+
+    workTitle.addEventListener('input', scheduleSave);
+
+    windowInput.addEventListener('change', () => setWindow(parseInt(windowInput.value, 10)));
+    windowSlider.addEventListener('input', () => setWindow(parseInt(windowSlider.value, 10)));
+
+    windowInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        windowInput.blur();
+      }
+    });
+
+    for (const input of Object.values(EXCLUDE_INPUTS)) {
+      input.addEventListener('change', () => {
+        saveExcludePrefs();
+        render();
+      });
+    }
+
+    editor.addEventListener('input', () => {
+      render();
+      scheduleSave();
+    });
+    editor.addEventListener('scroll', trackScrollSync, { passive: true });
+    window.addEventListener('resize', syncScroll);
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        render();
+        scheduleSave();
+      }, 0);
+    });
+
+    (async () => {
+      syncExcludeControls(loadExcludePrefs());
+      setWindow(loadWindow(), { save: false });
+      await library.initFromUrl();
+      render();
+      editor.focus();
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>
