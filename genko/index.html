@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../shared/export.css">
   <script src="../shared/export.js"></script>
   <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
   <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
@@ -670,7 +671,7 @@
 
       const cellH = Math.floor(availH / ROWS);
       const cellW = Math.floor(availW / COLS);
-      const minCell = window.matchMedia('(max-width: 640px)').matches ? 12 : 16;
+      const minCell = window.matchMedia('(max-width: 640px)').matches ? 23 : 16;
       const cell = Math.max(minCell, Math.min(60, cellH, cellW));
       CELL_PX = cell;
       document.documentElement.style.setProperty('--cell-size', cell + 'px');

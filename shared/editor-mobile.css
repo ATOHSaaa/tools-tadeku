@@ -1,0 +1,17 @@
+/* iOS Safari は font-size が 16px 未満の入力欄をフォーカス時に自動拡大する */
+@media (max-width: 640px) {
+  #editor,
+  .work-title,
+  .scene-text,
+  .scene-title,
+  .capture,
+  .goal-input,
+  .window-input,
+  input[type="text"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: max(16px, 1em) !important;
+  }
+}

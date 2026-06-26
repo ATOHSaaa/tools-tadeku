@@ -10,13 +10,14 @@
     gtag('js', new Date());
     gtag('config', 'G-HN5C12BJ0W');
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="執筆中に語彙がひらめく小説執筆エディタ。WordFall・PedantryFall連携で用例付きの語を見ながら、表現豊かな原稿を書けます。">
   <title>Cue — 語彙と一緒に書くエディタ | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
   <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
@@ -205,13 +206,21 @@
     }
 
     @media (max-width: 640px) {
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+      }
+
       .layout {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(0, 1fr) auto;
+        width: 100%;
+        will-change: transform, height;
         padding:
           env(safe-area-inset-top, 0)
           env(safe-area-inset-right, 0)
-          env(safe-area-inset-bottom, 0)
+          0
           env(safe-area-inset-left, 0);
       }
 
@@ -253,8 +262,10 @@
 
       .word-panel {
         flex-shrink: 0;
-        max-height: min(36dvh, 11.5rem);
+        max-height: min(32dvh, 10.5rem);
         min-height: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        background: var(--surface);
       }
 
       .inject-rows {
@@ -396,7 +407,39 @@
       pedantryLink: document.getElementById('pedantry-link'),
       wordNext: document.getElementById('word-next'),
       wordTimer: document.getElementById('word-timer'),
+      layout: document.querySelector('.layout'),
     };
+
+    const mobileMq = window.matchMedia('(max-width: 640px)');
+
+    function resetMobileViewportLayout() {
+      if (!els.layout) return;
+      els.layout.style.height = '';
+      els.layout.style.transform = '';
+    }
+
+    function syncMobileViewportLayout() {
+      if (!mobileMq.matches || !els.layout) {
+        resetMobileViewportLayout();
+        return;
+      }
+
+      const vv = window.visualViewport;
+      if (!vv) return;
+
+      els.layout.style.height = `${vv.height}px`;
+      els.layout.style.transform = `translateY(${vv.offsetTop}px)`;
+    }
+
+    function bindMobileViewportSync() {
+      if (!window.visualViewport) return;
+      const onChange = () => syncMobileViewportLayout();
+      window.visualViewport.addEventListener('resize', onChange);
+      window.visualViewport.addEventListener('scroll', onChange);
+      window.addEventListener('orientationchange', onChange);
+      mobileMq.addEventListener('change', onChange);
+      onChange();
+    }
 
     TadekuEditorPrefs.trackEditor('cue');
 
@@ -510,6 +553,7 @@
 
     refreshWords();
     injectWords();
+    bindMobileViewportSync();
     (async () => {
       await library.initFromUrl();
       els.editor.focus();
