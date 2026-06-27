@@ -169,6 +169,80 @@
       cursor: pointer;
     }
 
+    .exclude-custom {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+      flex: 1 1 8rem;
+      min-width: 6rem;
+      max-width: 22rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.15rem 0.35rem;
+    }
+
+    .exclude-custom-tags {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .exclude-custom-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      border: 1px solid var(--border);
+      padding: 0.05rem 0.15rem 0.05rem 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .exclude-custom-tag-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1rem;
+      height: 1rem;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .exclude-custom-tag-remove:hover {
+      color: var(--muted);
+    }
+
+    .exclude-custom-input {
+      flex: 1 1 4rem;
+      min-width: 3rem;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.1rem 0;
+      outline: none;
+    }
+
+    .exclude-custom-input::placeholder {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .exclude-custom-input:focus {
+      outline: none;
+    }
+
     .editor-backdrop .echo-0 { background: #fde8d0; }
     .editor-backdrop .echo-1 { background: #d4e8fc; }
     .editor-backdrop .echo-2 { background: #d4f0dc; }
@@ -257,6 +331,10 @@
           <label class="exclude-opt"><input type="checkbox" id="exclude-second-person"><span>二人称</span></label>
           <label class="exclude-opt"><input type="checkbox" id="exclude-third-person"><span>三人称</span></label>
           <label class="exclude-opt"><input type="checkbox" id="exclude-demonstrative"><span>指示代名詞</span></label>
+          <div class="exclude-custom" id="exclude-custom">
+            <div class="exclude-custom-tags" id="exclude-custom-tags"></div>
+            <input type="text" class="exclude-custom-input" id="exclude-custom-input" placeholder="語を入力して Enter" spellcheck="false" aria-label="除外する語">
+          </div>
         </div>
       </div>
     </header>
@@ -349,6 +427,9 @@
     EXCLUDE_INPUTS.secondPerson = document.getElementById('exclude-second-person');
     EXCLUDE_INPUTS.thirdPerson = document.getElementById('exclude-third-person');
     EXCLUDE_INPUTS.demonstrative = document.getElementById('exclude-demonstrative');
+    const excludeCustomTags = document.getElementById('exclude-custom-tags');
+    const excludeCustomInput = document.getElementById('exclude-custom-input');
+    let excludeCustomWords = [];
 
     TadekuEditorPrefs.trackEditor('echo');
 
@@ -408,7 +489,18 @@
         secondPerson: false,
         thirdPerson: false,
         demonstrative: false,
+        customWords: [],
       };
+    }
+
+    function normalizeCustomWords(value) {
+      if (Array.isArray(value)) {
+        return value.map((w) => String(w).trim()).filter(Boolean);
+      }
+      if (typeof value === 'string' && value.trim()) {
+        return value.split(/[,、\s]+/).map((w) => w.trim()).filter(Boolean);
+      }
+      return [];
     }
 
     function loadExcludePrefs() {
@@ -431,6 +523,7 @@
         secondPerson: EXCLUDE_INPUTS.secondPerson.checked,
         thirdPerson: EXCLUDE_INPUTS.thirdPerson.checked,
         demonstrative: EXCLUDE_INPUTS.demonstrative.checked,
+        customWords: excludeCustomWords,
       }));
     }
 
@@ -439,6 +532,49 @@
       EXCLUDE_INPUTS.secondPerson.checked = prefs.secondPerson;
       EXCLUDE_INPUTS.thirdPerson.checked = prefs.thirdPerson;
       EXCLUDE_INPUTS.demonstrative.checked = prefs.demonstrative;
+      excludeCustomWords = normalizeCustomWords(prefs.customWords);
+      renderCustomExcludeTags();
+    }
+
+    function hasCustomExcludeWord(word) {
+      const norm = tokenNorm(word);
+      return excludeCustomWords.some((w) => w === word || tokenNorm(w) === norm);
+    }
+
+    function addCustomExcludeWord(raw) {
+      const word = raw.trim();
+      if (!word || hasCustomExcludeWord(word)) return false;
+      excludeCustomWords.push(word);
+      renderCustomExcludeTags();
+      saveExcludePrefs();
+      render();
+      return true;
+    }
+
+    function removeCustomExcludeWord(index) {
+      if (index < 0 || index >= excludeCustomWords.length) return;
+      excludeCustomWords.splice(index, 1);
+      renderCustomExcludeTags();
+      saveExcludePrefs();
+      render();
+    }
+
+    function renderCustomExcludeTags() {
+      excludeCustomTags.innerHTML = excludeCustomWords.map((word, index) => (
+        `<span class="exclude-custom-tag">`
+        + `<span>${escapeHtml(word)}</span>`
+        + `<button type="button" class="exclude-custom-tag-remove" data-index="${index}" aria-label="${escapeHtml(word)} を除外リストから削除">×</button>`
+        + `</span>`
+      )).join('');
+    }
+
+    function buildCustomExcludeSet(words) {
+      const set = new Set();
+      for (const word of words) {
+        set.add(word);
+        set.add(tokenNorm(word));
+      }
+      return set;
     }
 
     function isParticle(text) {
@@ -454,6 +590,8 @@
         const set = EXCLUDE_SETS[key];
         if (set.has(text) || set.has(norm)) return true;
       }
+      const customSet = buildCustomExcludeSet(excludeCustomWords);
+      if (customSet.has(text) || customSet.has(norm)) return true;
       return false;
     }
 
@@ -852,6 +990,41 @@
         render();
       });
     }
+
+    excludeCustomTags.addEventListener('click', (e) => {
+      const btn = e.target.closest('.exclude-custom-tag-remove');
+      if (!btn) return;
+      removeCustomExcludeWord(Number(btn.dataset.index));
+    });
+
+    let excludeCustomComposing = false;
+    let excludeCustomJustEndedComposition = false;
+
+    excludeCustomInput.addEventListener('compositionstart', () => {
+      excludeCustomComposing = true;
+    });
+    excludeCustomInput.addEventListener('compositionend', () => {
+      excludeCustomComposing = false;
+      excludeCustomJustEndedComposition = true;
+      setTimeout(() => {
+        excludeCustomJustEndedComposition = false;
+      }, 0);
+    });
+
+    excludeCustomInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (e.isComposing || e.keyCode === 229 || excludeCustomComposing || excludeCustomJustEndedComposition) return;
+        e.preventDefault();
+        if (addCustomExcludeWord(excludeCustomInput.value)) {
+          excludeCustomInput.value = '';
+        }
+        return;
+      }
+      if (e.key === 'Backspace' && !excludeCustomInput.value && excludeCustomWords.length) {
+        if (e.isComposing || excludeCustomComposing) return;
+        removeCustomExcludeWord(excludeCustomWords.length - 1);
+      }
+    });
 
     editor.addEventListener('input', () => {
       render();
