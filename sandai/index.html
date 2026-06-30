@@ -48,14 +48,6 @@
       margin-bottom: 2rem;
     }
 
-    .title {
-      font-size: clamp(2rem, 7vw, 3rem);
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      line-height: 1.05;
-      margin-bottom: 0.65rem;
-    }
-
     .lead {
       font-size: clamp(0.62rem, 2.6vw, 0.92rem);
       color: var(--muted);
@@ -258,7 +250,7 @@
 <body>
   <div class="app">
     <header class="header">
-      <h1 class="title" id="page-title">三題噺ガチャ</h1>
+      <h1 class="page-title" id="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span><span id="page-tool-name">三題噺ガチャ</span></h1>
       <p class="lead" id="page-lead">三題噺用に、3つのお題をランダムで表示します。カードを固定して引き直すこともできます</p>
     </header>
 
@@ -277,7 +269,7 @@
       const CARDS_PER_ROW = 3;
       const allItems = (window.SANDAI_DATA?.items || []).slice();
       const cardsEl = document.getElementById('cards');
-      const titleEl = document.getElementById('page-title');
+      const toolNameEl = document.getElementById('page-tool-name');
       const leadEl = document.getElementById('page-lead');
 
       const KANJI_ONES = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
@@ -346,8 +338,8 @@
         const n = state.length;
         const kanji = topicKanji(n);
         const title = `${kanji}題噺ガチャ`;
-        titleEl.textContent = title;
-        document.title = `${title} — アイデア発想`;
+        toolNameEl.textContent = title;
+        document.title = `${title} — アイデア発想 | tadeku-tools`;
         leadEl.textContent = `${kanji}題噺用に、${n}つのお題をランダムで表示します。カードを固定して引き直すこともできます`;
       }
 
