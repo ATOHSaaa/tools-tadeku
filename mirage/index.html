@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="執筆が止まったとき、エディタの背景に薄く語が浮かぶ執筆エディタ。関係のない言葉や難解な概念が蜃気楼のように現れ、思考のフックになります。">
+  <title>Mirage — 蜃気楼の執筆エディタ | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      border-bottom: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem 0;
+    }
+
+    .header .work-title {
+      padding: 0 1.25rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .idle-line {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .idle-line span {
+      letter-spacing: 0.04em;
+    }
+
+    .idle-input {
+      width: 3.5rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 0.25rem 0.35rem;
+      outline: none;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .idle-input::-webkit-outer-spin-button,
+    .idle-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .idle-input:focus {
+      outline: none;
+    }
+
+    .idle-slider {
+      flex: 1;
+      min-width: 5rem;
+      max-width: 14rem;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .mirage-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    #mirage-measurer {
+      position: absolute;
+      left: -9999px;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .mirage-word {
+      position: absolute;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 2.4s ease;
+      user-select: none;
+      transform: translate(-50%, -50%);
+    }
+
+    .mirage-word.visible {
+      opacity: var(--mirage-opacity, 0.24);
+    }
+
+    .mirage-word.fading {
+      opacity: 0 !important;
+      transition-duration: 1.2s;
+    }
+
+    #editor {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/site-link.css">
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="header-row">
+        <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Mirage</div>
+        <div class="stats">
+          <span>文字数 <strong id="char-count">0</strong></span>
+        </div>
+      </div>
+      <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
+      <div class="toolbar">
+        <div class="idle-line">
+          <span>待機：</span>
+          <input type="number" class="idle-input" id="idle-input" value="30" min="5" max="600" inputmode="numeric" aria-label="待機秒数">
+          <span>秒</span>
+        </div>
+        <input type="range" class="idle-slider" id="idle-slider" min="5" max="300" step="5" value="30" aria-label="待機秒数">
+      </div>
+    </header>
+    <div class="editor-wrap" id="editor-wrap">
+      <div class="mirage-layer" id="mirage-layer" aria-hidden="true"></div>
+      <span id="mirage-measurer" class="mirage-word" aria-hidden="true"></span>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
+  <script src="../shared/wordfall-words.js"></script>
+  <script>
+    const wordfallWords = (window.WORDFALL_CONFIG?.words || []).map((w) => w.word.trim());
+  </script>
+  <script src="../shared/pedantryfall-words.js"></script>
+  <script>
+    const pedantryWords = (window.WORDFALL_CONFIG?.words || []).map((w) => w.word.trim());
+  </script>
+  <script>
+    const STORAGE_KEY = 'mirage-idle-sec';
+    const DEFAULT_IDLE_SEC = 30;
+    const IDLE_MIN = 5;
+    const IDLE_MAX = 600;
+    const SLIDER_MAX = 300;
+    const CYCLE_MS = 16000;
+    const FADE_IN_DELAY = 40;
+    const WORD_MIN = 22;
+    const WORD_MAX = 42;
+    const LAYOUT_GAP = 8;
+    const LAYOUT_JITTER = 20;
+    const FONT_SIZE_REM = 0.92;
+
+    const editor = document.getElementById('editor');
+    const editorWrap = document.getElementById('editor-wrap');
+    const mirageLayer = document.getElementById('mirage-layer');
+    const mirageMeasurer = document.getElementById('mirage-measurer');
+    const workTitle = document.getElementById('work-title');
+    const charCount = document.getElementById('char-count');
+    const idleInput = document.getElementById('idle-input');
+    const idleSlider = document.getElementById('idle-slider');
+
+    const wordPool = [...wordfallWords, ...pedantryWords].filter(Boolean);
+    let lastInputTime = Date.now();
+    let mirageActive = false;
+    let cycleTimer = null;
+    let wordElements = [];
+
+    TadekuEditorPrefs.trackEditor('mirage');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'mirage',
+      () => ({ title: workTitle.value, body: editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          workTitle.value = title || '';
+          editor.value = body || '';
+          charCount.textContent = editor.value.length;
+          lastInputTime = Date.now();
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
+        },
+      },
+    );
+
+    function scheduleSave() {
+      library.scheduleSave();
+    }
+
+    function updateCount() {
+      charCount.textContent = editor.value.length;
+    }
+
+    function loadIdleSec() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const n = saved !== null ? parseInt(saved, 10) : DEFAULT_IDLE_SEC;
+      return Number.isFinite(n) && n >= IDLE_MIN ? n : DEFAULT_IDLE_SEC;
+    }
+
+    function saveIdleSec(value) {
+      localStorage.setItem(STORAGE_KEY, String(value));
+    }
+
+    function clampIdleSec(n) {
+      if (!Number.isFinite(n)) return DEFAULT_IDLE_SEC;
+      return Math.min(IDLE_MAX, Math.max(IDLE_MIN, Math.round(n)));
+    }
+
+    function syncIdleControls(sec) {
+      idleInput.value = sec;
+      idleSlider.value = Math.min(sec, SLIDER_MAX);
+    }
+
+    function getIdleSec() {
+      return clampIdleSec(parseInt(idleInput.value, 10));
+    }
+
+    function getIdleMs() {
+      return getIdleSec() * 1000;
+    }
+
+    function setIdleSec(n, { save = true } = {}) {
+      const sec = clampIdleSec(n);
+      syncIdleControls(sec);
+      if (save) saveIdleSec(sec);
+      if (mirageActive && Date.now() - lastInputTime < sec * 1000) {
+        clearMirage();
+      }
+    }
+
+    function recordInput() {
+      lastInputTime = Date.now();
+      clearMirage();
+    }
+
+    function pickWords(count) {
+      if (!wordPool.length) return [];
+      const shuffled = wordPool.slice().sort(() => Math.random() - 0.5);
+      const n = Math.min(count, shuffled.length);
+      const seen = new Set();
+      const picked = [];
+      for (const word of shuffled) {
+        if (seen.has(word)) continue;
+        seen.add(word);
+        picked.push(word);
+        if (picked.length >= n) break;
+      }
+      return picked;
+    }
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function measureWord(text, fontSizeRem) {
+      mirageMeasurer.textContent = text;
+      mirageMeasurer.style.fontSize = `${fontSizeRem}rem`;
+      return {
+        width: mirageMeasurer.offsetWidth,
+        height: mirageMeasurer.offsetHeight,
+      };
+    }
+
+    function boxFromCenter(cx, cy, w, h) {
+      return { left: cx - w / 2, top: cy - h / 2, right: cx + w / 2, bottom: cy + h / 2 };
+    }
+
+    function boxesOverlap(a, b, gap) {
+      return !(
+        a.right + gap <= b.left
+        || a.left - gap >= b.right
+        || a.bottom + gap <= b.top
+        || a.top - gap >= b.bottom
+      );
+    }
+
+    function getEditorInsets() {
+      const style = getComputedStyle(editor);
+      const padX = parseFloat(style.paddingLeft);
+      const padY = parseFloat(style.paddingTop);
+      const padRight = parseFloat(style.paddingRight);
+      const padBottom = parseFloat(style.paddingBottom);
+      return {
+        padX,
+        padY,
+        layerW: editorWrap.clientWidth - padX - padRight,
+        layerH: editorWrap.clientHeight - padY - padBottom,
+      };
+    }
+
+    function generateAnchors(count, padX, padY, layerW, layerH) {
+      const cols = Math.max(1, Math.round(Math.sqrt(count * layerW / Math.max(layerH, 1))));
+      const rows = Math.max(1, Math.ceil(count / cols));
+      const cellW = layerW / cols;
+      const cellH = layerH / rows;
+      const anchors = [];
+
+      for (let i = 0; i < count; i++) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        anchors.push({
+          x: padX + col * cellW + randomBetween(0.12, 0.88) * cellW,
+          y: padY + row * cellH + randomBetween(0.12, 0.88) * cellH,
+        });
+      }
+
+      return shuffle(anchors);
+    }
+
+    function layoutMirageWords(words, padX, padY, layerW, layerH) {
+      const anchors = generateAnchors(words.length, padX, padY, layerW, layerH);
+      const placed = [];
+      const items = words.map((text) => ({
+        text,
+        opacity: randomBetween(0.18, 0.32),
+      })).sort((a, b) => b.text.length - a.text.length);
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const anchor = anchors[i % anchors.length];
+        let placedItem = null;
+
+        for (let attempt = 0; attempt < 40; attempt++) {
+          const { width, height } = measureWord(item.text, FONT_SIZE_REM);
+          const jitterScale = attempt === 0 ? 0.35 : 1;
+          const cx = anchor.x + randomBetween(-LAYOUT_JITTER, LAYOUT_JITTER) * jitterScale;
+          const cy = anchor.y + randomBetween(-LAYOUT_JITTER, LAYOUT_JITTER) * jitterScale;
+          const box = boxFromCenter(cx, cy, width, height);
+
+          if (
+            box.left < padX
+            || box.top < padY
+            || box.right > padX + layerW
+            || box.bottom > padY + layerH
+          ) {
+            continue;
+          }
+
+          if (placed.every((p) => !boxesOverlap(box, p.box, LAYOUT_GAP))) {
+            placedItem = { ...item, cx, cy, box };
+            break;
+          }
+        }
+
+        if (placedItem) placed.push(placedItem);
+      }
+
+      return shuffle(placed);
+    }
+
+    function clearMirage() {
+      mirageActive = false;
+      if (cycleTimer) {
+        clearTimeout(cycleTimer);
+        cycleTimer = null;
+      }
+      mirageLayer.innerHTML = '';
+      wordElements = [];
+    }
+
+    function spawnMirage() {
+      if (Date.now() - lastInputTime < getIdleMs()) return;
+      mirageActive = true;
+      mirageLayer.innerHTML = '';
+      wordElements = [];
+
+      const count = Math.floor(randomBetween(WORD_MIN, WORD_MAX + 1));
+      const words = pickWords(count);
+      const { padX, padY, layerW, layerH } = getEditorInsets();
+      const layout = layoutMirageWords(words, padX, padY, layerW, layerH);
+
+      layout.forEach((item, i) => {
+        const el = document.createElement('span');
+        el.className = 'mirage-word';
+        el.textContent = item.text;
+        el.style.fontSize = `${FONT_SIZE_REM}rem`;
+        el.style.left = `${item.cx}px`;
+        el.style.top = `${item.cy}px`;
+        el.style.setProperty('--mirage-opacity', String(item.opacity));
+        mirageLayer.appendChild(el);
+        wordElements.push(el);
+
+        setTimeout(() => el.classList.add('visible'), FADE_IN_DELAY + i * 55);
+      });
+
+      scheduleCycle();
+    }
+
+    function scheduleCycle() {
+      if (cycleTimer) clearTimeout(cycleTimer);
+      cycleTimer = setTimeout(() => {
+        if (!mirageActive || Date.now() - lastInputTime < getIdleMs()) return;
+        fadeOutAndReplace();
+      }, CYCLE_MS);
+    }
+
+    function fadeOutAndReplace() {
+      wordElements.forEach((el) => el.classList.add('fading'));
+      setTimeout(() => {
+        if (!mirageActive || Date.now() - lastInputTime < getIdleMs()) return;
+        spawnMirage();
+      }, 1400);
+    }
+
+    workTitle.addEventListener('input', () => {
+      recordInput();
+      scheduleSave();
+    });
+
+    editor.addEventListener('input', () => {
+      updateCount();
+      recordInput();
+      scheduleSave();
+    });
+
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        updateCount();
+        recordInput();
+        scheduleSave();
+      }, 0);
+    });
+
+    idleInput.addEventListener('change', () => setIdleSec(getIdleSec()));
+    idleInput.addEventListener('input', () => setIdleSec(getIdleSec(), { save: false }));
+    idleSlider.addEventListener('input', () => setIdleSec(parseInt(idleSlider.value, 10), { save: false }));
+    idleSlider.addEventListener('change', () => setIdleSec(parseInt(idleSlider.value, 10)));
+
+    setInterval(() => {
+      if (!mirageActive && Date.now() - lastInputTime >= getIdleMs()) {
+        spawnMirage();
+      }
+    }, 1000);
+
+    (async () => {
+      setIdleSec(loadIdleSec(), { save: false });
+      await library.initFromUrl();
+      updateCount();
+      editor.focus();
+      editor.setSelectionRange(0, 0);
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

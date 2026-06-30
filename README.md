@@ -21,6 +21,7 @@
 | `Interval/` | 立ち止まりたい人のための執筆エディタ |
 | `scene/` | Scene — シーン単位の構成エディタ |
 | `cue/` | Cue — 語彙表示型執筆エディタ |
+| `mirage/` | Mirage — 執筆停止時に背景へ語が浮かぶエディタ |
 | `genko/` | Genko — 400字詰め原稿用紙エディタ |
 | `zenhan/` | Zenhan — 全角半角変換ツール |
 | `shaper/` | Shaper — 小説テキスト整形ツール |
