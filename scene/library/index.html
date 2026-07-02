@@ -269,6 +269,7 @@
         <div class="format-group">
           <button class="format-btn" type="button" data-format="txt">.txt</button>
           <button class="format-btn" type="button" data-format="md">.md</button>
+          <button class="format-btn" type="button" data-format="jpg">.jpg</button>
         </div>
       </fieldset>
       <div class="modal-actions">
@@ -279,6 +280,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../../shared/export.js"></script>
+  <script src="../../shared/scene-export.js"></script>
   <script src="../../shared/editor-prefs.js"></script>
   <script>
     const P = window.TadekuEditorPrefs;
@@ -354,8 +356,12 @@
       return lines.join('\n');
     }
 
+    function docScenes(doc) {
+      return parseSceneBody(doc.body)?.scenes || [];
+    }
+
     function zipEntryName(doc, format, used) {
-      const ext = format === 'md' ? '.md' : '.txt';
+      const ext = format === 'md' ? '.md' : format === 'jpg' ? '.jpg' : '.txt';
       const base = exportBasename(doc);
       let name = base + ext;
       if (!used.has(name)) {
@@ -382,7 +388,18 @@
       const zip = new JSZip();
       const used = new Set();
       for (const doc of docs) {
-        zip.file(zipEntryName(doc, format, used), buildExportContent(doc, format));
+        if (format === 'jpg') {
+          const scenes = docScenes(doc);
+          if (!scenes.length) continue;
+          const canvas = await SceneExport.renderExportCanvas({
+            title: displayTitle(doc),
+            scenes,
+          });
+          const blob = await SceneExport.canvasToJpgBlob(canvas);
+          if (blob) zip.file(zipEntryName(doc, format, used), blob);
+        } else {
+          zip.file(zipEntryName(doc, format, used), buildExportContent(doc, format));
+        }
       }
       const blob = await zip.generateAsync({ type: 'blob' });
       ExportUtils.downloadBlob(blob, bulkZipFilename());
@@ -407,7 +424,18 @@
       return ExportUtils.showExportFormatModal(message, null);
     }
 
-    function exportDoc(doc, format) {
+    async function exportDoc(doc, format) {
+      if (format === 'jpg') {
+        const scenes = docScenes(doc);
+        if (!scenes.length) return;
+        const canvas = await SceneExport.renderExportCanvas({
+          title: displayTitle(doc),
+          scenes,
+        });
+        const blob = await SceneExport.canvasToJpgBlob(canvas);
+        if (blob) ExportUtils.downloadBlob(blob, exportBasename(doc) + '.jpg');
+        return;
+      }
       const ext = format === 'md' ? '.md' : '.txt';
       const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
       ExportUtils.downloadBlob(
@@ -495,7 +523,7 @@
         exportBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const format = await showExportModal(doc);
-          if (format) exportDoc(doc, format);
+          if (format) await exportDoc(doc, format);
         });
 
         const deleteBtn = document.createElement('button');
