@@ -100,7 +100,15 @@
       color: #fff;
     }
 
-    .btn-danger:hover {
+    .btn-library {
+      background: var(--invert);
+      border-color: var(--invert);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .btn-library:hover {
+      opacity: 0.85;
       background: var(--invert);
       border-color: var(--invert);
       color: #fff;
@@ -536,12 +544,13 @@
     <header class="header">
       <div class="header-top">
         <div style="flex:1; min-width:0">
-          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Scene — シーンエディタ</div>
+          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Scene</div>
           <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
         </div>
         <div class="header-actions">
+          <a class="btn btn-library" href="library/">Library</a>
+          <button class="btn" id="new-btn" type="button" title="新しいプロットを作成">新規作成</button>
           <button class="btn" id="export-btn" title="テキストを書き出す">書き出し</button>
-          <button class="btn btn-danger" id="clear-btn" title="全シーンを消去">全消去</button>
         </div>
       </div>
       <div class="stats">
@@ -580,6 +589,7 @@
 
   <script src="../shared/export.js"></script>
   <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
   <script src="../shared/editor-undo.js"></script>
   <script>
     const STORAGE_KEY = 'scene-scenes-v1';
@@ -589,6 +599,67 @@
     let data = { title: '', scenes: [] };
     let saveTimer = null;
     const undo = TadekuEditorUndo.createStack({ limit: 50 });
+
+    TadekuEditorPrefs.trackEditor('scene');
+
+    function serializeForLibrary() {
+      const hasSceneContent = data.scenes.some(sc => sc.title.trim() || sc.body.trim());
+      if (!data.title.trim() && !hasSceneContent) return '';
+      return JSON.stringify({
+        scenes: data.scenes.map(sc => ({
+          title: sc.title,
+          body: sc.body,
+          collapsed: !!sc.collapsed,
+        })),
+      });
+    }
+
+    function deserializeFromLibrary(body) {
+      try {
+        const parsed = JSON.parse(body);
+        if (!parsed || !Array.isArray(parsed.scenes)) return null;
+        return parsed.scenes.map(sc => ({
+          id: uid(),
+          title: sc.title || '',
+          body: sc.body || '',
+          collapsed: sc.collapsed == null ? false : !!sc.collapsed,
+        }));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function applyLibraryDocument({ title, body }) {
+      const scenes = deserializeFromLibrary(body);
+      data = {
+        title: title || '',
+        scenes: scenes && scenes.length ? scenes : [makeScene()],
+      };
+      document.getElementById('work-title').value = data.title || '';
+      render();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      syncMeta();
+    }
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'scene',
+      () => ({
+        title: document.getElementById('work-title').value,
+        body: serializeForLibrary(),
+      }),
+      {
+        onLoad: applyLibraryDocument,
+        onTitleResolved: (uniqueTitle) => {
+          const workTitle = document.getElementById('work-title');
+          if (document.activeElement !== workTitle) {
+            workTitle.value = uniqueTitle;
+            data.title = uniqueTitle;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            syncMeta();
+          }
+        },
+      },
+    );
 
     function getEditorState() {
       return data;
@@ -650,6 +721,7 @@
       saveTimer = setTimeout(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         syncMeta();
+        library.scheduleSave();
       }, 400);
     }
 
@@ -1171,12 +1243,15 @@
       if (format) await exportFile(format);
     });
 
-    document.getElementById('clear-btn').addEventListener('click', () => {
-      if (!confirm('すべてのシーンを消去しますか？この操作は元に戻せません。')) return;
+    document.getElementById('new-btn').addEventListener('click', async () => {
+      if (!confirm('新しいプロットを作成しますか？')) return;
+      await library.flush();
+      library.resetSession();
       data = { title: '', scenes: [makeScene()] };
       document.getElementById('work-title').value = '';
       render();
       scheduleSave();
+      document.getElementById('work-title').focus();
     });
 
     document.addEventListener('keydown', e => {
@@ -1188,6 +1263,10 @@
     document.getElementById('work-title').value = data.title || '';
     syncMeta();
     render();
+
+    (async () => {
+      await library.initFromUrl();
+    })();
   </script>
   <script src="../shared/site-link.js"></script>
 </body>

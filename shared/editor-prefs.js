@@ -290,8 +290,9 @@
     return t || '無題';
   }
 
-  async function resolveUniqueTitle(requestedRaw, excludeId) {
-    const all = await getAllDocuments();
+  async function resolveUniqueTitle(requestedRaw, excludeId, editorId) {
+    let all = await getAllDocuments();
+    if (editorId) all = all.filter((d) => d.editorId === editorId);
     const used = new Set(
       all.filter((d) => d.id !== excludeId).map((d) => documentDisplayTitle(d)),
     );
@@ -301,6 +302,12 @@
     let n = 2;
     while (used.has(`${base} (${n})`)) n++;
     return `${base} (${n})`;
+  }
+
+  async function getDocumentsByEditorId(editorId) {
+    const all = await getAllDocuments();
+    if (!editorId) return all;
+    return all.filter((d) => d.editorId === editorId);
   }
 
   async function getAllDocuments() {
@@ -401,6 +408,7 @@
     documentDisplayTitle,
     isPlaceholderTitle,
     getAllDocuments,
+    getDocumentsByEditorId,
     getDocument,
     deleteDocument,
   };

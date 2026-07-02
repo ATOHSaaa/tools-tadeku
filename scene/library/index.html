@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Scene で自動保存したプロットの一覧。シーン構成をブラウザから確認し、編集を再開できます。">
+  <title>Scene — Library | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../shared/export.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --muted: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --invert: #000000;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .header {
+      margin-bottom: 1.5rem;
+    }
+
+    .header-top {
+      margin-bottom: 0.75rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+
+    .intro {
+      font-size: 0.82rem;
+      font-weight: 500;
+      line-height: 1.75;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin: 1.25rem 0 1rem;
+    }
+
+    .bulk-export-btn {
+      border: 2px solid var(--invert);
+      background: var(--invert);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .bulk-export-btn:hover:not(:disabled) { opacity: 0.85; }
+    .bulk-export-btn[hidden] { display: none; }
+
+    .empty {
+      border: 2px dashed var(--border);
+      padding: 2rem 1.25rem;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.75;
+    }
+
+    .table-wrap {
+      border: 2px solid var(--border);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.7rem 0.85rem;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    tbody tr:hover { background: #f5f5f5; }
+
+    tbody td {
+      padding: 0.8rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    .doc-title {
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .num, .date {
+      white-space: nowrap;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.38rem 0.55rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--invert);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: var(--invert);
+      border-color: var(--invert);
+      color: #fff;
+    }
+
+    .btn-danger:hover { opacity: 0.85; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .modal-overlay[hidden] { display: none; }
+
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-message {
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.75;
+      margin-bottom: 1.25rem;
+    }
+
+    .format-options { border: none; margin-bottom: 1rem; }
+
+    .format-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 520px) {
+      .actions { flex-wrap: wrap; justify-content: flex-start; }
+    }
+  </style>
+  <link rel="stylesheet" href="../../shared/site-link.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-top">
+        <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span><a class="brand-home" href="../">Scene</a><span class="brand-sep"> / </span>Library</div>
+      </div>
+      <h1>Library</h1>
+      <p class="intro">Scene で書いたプロットが、入力とともに自動保存されます。</p>
+    </header>
+
+    <div class="toolbar">
+      <button class="bulk-export-btn" id="bulk-export-btn" type="button" hidden>一括書き出し</button>
+    </div>
+
+    <div id="list" aria-live="polite"></div>
+  </div>
+
+  <div class="modal-overlay" id="export-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+      <p class="modal-title" id="export-modal-title">書き出し</p>
+      <p class="modal-message" id="export-modal-message"></p>
+      <fieldset class="format-options">
+        <legend class="format-label">形式を選ぶと書き出します</legend>
+        <div class="format-group">
+          <button class="format-btn" type="button" data-format="txt">.txt</button>
+          <button class="format-btn" type="button" data-format="md">.md</button>
+        </div>
+      </fieldset>
+      <div class="modal-actions">
+        <button class="btn" id="export-modal-cancel" type="button">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="../../shared/export.js"></script>
+  <script src="../../shared/editor-prefs.js"></script>
+  <script>
+    const P = window.TadekuEditorPrefs;
+    const SCENE_EDITOR_ID = 'scene';
+    const listEl = document.getElementById('list');
+    const bulkExportBtn = document.getElementById('bulk-export-btn');
+
+    function setBulkExportEnabled(enabled) {
+      bulkExportBtn.hidden = !enabled;
+    }
+
+    function parseSceneBody(body) {
+      try {
+        const parsed = JSON.parse(body);
+        if (parsed && Array.isArray(parsed.scenes)) return parsed;
+      } catch (_) {}
+      return null;
+    }
+
+    function sceneStats(doc) {
+      const parsed = parseSceneBody(doc.body);
+      if (!parsed) return { sceneCount: 0, charCount: doc.charCount || 0 };
+      const scenes = parsed.scenes;
+      const charCount = scenes.reduce((n, sc) => n + (sc.body || '').length, 0);
+      return { sceneCount: scenes.length, charCount };
+    }
+
+    function displayTitle(doc) {
+      return P.documentDisplayTitle(doc);
+    }
+
+    function libraryListTitle(doc) {
+      const raw = (doc?.title || '').trim();
+      if (raw && !P.isPlaceholderTitle(raw)) return raw;
+      const parsed = parseSceneBody(doc.body);
+      const first = parsed?.scenes?.find((sc) => (sc.title || '').trim() || (sc.body || '').trim());
+      if (first) {
+        const label = (first.title || '').trim() || (first.body || '').trim();
+        return label.length > 48 ? `${label.slice(0, 48)}…` : label;
+      }
+      return displayTitle(doc);
+    }
+
+    function exportBasename(doc) {
+      const title = libraryListTitle(doc);
+      const safe = title.replace(/[\\/:*?"<>|]/g, '_').trim();
+      return safe || 'scene';
+    }
+
+    function buildExportContent(doc, format) {
+      const parsed = parseSceneBody(doc.body);
+      const title = displayTitle(doc);
+      if (!parsed) return doc.body || '';
+      const scenes = parsed.scenes;
+      if (format === 'md') {
+        const lines = [`# ${title}`, ''];
+        scenes.forEach((sc, i) => {
+          const label = (sc.title || '').trim() || `シーン ${i + 1}`;
+          lines.push(`## ${label}`);
+          lines.push('');
+          lines.push((sc.body || '').trim() || '（未記入）');
+          lines.push('');
+        });
+        return lines.join('\n');
+      }
+      const lines = [title, ''];
+      scenes.forEach((sc, i) => {
+        const label = (sc.title || '').trim() || `シーン ${i + 1}`;
+        lines.push(`【${label}】`);
+        lines.push((sc.body || '').trim() || '（未記入）');
+        lines.push('');
+      });
+      return lines.join('\n');
+    }
+
+    function zipEntryName(doc, format, used) {
+      const ext = format === 'md' ? '.md' : '.txt';
+      const base = exportBasename(doc);
+      let name = base + ext;
+      if (!used.has(name)) {
+        used.add(name);
+        return name;
+      }
+      let n = 2;
+      while (used.has(`${base} (${n})${ext}`)) n += 1;
+      name = `${base} (${n})${ext}`;
+      used.add(name);
+      return name;
+    }
+
+    function bulkZipFilename() {
+      const d = new Date();
+      return `scene-library-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}.zip`;
+    }
+
+    async function exportAllDocsAsZip(docs, format) {
+      if (!window.JSZip) {
+        window.alert('ZIP の作成に必要なライブラリを読み込めませんでした。');
+        return;
+      }
+      const zip = new JSZip();
+      const used = new Set();
+      for (const doc of docs) {
+        zip.file(zipEntryName(doc, format, used), buildExportContent(doc, format));
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      ExportUtils.downloadBlob(blob, bulkZipFilename());
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function sceneDocHref(docId) {
+      const url = new URL('../', window.location.href);
+      url.searchParams.set('doc', docId);
+      return url.href;
+    }
+
+    async function showExportModal(doc) {
+      const stats = sceneStats(doc);
+      const message = `${displayTitle(doc)} · ${stats.sceneCount} シーン · ${stats.charCount.toLocaleString()} 字`;
+      return ExportUtils.showExportFormatModal(message, null);
+    }
+
+    function exportDoc(doc, format) {
+      const ext = format === 'md' ? '.md' : '.txt';
+      const mime = format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+      ExportUtils.downloadBlob(
+        new Blob([buildExportContent(doc, format)], { type: mime }),
+        exportBasename(doc) + ext,
+      );
+    }
+
+    function showEmpty() {
+      listEl.innerHTML = '';
+      setBulkExportEnabled(false);
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'まだ保存されたプロットはありません。Scene で書き始めると、ここに自動的に追加されます。';
+      listEl.appendChild(empty);
+    }
+
+    function showError(message) {
+      listEl.innerHTML = '';
+      setBulkExportEnabled(false);
+      const err = document.createElement('div');
+      err.className = 'empty';
+      err.textContent = message;
+      listEl.appendChild(err);
+    }
+
+    function renderTable(docs) {
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+
+      const table = document.createElement('table');
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th class="col-title">タイトル</th>
+            <th>シーン</th>
+            <th>合計</th>
+            <th>更新</th>
+            <th></th>
+          </tr>
+        </thead>
+      `;
+
+      const tbody = document.createElement('tbody');
+
+      for (const doc of docs) {
+        const stats = sceneStats(doc);
+        const tr = document.createElement('tr');
+        tr.title = 'クリックで Scene で開く';
+
+        const titleCell = document.createElement('td');
+        const titleEl = document.createElement('div');
+        titleEl.className = 'doc-title';
+        titleEl.textContent = libraryListTitle(doc);
+        titleCell.appendChild(titleEl);
+
+        const sceneCell = document.createElement('td');
+        sceneCell.className = 'num';
+        sceneCell.textContent = `${stats.sceneCount}`;
+
+        const countCell = document.createElement('td');
+        countCell.className = 'num';
+        countCell.textContent = `${stats.charCount.toLocaleString()} 字`;
+
+        const dateCell = document.createElement('td');
+        dateCell.className = 'date';
+        dateCell.textContent = formatDate(doc.updatedAt);
+
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'actions';
+
+        const openBtn = document.createElement('button');
+        openBtn.className = 'btn';
+        openBtn.type = 'button';
+        openBtn.textContent = '開く';
+        openBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.location.assign(sceneDocHref(doc.id));
+        });
+
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'btn';
+        exportBtn.type = 'button';
+        exportBtn.textContent = '書き出し';
+        exportBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const format = await showExportModal(doc);
+          if (format) exportDoc(doc, format);
+        });
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger';
+        deleteBtn.type = 'button';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!window.confirm('このプロットを削除しますか？')) return;
+          await P.deleteDocument(doc.id);
+          tr.remove();
+          if (!tbody.querySelector('tr')) showEmpty();
+        });
+
+        actionsCell.append(openBtn, exportBtn, deleteBtn);
+        actionsCell.addEventListener('click', (e) => e.stopPropagation());
+
+        tr.append(titleCell, sceneCell, countCell, dateCell, actionsCell);
+        tr.addEventListener('click', () => {
+          window.location.assign(sceneDocHref(doc.id));
+        });
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      return wrap;
+    }
+
+    async function render() {
+      if (!P || !window.indexedDB) {
+        showError('このブラウザでは IndexedDB が使えません。');
+        return;
+      }
+      try {
+        const docs = await P.getDocumentsByEditorId(SCENE_EDITOR_ID);
+        if (!docs.length) {
+          showEmpty();
+          return;
+        }
+        listEl.innerHTML = '';
+        listEl.appendChild(renderTable(docs));
+        setBulkExportEnabled(true);
+      } catch (err) {
+        console.error('Scene library load failed:', err);
+        showError('一覧の読み込みに失敗しました。ページを再読み込みしてください。');
+      }
+    }
+
+    bulkExportBtn.addEventListener('click', async () => {
+      const docs = await P.getDocumentsByEditorId(SCENE_EDITOR_ID);
+      if (!docs.length) return;
+      const format = await ExportUtils.showExportFormatModal(
+        `${docs.length} 件を ZIP で書き出します`,
+        null,
+      );
+      if (format) await exportAllDocsAsZip(docs, format);
+    });
+
+    render();
+
+    window.addEventListener('pageshow', () => {
+      render();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) render();
+    });
+  </script>
+  <script src="../../shared/site-link.js"></script>
+</body>
+</html>

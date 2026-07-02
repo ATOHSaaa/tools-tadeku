@@ -47,7 +47,7 @@
         if (!sessionDocId) {
           let storedTitle = '';
           if (userTitle) {
-            storedTitle = await P.resolveUniqueTitle(title, null);
+            storedTitle = await P.resolveUniqueTitle(title, null, editorId);
           }
           const doc = await P.saveDocument({ editorId, title: storedTitle, body });
           sessionDocId = doc.id;
@@ -57,7 +57,7 @@
         } else {
           let storedTitle = '';
           if (userTitle) {
-            storedTitle = await P.resolveUniqueTitle(title, sessionDocId);
+            storedTitle = await P.resolveUniqueTitle(title, sessionDocId, editorId);
           }
           await P.updateDocument(sessionDocId, { editorId, title: storedTitle, body });
           notifyRename(userTitle, storedTitle);
