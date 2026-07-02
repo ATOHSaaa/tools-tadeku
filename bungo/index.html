@@ -14,7 +14,7 @@
   <title>Bungo — 文豪タイプ診断 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/site-link.css">
   <style>
     :root {
@@ -170,9 +170,8 @@
     }
 
     .result-name {
-      font-family: "Shippori Mincho", serif;
       font-size: clamp(1.75rem, 5vw, 2.25rem);
-      font-weight: 700;
+      font-weight: 900;
       line-height: 1.35;
     }
 
@@ -212,6 +211,229 @@
       border: 1px solid var(--border);
       background: var(--accent-soft);
     }
+
+    .match-detail {
+      margin-top: 1.1rem;
+      text-align: left;
+      max-width: 28rem;
+      width: 100%;
+    }
+
+    .match-detail-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .match-detail-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .match-item {
+      display: grid;
+      grid-template-columns: 6.5rem 1fr;
+      gap: 0.55rem;
+      align-items: baseline;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid #e8e4da;
+    }
+
+    .match-item:last-child { border-bottom: none; }
+
+    .match-item-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .match-item-text { font-weight: 700; }
+
+    .match-item.is-close .match-item-text { color: var(--accent); }
+
+    .match-detail--diff .match-item-text {
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .match-phrases {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      margin-top: 0.85rem;
+    }
+
+    .style-map-wrap {
+      margin: 0 0 1rem;
+      padding-top: 0.25rem;
+    }
+
+    .style-map-lead {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 0.55rem;
+      text-align: left;
+    }
+
+    .style-map-summary {
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.6;
+      margin-bottom: 0.85rem;
+      text-align: left;
+    }
+
+    .style-map-tip {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.55rem;
+    }
+
+    .style-map-pick {
+      margin-bottom: 0.85rem;
+      text-align: left;
+    }
+
+    .style-map-pick-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .style-map-pick-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      line-height: 1.55;
+    }
+
+    .style-map-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .style-map-chip {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 0.32rem 0.58rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .style-map-chip:hover:not(:disabled) {
+      background: var(--accent-soft);
+    }
+
+    .style-map-chip.is-on {
+      background: var(--ink);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .style-map-chip:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    .style-map-svg.is-1d {
+      max-width: 22rem;
+      height: auto;
+    }
+
+    .style-map-svg {
+      display: block;
+      width: 100%;
+      max-width: 22rem;
+      margin: 0 auto;
+    }
+
+    .style-map-quad { fill: var(--accent-soft); opacity: 0.35; }
+    .style-map-quad.q-tr { fill: #efe8dc; }
+    .style-map-quad.q-bl { fill: #efe8dc; }
+
+    .style-map-axis {
+      stroke: var(--border);
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+      opacity: 0.55;
+    }
+
+    .style-map-tick {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 9px;
+      fill: var(--muted);
+    }
+
+    .style-map-axis-label {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      fill: var(--ink);
+    }
+
+    .style-map-dot {
+      stroke: var(--surface);
+      stroke-width: 1.25;
+    }
+
+    .style-map-dot.is-author { fill: #8a7f72; }
+    .style-map-dot.is-top { fill: var(--gold); }
+    .style-map-dot.is-user { fill: var(--accent); }
+
+    .style-map-label {
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      fill: var(--ink);
+      pointer-events: none;
+    }
+
+    .style-map-label.is-user { fill: var(--accent); }
+
+    .style-map-legend {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.65rem 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .style-map-legend li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .style-map-legend .dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      border: 1px solid var(--surface);
+    }
+
+    .style-map-legend .dot.is-user { background: var(--accent); }
+    .style-map-legend .dot.is-top { background: var(--gold); }
+    .style-map-legend .dot.is-author { background: #8a7f72; }
 
     .works-used {
       font-size: 0.78rem;
@@ -294,18 +516,12 @@
       text-align: right;
     }
 
-    .source-note {
-      margin-top: 1.25rem;
-      font-size: 0.72rem;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-
-    .source-note a {
-      color: inherit;
-    }
-
     @media (max-width: 520px) {
+      .match-item {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+      }
+
       .rank-item {
         grid-template-columns: 1.75rem 1fr auto;
         gap: 0.45rem;
@@ -340,6 +556,7 @@
     <section class="panel result" id="result" aria-live="polite">
       <h2 class="panel-title">ランキング</h2>
       <div class="result-top" id="result-top"></div>
+      <div id="style-map-wrap"></div>
       <div class="result-share" id="result-share" hidden>
         <button type="button" class="btn btn-share" id="share-btn">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -347,7 +564,6 @@
         </button>
       </div>
       <ol class="rank-list" id="rank-list"></ol>
-      <p class="source-note">診断は<a href="http://logoon.org/about.html" target="_blank" rel="noopener noreferrer">文体診断ロゴーン</a>を参考に、形態素解析と10項目の偏差値から一致指数を算出しています。比較対象は青空文庫の公開テキスト（18作家）です。</p>
     </section>
   </div>
 
@@ -358,7 +574,7 @@
   <script src="../shared/bungo-profiles.js"></script>
   <script>
     const MIN_CHARS = 150;
-    const CI_RELIABLE = 35;
+    const CI_RELIABLE = 50;
     const SHARE_URL = 'https://tools.tadeku.net/bungo/';
     const SAMPLE = '　私はその男の写真を三葉、見たことがある。一葉は、その男が、幼年のころ、たぶん十歳前後かと思われる頃で、それと一緒に母親らしい人の写真がある。もう一葉は、その男が、青年のころ、たぶん二十歳前後かと思われる頃で、それと一緒に、彼の妻らしい人の写真がある。どちらも、どこかの下町の写真屋で撮ったものらしく、背景には、よく見る、安い絨毯がかかっている。男は、どちらも、正面を向いて、無表情で、眼を細めて、口をへの字に結んでいる。';
 
@@ -371,12 +587,15 @@
       status: document.getElementById('status'),
       result: document.getElementById('result'),
       resultTop: document.getElementById('result-top'),
+      styleMapWrap: document.getElementById('style-map-wrap'),
       resultShare: document.getElementById('result-share'),
       shareBtn: document.getElementById('share-btn'),
       rankList: document.getElementById('rank-list'),
     };
 
     let lastShareTop = null;
+    let lastMapContext = null;
+    let styleMapSelection = null;
 
     function esc(s) {
       return String(s)
@@ -402,7 +621,7 @@
     }
 
     function buildShareText(top) {
-      const score = Math.round(top.score);
+      const score = Math.min(100, Math.round(top.ci));
       return '文豪タイプ診断の結果：' + top.name + '（一致指数' + score + '）';
     }
 
@@ -413,30 +632,234 @@
       window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
     }
 
+    function renderMatchDetails(detail) {
+      let html = '';
+      if (detail.phrases.length) {
+        html += '<div class="match-phrases">' +
+          detail.phrases.map((item) => '<span class="trait">' + esc(item.text) + '</span>').join('') +
+          '</div>';
+      }
+      if (detail.similar.length) {
+        html += '<div class="match-detail"><h3 class="match-detail-title">似ているところ</h3><ul class="match-detail-list">';
+        detail.similar.forEach((item) => {
+          html += '<li class="match-item' + (item.closeness === 'close' ? ' is-close' : '') + '">' +
+            '<span class="match-item-label">' + esc(item.label) + '</span>' +
+            '<span class="match-item-text">' + esc(item.text) + '</span></li>';
+        });
+        html += '</ul></div>';
+      }
+      if (detail.different.length) {
+        html += '<div class="match-detail match-detail--diff"><h3 class="match-detail-title">あまり似ていないところ</h3><ul class="match-detail-list">';
+        detail.different.forEach((item) => {
+          html += '<li class="match-item">' +
+            '<span class="match-item-label">' + esc(item.label) + '</span>' +
+            '<span class="match-item-text">' + esc(item.text) + '</span></li>';
+        });
+        html += '</ul></div>';
+      }
+      return html;
+    }
+
+    function renderStyleMapLegend() {
+      return '<ul class="style-map-legend">' +
+        '<li><span class="dot is-user" aria-hidden="true"></span>あなた</li>' +
+        '<li><span class="dot is-top" aria-hidden="true"></span>いちばん近い文豪</li>' +
+        '<li><span class="dot is-author" aria-hidden="true"></span>その他の文豪</li>' +
+      '</ul>';
+    }
+
+    function renderStyleMapDots(map, px, py, tooltip) {
+      let dots = '';
+      map.points.forEach((pt) => {
+        const cls = pt.kind === 'user' ? 'is-user' : (pt.kind === 'top' ? 'is-top' : 'is-author');
+        const r = pt.kind === 'user' ? 5.5 : (pt.kind === 'top' ? 5 : 3.5);
+        const cx = px(pt.plotX).toFixed(1);
+        const cy = py(pt.plotY).toFixed(1);
+        dots += '<circle class="style-map-dot ' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '">' +
+          '<title>' + tooltip(pt) + '</title></circle>';
+        if (pt.kind === 'user' || pt.kind === 'top') {
+          const anchor = pt.plotX > 68 ? 'end' : 'start';
+          const lx = pt.plotX > 68 ? px(pt.plotX) - 7 : px(pt.plotX) + 7;
+          const ly = map.mode === '1d' ? py(pt.plotY) - 10 : py(pt.plotY) - 8;
+          dots += '<text class="style-map-label' + (pt.kind === 'user' ? ' is-user' : '') + '" x="' +
+            lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' +
+            esc(pt.name) + '</text>';
+        }
+      });
+      return dots;
+    }
+
+    function renderStyleMap2D(map) {
+      const W = 340;
+      const P = 34;
+      const plot = W - P * 2;
+      const mid = P + plot / 2;
+      const px = (v) => P + (v / 100) * plot;
+      const py = (v) => P + plot - (v / 100) * plot;
+      const dots = renderStyleMapDots(map, px, py, (pt) =>
+        esc(pt.name) + '：' + esc(pt.xText) + ' × ' + esc(pt.yText)
+      );
+
+      return '<p class="style-map-lead">「' + esc(map.xAxis) + '」と「' + esc(map.yAxis) +
+        '」の2つで並べた地図です。左右・上下は相対的な順位で、点が近いほど似ています。</p>' +
+        (map.summary ? '<p class="style-map-summary">' + esc(map.summary) + '</p>' : '') +
+        '<svg viewBox="0 0 ' + W + ' ' + W + '" class="style-map-svg" role="img" aria-label="文体マップ">' +
+          '<rect x="' + mid + '" y="' + P + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-tr" />' +
+          '<rect x="' + P + '" y="' + P + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-tl" />' +
+          '<rect x="' + P + '" y="' + mid + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-bl" />' +
+          '<rect x="' + mid + '" y="' + mid + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-br" />' +
+          '<line x1="' + P + '" y1="' + mid + '" x2="' + (P + plot) + '" y2="' + mid + '" class="style-map-axis" />' +
+          '<line x1="' + mid + '" y1="' + P + '" x2="' + mid + '" y2="' + (P + plot) + '" class="style-map-axis" />' +
+          '<text x="' + P + '" y="' + (P + plot + 16) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.xLow) + '</text>' +
+          '<text x="' + (P + plot) + '" y="' + (P + plot + 16) + '" class="style-map-tick" text-anchor="end">' + esc(map.xHigh) + ' →</text>' +
+          '<text x="' + (P - 5) + '" y="' + (P + 4) + '" class="style-map-tick" text-anchor="end">' + esc(map.yHigh) + ' ↑</text>' +
+          '<text x="' + (P - 5) + '" y="' + (P + plot) + '" class="style-map-tick" text-anchor="end">' + esc(map.yLow) + ' ↓</text>' +
+          '<text x="' + mid + '" y="' + (W - 6) + '" class="style-map-axis-label" text-anchor="middle">' + esc(map.xAxis) + '</text>' +
+          '<text x="12" y="' + mid + '" class="style-map-axis-label" text-anchor="middle" transform="rotate(-90 12 ' + mid + ')">' + esc(map.yAxis) + '</text>' +
+          dots +
+        '</svg>';
+    }
+
+    function renderStyleMap1D(map) {
+      const W = 340;
+      const H = 130;
+      const P = 34;
+      const plot = W - P * 2;
+      const midY = 58;
+      const px = (v) => P + (v / 100) * plot;
+      const py = (v) => midY - ((v - 50) / 50) * 22;
+      const dots = renderStyleMapDots(map, px, py, (pt) =>
+        esc(pt.name) + '：' + esc(pt.vText)
+      );
+
+      return '<p class="style-map-lead">「' + esc(map.axis) +
+        '」だけで並べた分布です。左から右へ相対的な順位で、点が近いほど似ています。</p>' +
+        (map.summary ? '<p class="style-map-summary">' + esc(map.summary) + '</p>' : '') +
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" class="style-map-svg is-1d" role="img" aria-label="文体分布">' +
+          '<line x1="' + P + '" y1="' + midY + '" x2="' + (P + plot) + '" y2="' + midY + '" class="style-map-axis" />' +
+          '<text x="' + P + '" y="' + (H - 10) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.axisLow) + '</text>' +
+          '<text x="' + (P + plot) + '" y="' + (H - 10) + '" class="style-map-tick" text-anchor="end">' + esc(map.axisHigh) + ' →</text>' +
+          '<text x="' + (W / 2) + '" y="16" class="style-map-axis-label" text-anchor="middle">' + esc(map.axis) + '</text>' +
+          dots +
+        '</svg>';
+    }
+
+    function renderStyleMapChart(map) {
+      const chart = map.mode === '1d' ? renderStyleMap1D(map) : renderStyleMap2D(map);
+      return chart +
+        '<p class="style-map-tip">灰色の点にカーソルを合わせると、文豪名と文体の傾向が出ます。</p>' +
+        renderStyleMapLegend();
+    }
+
+    function renderStyleMapControls(map) {
+      const active = map.activeIndices || [];
+      const selected = styleMapSelection || map.selectedIndices || [];
+      let note = '2つまで選択できます。';
+      if (selected.length === 0 && map.autoSelected) {
+        note = '未選択のときは自動で2つ選びます。';
+      } else if (selected.length === 1) {
+        note = '1つ選択中 → 1次元の分布図';
+      }
+
+      let chips = '';
+      BungoEngine.FEATURE_AXIS_SHORT.forEach((label, index) => {
+        const isOn = selected.includes(index);
+        const disabled = !active.includes(index);
+        chips += '<button type="button" class="style-map-chip' + (isOn ? ' is-on' : '') + '"' +
+          ' data-axis="' + index + '"' + (disabled ? ' disabled' : '') + '>' + esc(label) + '</button>';
+      });
+
+      return '<div class="style-map-pick">' +
+        '<p class="style-map-pick-label">表示する特徴（最大2つ）</p>' +
+        '<p class="style-map-pick-note">' + note + '</p>' +
+        '<div class="style-map-chips">' + chips + '</div>' +
+      '</div>';
+    }
+
+    function bindStyleMapControls() {
+      els.styleMapWrap.querySelectorAll('.style-map-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const index = Number(chip.dataset.axis);
+          if (!lastMapContext || Number.isNaN(index)) return;
+          let next = styleMapSelection ? [...styleMapSelection] : [];
+          const pos = next.indexOf(index);
+          if (pos >= 0) {
+            next.splice(pos, 1);
+          } else if (next.length < 2) {
+            next.push(index);
+          } else {
+            next = [next[1], index];
+          }
+          styleMapSelection = next.length ? next : null;
+          refreshStyleMap();
+        });
+      });
+    }
+
+    function refreshStyleMap() {
+      if (!lastMapContext) return;
+      const map = BungoEngine.buildStyleMap(
+        lastMapContext.data.userScores,
+        lastMapContext.data.ranked,
+        window.BUNGO_PROFILES,
+        window.BUNGO_STATS,
+        lastMapContext.data.morphemeCount,
+        lastMapContext.matchDetail,
+        styleMapSelection
+      );
+      els.styleMapWrap.innerHTML =
+        '<div class="style-map-wrap">' +
+          '<h3 class="match-detail-title">文体マップ</h3>' +
+          renderStyleMapControls(map) +
+          '<div id="style-map-chart">' + renderStyleMapChart(map) + '</div>' +
+        '</div>';
+      bindStyleMapControls();
+    }
+
     function renderResult(data) {
       const top = data.ranked[0];
       const topProfile = window.BUNGO_PROFILES.find((p) => p.id === top.id);
       const matchedWork = topProfile.works.find((w) => w.title === top.matchedWork) || topProfile.works[0];
-      const traits = BungoEngine.describeMatch(
+      const matchDetail = BungoEngine.analyzeMatchDetails(
         data.userScores,
         matchedWork.scores,
         window.BUNGO_STATS,
-        data.morphemeCount
+        data.morphemeCount,
+        top.triSim || 0,
+        top.name
       );
-      const ci = Math.round(top.score);
+      const ci = Math.min(100, Math.round(top.ci));
 
       els.resultTop.innerHTML =
         '<p class="result-label">いちばん近い文豪</p>' +
         '<p class="result-name">' + esc(top.name) + '</p>' +
         '<p class="result-era">' + esc(top.era) + '</p>' +
         '<p class="result-score">' + ci + '<small>一致指数</small></p>' +
-        (traits.length ? '<div class="traits">' + traits.map((t) => '<span class="trait">' + esc(t) + '</span>').join('') + '</div>' : '') +
+        renderMatchDetails(matchDetail) +
         '<p class="works-used">参照作品：' + esc(top.matchedWork) + '</p>';
+
+      const styleMap = BungoEngine.buildStyleMap(
+        data.userScores,
+        data.ranked,
+        window.BUNGO_PROFILES,
+        window.BUNGO_STATS,
+        data.morphemeCount,
+        matchDetail
+      );
+      lastMapContext = { data, matchDetail };
+      styleMapSelection = null;
+      els.styleMapWrap.innerHTML =
+        '<div class="style-map-wrap">' +
+          '<h3 class="match-detail-title">文体マップ</h3>' +
+          renderStyleMapControls(styleMap) +
+          '<div id="style-map-chart">' + renderStyleMapChart(styleMap) + '</div>' +
+        '</div>';
+      bindStyleMapControls();
 
       const maxScore = data.ranked[0].score || 1;
       els.rankList.innerHTML = data.ranked.map((item, i) => {
         const bar = Math.round((item.score / maxScore) * 100);
-        const itemCi = Math.round(item.score);
+        const itemCi = Math.min(100, Math.round(item.ci));
         return '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
           '<span class="rank-num">' + (i + 1) + '</span>' +
           '<div class="rank-body">' +
@@ -452,7 +875,7 @@
       lastShareTop = top;
       els.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-      if (data.morphemeCount < 400 && ci < 45) {
+      if (data.morphemeCount < 400 && ci < 50) {
         setStatus('文章が短いため参考程度です。長めの文章だと精度が上がります。');
       } else if (ci < CI_RELIABLE) {
         setStatus('一致指数が ' + CI_RELIABLE + ' 未満です。もう少し長い文章で試してください。');
@@ -491,6 +914,9 @@
       setStatus('');
       els.result.classList.remove('is-visible');
       els.resultShare.hidden = true;
+      els.styleMapWrap.innerHTML = '';
+      lastMapContext = null;
+      styleMapSelection = null;
       lastShareTop = null;
     });
     els.sampleBtn.addEventListener('click', () => {

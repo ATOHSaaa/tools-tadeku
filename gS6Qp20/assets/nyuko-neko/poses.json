@@ -1,0 +1,57 @@
+{
+  "character": "nyuko-neko",
+  "fill": "#1a1a1a",
+  "frameSize": { "width": 100, "height": 100 },
+  "spritesheet": "spritesheet.png",
+  "spritesheetPaper": "spritesheet-paper.png",
+  "spritesheetBackCarry": "spritesheet-back-carry.png",
+  "spritesheetQuadCarry": "spritesheet-quad-carry.png",
+  "poses": [
+    { "id": "sit", "file": "01-sit.svg", "png": "01-sit.png", "label": "おすわり" },
+    { "id": "walk-a", "file": "02-walk-a.svg", "png": "02-walk-a.png", "label": "歩き A" },
+    { "id": "walk-b", "file": "03-walk-b.svg", "png": "03-walk-b.png", "label": "歩き B" },
+    { "id": "stand", "file": "04-stand.svg", "png": "04-stand.png", "label": "立ち" },
+    { "id": "stretch", "file": "05-stretch.svg", "png": "05-stretch.png", "label": "のび" },
+    { "id": "sleep", "file": "06-sleep.svg", "png": "06-sleep.png", "label": "ねむり" },
+    { "id": "pounce", "file": "07-pounce.svg", "png": "07-pounce.png", "label": "構え" },
+    { "id": "jump", "file": "08-jump.svg", "png": "08-jump.png", "label": "ジャンプ" },
+    { "id": "groom", "file": "09-groom.svg", "png": "09-groom.png", "label": "グルーミング" },
+    { "id": "sit-tail-up", "file": "10-sit-tail-up.svg", "png": "10-sit-tail-up.png", "label": "しっぽピン" },
+    { "id": "carry-hold", "file": "11-carry-hold.svg", "png": "11-carry-hold.png", "label": "原稿を抱える" },
+    { "id": "carry-walk", "file": "12-carry-walk.svg", "png": "12-carry-walk.png", "label": "原稿を運ぶ" },
+    { "id": "carry-head", "file": "13-carry-head.svg", "png": "13-carry-head.png", "label": "頭で運ぶ" },
+    { "id": "carry-mouth", "file": "14-carry-mouth.svg", "png": "14-carry-mouth.png", "label": "くわえて運ぶ" },
+    { "id": "carry-stack", "file": "15-carry-stack.svg", "png": "15-carry-stack.png", "label": "原稿のそば" },
+    { "id": "back-carry-stand", "file": "16-back-carry-stand.svg", "png": "16-back-carry-stand.png", "label": "背中に載せる" },
+    { "id": "back-carry-walk-a", "file": "17-back-carry-walk-a.svg", "png": "17-back-carry-walk-a.png", "label": "背中で運ぶ A" },
+    { "id": "back-carry-walk-b", "file": "18-back-carry-walk-b.svg", "png": "18-back-carry-walk-b.png", "label": "背中で運ぶ B" },
+    { "id": "back-carry-rest", "file": "19-back-carry-rest.svg", "png": "19-back-carry-rest.png", "label": "背中で休憩" },
+    { "id": "quad-mouth-a", "file": "20-quad-mouth-a.svg", "png": "20-quad-mouth-a.png", "label": "四足・くわえ歩き A" },
+    { "id": "quad-mouth-b", "file": "21-quad-mouth-b.svg", "png": "21-quad-mouth-b.png", "label": "四足・くわえ歩き B" },
+    { "id": "quad-back-a", "file": "22-quad-back-a.svg", "png": "22-quad-back-a.png", "label": "四足・背中運び A" },
+    { "id": "quad-back-b", "file": "23-quad-back-b.svg", "png": "23-quad-back-b.png", "label": "四足・背中運び B" },
+    { "id": "quad-belly", "file": "24-quad-belly.svg", "png": "24-quad-belly.png", "label": "四足・お腹で運ぶ" },
+    { "id": "quad-sit-paper", "file": "25-quad-sit-paper.svg", "png": "25-quad-sit-paper.png", "label": "四足・原稿の前" }
+  ],
+  "animations": [
+    {
+      "id": "quad-back-carry-walk",
+      "label": "背中で運ぶ（四足歩行）",
+      "keyframes": 8,
+      "frames": [
+        "walk-cycle/quad-back-walk-01.png",
+        "walk-cycle/quad-back-walk-02.png",
+        "walk-cycle/quad-back-walk-03.png",
+        "walk-cycle/quad-back-walk-04.png",
+        "walk-cycle/quad-back-walk-05.png",
+        "walk-cycle/quad-back-walk-06.png",
+        "walk-cycle/quad-back-walk-07.png",
+        "walk-cycle/quad-back-walk-08.png"
+      ],
+      "sourcePoses": ["22-quad-back-a.png", "23-quad-back-b.png"],
+      "gif": "quad-back-carry-walk.gif",
+      "webp": "quad-back-carry-walk.webp",
+      "durationMs": 95
+    }
+  ]
+}

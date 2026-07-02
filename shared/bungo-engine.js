@@ -10,6 +10,9 @@
   ];
 
   const HAPAX_MIN_MORPHEMES = 400;
+  const CI_SS_UNIT = 40;
+  const CI_QUAD_WEIGHT = 2;
+  const DISPLAY_MATCH_SCALE = 2.4;
   const KUROMOJI_DIC = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/';
   let tokenizerPromise = null;
 
@@ -180,8 +183,16 @@
     const indices = activeIndices || userSS.map((_, i) => i);
     if (!indices.length) return 0;
     let sum = 0;
-    indices.forEach((i) => { sum += Math.abs(authorSS[i] - userSS[i]) / 40; });
-    return Math.max(0, 100 - (10 / indices.length) * sum);
+    indices.forEach((i) => {
+      const d = Math.abs(authorSS[i] - userSS[i]) / CI_SS_UNIT;
+      sum += d + CI_QUAD_WEIGHT * d * d;
+    });
+    const ci = 100 - (10 / indices.length) * sum;
+    return Math.min(100, Math.max(0, ci));
+  }
+
+  function displayConsistencyIndex(ci, triSim, morphemeCount) {
+    return Math.min(100, Math.max(0, Math.round(matchScore(ci, triSim, morphemeCount) * DISPLAY_MATCH_SCALE)));
   }
 
   function matchScore(ci, triSim, morphemeCount) {
@@ -222,16 +233,18 @@
       const ranked = profiles.map((author) => {
         let bestScore = 0;
         let bestCI = 0;
+        let bestTri = 0;
         let matchedWork = author.works[0]?.title || '';
 
         author.works.forEach((work) => {
           const authorSS = deviationScores(work.scores, stats);
           const ci = consistencyIndex(authorSS, userSS, active);
           const tri = trigramCosine(userTrigrams, work.trigrams);
-          const score = matchScore(ci, tri, features.morphemeCount);
-          if (score > bestScore) {
-            bestScore = score;
+          const rankScore = matchScore(ci, tri, features.morphemeCount);
+          if (rankScore > bestScore || (rankScore === bestScore && ci > bestCI)) {
+            bestScore = rankScore;
             bestCI = ci;
+            bestTri = tri;
             matchedWork = work.title;
           }
         });
@@ -243,11 +256,12 @@
           works: author.works.map((w) => w.title),
           matchedWork,
           score: bestScore,
-          ci: bestCI,
+          ci: displayConsistencyIndex(bestCI, bestTri, features.morphemeCount),
+          triSim: bestTri,
         };
       });
 
-      ranked.sort((a, b) => b.score - a.score);
+      ranked.sort((a, b) => b.score - a.score || b.ci - a.ci);
       return {
         ok: true,
         features,
@@ -260,30 +274,317 @@
   }
 
   function describeMatch(userScores, authorScores, stats, morphemeCount) {
+    return analyzeMatchDetails(userScores, authorScores, stats, morphemeCount).similar
+      .slice(0, 4)
+      .map((item) => item.text);
+  }
+
+  const FEATURE_TENDENCY = [
+    { high: '文が長め', low: '文が短め', mid: '文長は標準的' },
+    { high: '句読点の間隔が広め', low: '句読点が多め', mid: '句読点の間隔は標準的' },
+    { high: '記号・特殊語が多め', low: '記号・特殊語が少なめ', mid: '記号・特殊語は標準的' },
+    { high: '名詞が多め', low: '名詞が少なめ', mid: '名詞の比率は標準的' },
+    { high: '動詞が多め', low: '動詞が少なめ', mid: '動詞の比率は標準的' },
+    { high: '形容詞が多め', low: '形容詞が少なめ', mid: '形容詞の比率は標準的' },
+    { high: '助詞が多め', low: '助詞が少なめ', mid: '助詞の比率は標準的' },
+    { high: '助動詞が多め', low: '助動詞が少なめ', mid: '助動詞の比率は標準的' },
+    { high: 'ひらがなが多め', low: '漢字・固い表記が多め', mid: 'ひらがなと漢字のバランスは標準的' },
+    { high: '語彙の幅が広め', low: '語の反復が多め', mid: '語彙の多様さは標準的' },
+  ];
+
+  const FEATURE_AXIS_SHORT = [
+    '文の長さ',
+    '句読点',
+    '記号・特殊語',
+    '名詞',
+    '動詞',
+    '形容詞',
+    '助詞',
+    '助動詞',
+    'ひらがな',
+    '語彙の幅',
+  ];
+
+  function tendencyText(index, ss) {
+    const avg = ss[index];
+    const t = FEATURE_TENDENCY[index];
+    if (avg >= 56) return t.high;
+    if (avg <= 44) return t.low;
+    return t.mid;
+  }
+
+  function analyzeMatchDetails(userScores, authorScores, stats, morphemeCount, triSim, authorName) {
     const active = activeFeatureIndices(morphemeCount);
     const userSS = deviationScores(userScores, stats);
     const authorSS = deviationScores(authorScores, stats);
-    const traits = [];
-    const checks = [
-      { i: 0, low: '短い文', high: '長い文' },
-      { i: 3, low: '名詞が少ない', high: '名詞が多い' },
-      { i: 4, low: '動詞が少ない', high: '動詞が多い' },
-      { i: 6, low: '助詞が少ない', high: '助詞が多い' },
-      { i: 8, low: '漢字中心', high: 'ひらがな多め' },
-    ];
-    checks.forEach(({ i, low, high }) => {
-      if (!active.includes(i)) return;
-      const diff = userSS[i] - authorSS[i];
-      if (Math.abs(diff) < 4) traits.push(high);
-      else if (diff > 0) traits.push(high);
-      else traits.push(low);
+    const name = authorName || '';
+
+    const compared = active.map((index) => ({
+      index,
+      label: FEATURE_LABELS[index],
+      diff: Math.abs(userSS[index] - authorSS[index]),
+    }));
+
+    const avgSS = userSS.map((v, i) => (userSS[i] + authorSS[i]) / 2);
+
+    const similar = compared
+      .filter((item) => item.diff <= 10)
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 6)
+      .map((item) => ({
+        index: item.index,
+        label: item.label,
+        text: tendencyText(item.index, avgSS),
+        closeness: item.diff <= 4 ? 'close' : 'near',
+      }));
+
+    const different = compared
+      .filter((item) => item.diff >= 14)
+      .sort((a, b) => b.diff - a.diff)
+      .slice(0, 2)
+      .map((item) => ({
+        label: item.label,
+        text: name
+          ? `あなたの文は${tendencyText(item.index, userSS)}、${name}は${tendencyText(item.index, authorSS)}`
+          : `あなたの文は${tendencyText(item.index, userSS)}、参照作品は${tendencyText(item.index, authorSS)}`,
+      }));
+
+    const phrases = [];
+    if (triSim >= 0.12) phrases.push({ text: '語の並び・言い回しがとても近い' });
+    else if (triSim >= 0.06) phrases.push({ text: '語句のリズムがやや近い' });
+    else if (triSim >= 0.03) phrases.push({ text: '一部の言い回しが近い' });
+
+    return { similar, different, phrases };
+  }
+
+  function variance(values) {
+    if (!values.length) return 0;
+    const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+    return values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+  }
+
+  function interquartileRange(values) {
+    if (values.length < 4) {
+      return Math.max(Math.max(...values) - Math.min(...values), 0.5);
+    }
+    const sorted = [...values].sort((a, b) => a - b);
+    const q1 = sorted[Math.floor((sorted.length - 1) * 0.25)];
+    const q3 = sorted[Math.floor((sorted.length - 1) * 0.75)];
+    return Math.max(q3 - q1, 0.5);
+  }
+
+  function rankScale(values) {
+    const n = values.length;
+    if (n === 1) return [50];
+    const order = values
+      .map((v, i) => ({ v, i }))
+      .sort((a, b) => a.v - b.v || a.i - b.i);
+    const coords = new Array(n);
+    let rank = 0;
+    while (rank < n) {
+      let end = rank;
+      while (end + 1 < n && order[end + 1].v === order[rank].v) end += 1;
+      const midRank = (rank + end) / 2;
+      const coord = 12 + (midRank / (n - 1)) * 76;
+      for (let j = rank; j <= end; j += 1) {
+        coords[order[j].i] = coord;
+      }
+      rank = end + 1;
+    }
+    return coords;
+  }
+
+  function pickQuadrantAxes(similar, active, points) {
+    const similarSet = new Set(
+      similar
+        .map((item) => (item.index != null ? item.index : FEATURE_LABELS.indexOf(item.label)))
+        .filter((index) => index >= 0 && active.includes(index))
+    );
+
+    let bestPair = [active[0], active[1] ?? active[0]];
+    let bestScore = -1;
+
+    for (let a = 0; a < active.length; a += 1) {
+      for (let b = a + 1; b < active.length; b += 1) {
+        const xi = active[a];
+        const yi = active[b];
+        const xs = points.map((p) => p.ss[xi]);
+        const ys = points.map((p) => p.ss[yi]);
+        const spread = interquartileRange(xs) * interquartileRange(ys);
+        const bonus = (similarSet.has(xi) ? 1.35 : 1) * (similarSet.has(yi) ? 1.35 : 1);
+        const score = spread * bonus;
+        if (score > bestScore) {
+          bestScore = score;
+          bestPair = [xi, yi];
+        }
+      }
+    }
+    return bestPair;
+  }
+
+  function tendencySide(index, ss) {
+    const t = FEATURE_TENDENCY[index];
+    if (ss >= 56) return t.high;
+    if (ss <= 44) return t.low;
+    return t.mid;
+  }
+
+  function resolveAxisSelection(axisIndices, active, similar, plotPoints) {
+    const picked = [...new Set(
+      (axisIndices || [])
+        .filter((index) => typeof index === 'number' && active.includes(index))
+    )].slice(0, 2);
+
+    if (picked.length >= 2) {
+      return { mode: '2d', indices: picked, auto: false };
+    }
+    if (picked.length === 1) {
+      return { mode: '1d', indices: picked, auto: false };
+    }
+    const [xIndex, yIndex] = pickQuadrantAxes(similar, active, plotPoints);
+    return { mode: '2d', indices: [xIndex, yIndex], auto: true };
+  }
+
+  function rankJitterY(plotXCoords, center) {
+    const mid = center == null ? 50 : center;
+    const groups = new Map();
+    plotXCoords.forEach((x, i) => {
+      const key = x.toFixed(3);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(i);
     });
-    return [...new Set(traits)].slice(0, 4);
+    const ys = new Array(plotXCoords.length);
+    groups.forEach((indices) => {
+      if (indices.length === 1) {
+        ys[indices[0]] = mid;
+        return;
+      }
+      const spread = Math.min(28, Math.max(12, indices.length * 5));
+      indices.forEach((idx, j) => {
+        ys[idx] = mid - spread / 2 + (j / (indices.length - 1)) * spread;
+      });
+    });
+    return ys;
+  }
+
+  function buildStyleMapSummary(mode, userPt, topPt, topName) {
+    if (!userPt || !topPt) return '';
+    if (mode === '1d') {
+      const dist = Math.abs(userPt.plotX - topPt.plotX);
+      if (dist < 5) {
+        return 'あなたは「' + topName + '」と、選んだ特徴ではほぼ同じあたりにいます。';
+      }
+      if (dist < 16) {
+        return 'あなたは「' + topName + '」と近い位置にいます。';
+      }
+      return 'あなたは「' + topName + '」とは、選んだ特徴ではやや離れた位置にいます。';
+    }
+    const dist = Math.hypot(userPt.plotX - topPt.plotX, userPt.plotY - topPt.plotY);
+    if (dist < 14) {
+      return 'あなたは「' + topName + '」と、選んだ2つの特徴ではほぼ同じあたりにいます。';
+    }
+    if (dist < 30) {
+      return 'あなたは「' + topName + '」と近いゾーンにいます。';
+    }
+    return 'あなたは「' + topName + '」とは、選んだ特徴ではやや離れた位置にいます。';
+  }
+
+  function buildStyleMap(userScores, ranked, profiles, stats, morphemeCount, matchDetail, axisIndices) {
+    const active = activeFeatureIndices(morphemeCount);
+    const userSS = deviationScores(userScores, stats);
+    const topId = ranked[0]?.id || '';
+    const topName = ranked[0]?.name || '';
+    const similar = (matchDetail && matchDetail.similar) || [];
+
+    const authorEntries = profiles.map((profile) => {
+      const rank = ranked.find((item) => item.id === profile.id);
+      const workTitle = rank?.matchedWork || profile.works[0].title;
+      const work = profile.works.find((w) => w.title === workTitle) || profile.works[0];
+      return {
+        id: profile.id,
+        name: profile.name,
+        ss: deviationScores(work.scores, stats),
+      };
+    });
+
+    const plotPoints = [...authorEntries, { id: 'user', name: 'あなた', ss: userSS }];
+    const selection = resolveAxisSelection(axisIndices, active, similar, plotPoints);
+    const [xIndex, yIndex] = selection.indices;
+    const xT = FEATURE_TENDENCY[xIndex];
+
+    const rawPoints = authorEntries.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      x: entry.ss[xIndex],
+      y: selection.mode === '2d' ? entry.ss[yIndex] : null,
+      kind: entry.id === topId ? 'top' : 'author',
+    }));
+    rawPoints.push({
+      id: 'user',
+      name: 'あなた',
+      x: userSS[xIndex],
+      y: selection.mode === '2d' ? userSS[yIndex] : null,
+      kind: 'user',
+    });
+
+    if (selection.mode === '1d') {
+      const plotX = rankScale(rawPoints.map((p) => p.x));
+      const plotY = rankJitterY(plotX);
+      const points = rawPoints.map((p, i) => ({
+        ...p,
+        plotX: plotX[i],
+        plotY: plotY[i],
+        vText: tendencySide(xIndex, p.x),
+      }));
+      const userPt = points.find((p) => p.kind === 'user');
+      const topPt = points.find((p) => p.kind === 'top');
+
+      return {
+        mode: '1d',
+        activeIndices: active,
+        selectedIndices: [xIndex],
+        autoSelected: selection.auto,
+        axis: FEATURE_AXIS_SHORT[xIndex],
+        axisLow: xT.low,
+        axisHigh: xT.high,
+        summary: buildStyleMapSummary('1d', userPt, topPt, topName),
+        points,
+      };
+    }
+
+    const yT = FEATURE_TENDENCY[yIndex];
+    const xCoords = rankScale(rawPoints.map((p) => p.x));
+    const yCoords = rankScale(rawPoints.map((p) => p.y));
+    const points = rawPoints.map((p, i) => ({
+      ...p,
+      plotX: xCoords[i],
+      plotY: yCoords[i],
+      xText: tendencySide(xIndex, p.x),
+      yText: tendencySide(yIndex, p.y),
+    }));
+    const userPt = points.find((p) => p.kind === 'user');
+    const topPt = points.find((p) => p.kind === 'top');
+
+    return {
+      mode: '2d',
+      activeIndices: active,
+      selectedIndices: [xIndex, yIndex],
+      autoSelected: selection.auto,
+      xAxis: FEATURE_AXIS_SHORT[xIndex],
+      yAxis: FEATURE_AXIS_SHORT[yIndex],
+      xLow: xT.low,
+      xHigh: xT.high,
+      yLow: yT.low,
+      yHigh: yT.high,
+      summary: buildStyleMapSummary('2d', userPt, topPt, topName),
+      points,
+    };
   }
 
   window.BungoEngine = {
     FEATURE_KEYS,
     FEATURE_LABELS,
+    FEATURE_AXIS_SHORT,
     HAPAX_MIN_MORPHEMES,
     cleanAozoraText,
     extractScores,
@@ -293,9 +594,12 @@
     trigramCosine,
     deviationScores,
     consistencyIndex,
+    displayConsistencyIndex,
     matchScore,
     loadTokenizer,
     rankAuthors,
     describeMatch,
+    analyzeMatchDetails,
+    buildStyleMap,
   };
 })();

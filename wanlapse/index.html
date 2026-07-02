@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ワンアワーライティングの執筆過程をタイムラプス動画にするツール。倍速を選んで書き、停止するとMP4/WebMをブラウザ内で生成します。">
+  <title>Wanlapse — 執筆タイムラプス | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --muted: #4a4a4a;
+      --rec: #e03030;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .header-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.85rem 1.25rem 0.65rem;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stats strong {
+      font-weight: 900;
+    }
+
+    .rec-badge {
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--rec);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+    }
+
+    .rec-badge::before {
+      content: '';
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: var(--rec);
+      animation: rec-blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes rec-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+
+    body.is-recording .rec-badge {
+      display: inline-flex;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem 1.1rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    body.is-recording .toolbar-settings {
+      display: none;
+    }
+
+    .toolbar-line {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+
+    .toolbar-line span {
+      letter-spacing: 0.04em;
+    }
+
+    .toolbar select {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.25rem 0.45rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .toolbar-opt {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toolbar-opt input {
+      width: 0.9rem;
+      height: 0.9rem;
+      margin: 0;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      padding: 0.35rem 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-record {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-record:hover:not(:disabled) {
+      background: var(--rec);
+      border-color: var(--rec);
+      color: #fff;
+    }
+
+    .btn-stop {
+      display: none;
+      background: var(--rec);
+      border-color: var(--rec);
+      color: #fff;
+    }
+
+    body.is-recording .btn-record {
+      display: none;
+    }
+
+    body.is-recording .btn-stop {
+      display: inline-block;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .overlay.is-visible {
+      display: flex;
+    }
+
+    .overlay-card {
+      width: min(28rem, 100%);
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 1.5rem;
+    }
+
+    .overlay-title {
+      font-size: 0.85rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+
+    .progress-bar {
+      height: 0.45rem;
+      border: 2px solid var(--border);
+      background: transparent;
+      margin-bottom: 0.65rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--ink);
+      transition: width 0.2s ease;
+    }
+
+    .overlay-message {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .result-panel {
+      display: none;
+      flex-shrink: 0;
+      border-top: 2px solid var(--border);
+      padding: 1rem 1.25rem 1.25rem;
+      gap: 0.85rem;
+    }
+
+    .result-panel.is-visible {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .result-title {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .result-actions a {
+      display: inline-block;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      padding: 0.35rem 0.75rem;
+    }
+
+    .result-actions a:hover {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .result-videos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .result-videos video {
+      width: min(100%, 24rem);
+      border: 2px solid var(--border);
+      background: #000;
+    }
+
+    .notice {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0 1.25rem 0.65rem;
+      line-height: 1.5;
+    }
+
+    body.is-recording .notice {
+      display: none;
+    }
+
+    .error-toast {
+      display: none;
+      margin: 0 1.25rem 0.65rem;
+      padding: 0.55rem 0.75rem;
+      border: 2px solid var(--rec);
+      color: var(--rec);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .error-toast.is-visible {
+      display: block;
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/site-link.css">
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="header-stack">
+        <div class="header-top">
+          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Wanlapse</div>
+          <div class="stats">
+            <span class="rec-badge" id="rec-badge">REC</span>
+            <span id="timer-wrap" hidden>経過 <strong id="elapsed">00:00</strong></span>
+            <span id="countdown-wrap" hidden>残り <strong id="countdown">60:00</strong></span>
+            <span>文字数 <strong id="char-count">0</strong></span>
+          </div>
+        </div>
+        <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-settings toolbar-line">
+          <span>倍速</span>
+          <select id="speed-select" aria-label="倍速">
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+            <option value="8" selected>8x</option>
+            <option value="16">16x</option>
+            <option value="32">32x</option>
+          </select>
+        </div>
+        <div class="toolbar-settings toolbar-line">
+          <span>解像度</span>
+          <select id="resolution-select" aria-label="解像度">
+            <option value="720p" selected>720p</option>
+            <option value="1080p">1080p</option>
+          </select>
+        </div>
+        <div class="toolbar-settings toolbar-line">
+          <span>形式</span>
+          <select id="format-select" aria-label="出力形式">
+            <option value="mp4">MP4</option>
+            <option value="webm">WebM</option>
+            <option value="both">両方</option>
+          </select>
+        </div>
+        <label class="toolbar-settings toolbar-opt">
+          <input type="checkbox" id="countdown-toggle" checked>
+          <span>60分タイマー</span>
+        </label>
+        <button type="button" class="btn btn-record" id="btn-record">録画開始</button>
+        <button type="button" class="btn btn-stop" id="btn-stop">停止</button>
+      </div>
+      <p class="notice">初回のみ動画ライブラリ（約30MB）をダウンロードします。長文は720p・16x以上を推奨。</p>
+      <div class="error-toast" id="error-toast" role="alert"></div>
+    </header>
+    <div class="editor-wrap">
+      <textarea id="editor" spellcheck="false" placeholder="録画開始を押してから執筆してください。"></textarea>
+    </div>
+    <section class="result-panel" id="result-panel" aria-label="生成結果">
+      <div class="result-head">
+        <div class="result-title" id="result-meta">動画を生成しました</div>
+        <div class="result-actions" id="result-actions"></div>
+      </div>
+      <div class="result-videos" id="result-videos"></div>
+    </section>
+  </div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="overlay-card">
+      <div class="overlay-title" id="overlay-title">動画を生成中</div>
+      <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="overlay-message" id="overlay-message">準備中…</div>
+    </div>
+  </div>
+
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
+  <script src="../shared/timelapse-engine.js"></script>
+  <script>
+    const WANLAI_MS = 60 * 60 * 1000;
+
+    const editor = document.getElementById('editor');
+    const workTitle = document.getElementById('work-title');
+    const charCount = document.getElementById('char-count');
+    const speedSelect = document.getElementById('speed-select');
+    const resolutionSelect = document.getElementById('resolution-select');
+    const formatSelect = document.getElementById('format-select');
+    const countdownToggle = document.getElementById('countdown-toggle');
+    const btnRecord = document.getElementById('btn-record');
+    const btnStop = document.getElementById('btn-stop');
+    const timerWrap = document.getElementById('timer-wrap');
+    const countdownWrap = document.getElementById('countdown-wrap');
+    const elapsedEl = document.getElementById('elapsed');
+    const countdownEl = document.getElementById('countdown');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const progressFill = document.getElementById('progress-fill');
+    const overlayMessage = document.getElementById('overlay-message');
+    const resultPanel = document.getElementById('result-panel');
+    const resultMeta = document.getElementById('result-meta');
+    const resultActions = document.getElementById('result-actions');
+    const resultVideos = document.getElementById('result-videos');
+    const errorToast = document.getElementById('error-toast');
+
+    const recorder = TadekuTimelapse.createRecorder();
+    let timerInterval = null;
+    let recordStartMs = 0;
+    let previewUrls = [];
+
+    TadekuEditorPrefs.trackEditor('wanlapse');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'wanlapse',
+      () => ({ title: workTitle.value, body: editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          workTitle.value = title || '';
+          editor.value = body || '';
+          updateCount();
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
+        },
+      },
+    );
+
+    function scheduleSave() {
+      library.scheduleSave();
+    }
+
+    function updateCount() {
+      charCount.textContent = editor.value.length;
+    }
+
+    function formatTime(ms) {
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function showError(message) {
+      errorToast.textContent = message;
+      errorToast.classList.add('is-visible');
+    }
+
+    function hideError() {
+      errorToast.textContent = '';
+      errorToast.classList.remove('is-visible');
+    }
+
+    function setControlsDisabled(disabled) {
+      btnRecord.disabled = disabled;
+      btnStop.disabled = disabled;
+      speedSelect.disabled = disabled;
+      resolutionSelect.disabled = disabled;
+      formatSelect.disabled = disabled;
+      countdownToggle.disabled = disabled;
+    }
+
+    function captureSnapshot() {
+      recorder.capture({
+        text: editor.value,
+        cursor: editor.selectionStart,
+        title: workTitle.value,
+      });
+    }
+
+    function updateTimers() {
+      const elapsed = Date.now() - recordStartMs;
+      elapsedEl.textContent = formatTime(elapsed);
+      if (countdownToggle.checked) {
+        const remaining = WANLAI_MS - elapsed;
+        countdownEl.textContent = formatTime(remaining);
+        if (remaining <= 0) {
+          stopRecording();
+        }
+      }
+    }
+
+    function startTimerUI() {
+      timerWrap.hidden = false;
+      countdownWrap.hidden = !countdownToggle.checked;
+      recordStartMs = Date.now();
+      updateTimers();
+      timerInterval = setInterval(updateTimers, 250);
+    }
+
+    function stopTimerUI() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function getExportFormats() {
+      const v = formatSelect.value;
+      if (v === 'both') return ['mp4', 'webm'];
+      if (v === 'webm') return ['webm'];
+      return ['mp4'];
+    }
+
+    function revokePreviewUrls() {
+      for (const url of previewUrls) URL.revokeObjectURL(url);
+      previewUrls = [];
+    }
+
+    function hideResult() {
+      revokePreviewUrls();
+      resultPanel.classList.remove('is-visible');
+      resultActions.innerHTML = '';
+      resultVideos.innerHTML = '';
+    }
+
+    function showProgress({ phase, percent, message }) {
+      overlay.classList.add('is-visible');
+      overlay.setAttribute('aria-hidden', 'false');
+      overlayTitle.textContent = phase === 'loading'
+        ? 'ライブラリを読み込み中'
+        : phase === 'render'
+          ? 'フレームを描画中'
+          : '動画を生成中';
+      progressFill.style.width = `${Math.max(0, Math.min(100, percent || 0))}%`;
+      overlayMessage.textContent = message || '';
+    }
+
+    function hideProgress() {
+      overlay.classList.remove('is-visible');
+      overlay.setAttribute('aria-hidden', 'true');
+      progressFill.style.width = '0%';
+    }
+
+    function buildFilename(ext) {
+      const title = (workTitle.value || 'wanlapse').trim().replace(/[\\/:*?"<>|]/g, '_').slice(0, 40);
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+      return `${title || 'wanlapse'}_${stamp}.${ext}`;
+    }
+
+    function showResult(blobs, snapshots) {
+      const speed = Number(speedSelect.value) || 8;
+      const duration = TadekuTimelapse.estimateVideoDuration(snapshots, speed);
+      const mins = Math.floor(duration / 60);
+      const secs = Math.round(duration % 60);
+      resultMeta.textContent = `約 ${mins > 0 ? `${mins}分` : ''}${secs}秒 · ${snapshots.length} フレーム · ${speed}x`;
+
+      for (const [format, blob] of Object.entries(blobs)) {
+        const url = URL.createObjectURL(blob);
+        previewUrls.push(url);
+
+        const video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.playsInline = true;
+        resultVideos.appendChild(video);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = buildFilename(format);
+        link.textContent = `${format.toUpperCase()} をダウンロード`;
+        resultActions.appendChild(link);
+      }
+
+      resultPanel.classList.add('is-visible');
+    }
+
+    async function stopRecording() {
+      if (!recorder.isRecording) return;
+      hideError();
+      stopTimerUI();
+      document.body.classList.remove('is-recording');
+      setControlsDisabled(true);
+
+      const snapshots = recorder.stop();
+
+      try {
+        showProgress({ phase: 'render', percent: 0, message: '準備中…' });
+        const blobs = await TadekuTimelapse.exportVideo(
+          snapshots,
+          {
+            speed: Number(speedSelect.value) || 8,
+            resolution: resolutionSelect.value,
+            formats: getExportFormats(),
+          },
+          showProgress,
+        );
+        hideProgress();
+        hideResult();
+        showResult(blobs, snapshots);
+      } catch (err) {
+        hideProgress();
+        showError(err.message || '動画の生成に失敗しました。');
+      } finally {
+        setControlsDisabled(false);
+      }
+    }
+
+    function startRecording() {
+      hideError();
+      hideResult();
+      document.body.classList.add('is-recording');
+      recorder.start({
+        text: editor.value,
+        cursor: editor.selectionStart,
+        title: workTitle.value,
+      });
+      startTimerUI();
+      editor.focus();
+    }
+
+    btnRecord.addEventListener('click', startRecording);
+    btnStop.addEventListener('click', stopRecording);
+
+    editor.addEventListener('input', () => {
+      updateCount();
+      scheduleSave();
+      if (recorder.isRecording) captureSnapshot();
+    });
+
+    editor.addEventListener('keyup', () => {
+      if (recorder.isRecording) captureSnapshot();
+    });
+
+    editor.addEventListener('click', () => {
+      if (recorder.isRecording) captureSnapshot();
+    });
+
+    editor.addEventListener('select', () => {
+      if (recorder.isRecording) captureSnapshot();
+    });
+
+    workTitle.addEventListener('input', () => {
+      scheduleSave();
+      if (recorder.isRecording) captureSnapshot();
+    });
+
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        updateCount();
+        scheduleSave();
+        if (recorder.isRecording) captureSnapshot();
+      }, 0);
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (recorder.isRecording) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    (async () => {
+      await library.initFromUrl();
+      updateCount();
+      editor.focus();
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

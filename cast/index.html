@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="小説原稿から登場人物名を自動抽出し、表記ゆれを見つける推敲エディタ。固有名詞を色分けして一覧表示します。">
+  <title>Cast — 登場人物を見つける | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-title.css">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #000000;
+      --border: #000000;
+      --surface: #ffffff;
+      --muted: #4a4a4a;
+      --highlight: #fde8d0;
+      --accent: #e8913a;
+      --warn: #c0392b;
+      --panel: #faf9f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .header-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.85rem 1.25rem 0.65rem;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .stats strong {
+      font-weight: 900;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem 1.1rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .count-line {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .count-input {
+      width: 3.5rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 900;
+      text-align: center;
+      padding: 0.25rem 0.35rem;
+      outline: none;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .count-input::-webkit-outer-spin-button,
+    .count-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .count-slider {
+      flex: 1;
+      min-width: 5rem;
+      max-width: 10rem;
+      accent-color: var(--ink);
+      cursor: pointer;
+    }
+
+    .tag-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.75rem;
+      flex: 1 1 12rem;
+    }
+
+    .tag-label {
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .tag-box {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+      flex: 1 1 8rem;
+      min-width: 6rem;
+      max-width: 18rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.15rem 0.35rem;
+    }
+
+    .tag-list {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .tag-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      border: 1px solid var(--border);
+      padding: 0.05rem 0.15rem 0.05rem 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .tag-item.is-exclude {
+      background: #f5f5f5;
+    }
+
+    .tag-item.is-pin {
+      background: #eef6ff;
+    }
+
+    .tag-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1rem;
+      height: 1rem;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .tag-input {
+      flex: 1 1 4rem;
+      min-width: 3rem;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.1rem 0;
+      outline: none;
+    }
+
+    .tag-input::placeholder {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .editor-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      border-right: 2px solid var(--border);
+    }
+
+    .editor-backdrop .cast-0 { background: #fde8d0; }
+    .editor-backdrop .cast-1 { background: #d4e8fc; }
+    .editor-backdrop .cast-2 { background: #d4f0dc; }
+    .editor-backdrop .cast-3 { background: #ecd4f0; }
+    .editor-backdrop .cast-4 { background: #f0ecd4; }
+    .editor-backdrop .cast-5 { background: #f0d4d4; }
+    .editor-backdrop .cast-6 { background: #d4f0ec; }
+    .editor-backdrop .cast-7 { background: #e8d4f0; }
+
+    .editor-backdrop [class^="cast-"] {
+      border-radius: 2px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .editor-backdrop-clip {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .editor-backdrop,
+    #editor {
+      width: 100%;
+      margin: 0;
+      padding: 1.5rem 1.75rem;
+      border: none;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      resize: none;
+    }
+
+    .editor-backdrop {
+      color: transparent;
+      background: var(--bg);
+      will-change: transform;
+    }
+
+    #editor {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      overflow: auto;
+      overscroll-behavior: contain;
+      background: transparent;
+      color: var(--ink);
+      caret-color: var(--ink);
+      outline: none;
+      z-index: 2;
+    }
+
+    .cast-panel {
+      width: min(18rem, 34vw);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      min-height: 0;
+    }
+
+    .panel-head {
+      padding: 0.85rem 1rem 0.65rem;
+      border-bottom: 2px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .panel-note {
+      margin-top: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .cast-list {
+      flex: 1;
+      overflow: auto;
+      padding: 0.5rem 0;
+    }
+
+    .cast-empty {
+      padding: 1.25rem 1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .cast-item {
+      display: block;
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #e8e4dc;
+      background: transparent;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      font-family: inherit;
+      color: inherit;
+    }
+
+    .cast-item:hover,
+    .cast-item.is-active {
+      background: #fff;
+    }
+
+    .cast-item-top {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .cast-dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .cast-dot-0 { background: #fde8d0; }
+    .cast-dot-1 { background: #d4e8fc; }
+    .cast-dot-2 { background: #d4f0dc; }
+    .cast-dot-3 { background: #ecd4f0; }
+    .cast-dot-4 { background: #f0ecd4; }
+    .cast-dot-5 { background: #f0d4d4; }
+    .cast-dot-6 { background: #d4f0ec; }
+    .cast-dot-7 { background: #e8d4f0; }
+
+    .cast-name {
+      font-size: 0.92rem;
+      font-weight: 900;
+      line-height: 1.3;
+    }
+
+    .cast-count {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .cast-meta {
+      font-size: 0.72rem;
+      line-height: 1.55;
+      color: var(--muted);
+      padding-left: 1.15rem;
+    }
+
+    .cast-warn {
+      display: inline-block;
+      margin-top: 0.2rem;
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    @media (max-width: 820px) {
+      .main {
+        flex-direction: column;
+      }
+
+      .editor-wrap {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+        min-height: 45vh;
+      }
+
+      .cast-panel {
+        width: 100%;
+        max-height: 40vh;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/site-link.css">
+</head>
+<body>
+  <div class="layout">
+    <header class="header">
+      <div class="header-stack">
+        <div class="header-top">
+          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Cast</div>
+          <div class="stats">
+            <span>登場人物 <strong id="cast-count">0</strong></span>
+            <span>表記ゆれ <strong id="warn-count">0</strong></span>
+            <span>文字数 <strong id="char-count">0</strong></span>
+          </div>
+        </div>
+        <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
+      </div>
+      <div class="toolbar">
+        <div class="count-line">
+          <span>検出：</span>
+          <input type="number" class="count-input" id="min-count-input" value="2" min="1" max="20" inputmode="numeric" aria-label="最低出現回数">
+          <span>回以上</span>
+        </div>
+        <input type="range" class="count-slider" id="min-count-slider" min="1" max="10" step="1" value="2" aria-label="最低出現回数">
+        <div class="tag-tools">
+          <span class="tag-label">除外：</span>
+          <div class="tag-box">
+            <div class="tag-list" id="exclude-tags"></div>
+            <input type="text" class="tag-input" id="exclude-input" placeholder="語を入力して Enter" spellcheck="false" aria-label="除外する名前">
+          </div>
+        </div>
+        <div class="tag-tools">
+          <span class="tag-label">固定：</span>
+          <div class="tag-box">
+            <div class="tag-list" id="pin-tags"></div>
+            <input type="text" class="tag-input" id="pin-input" placeholder="名前を入力して Enter" spellcheck="false" aria-label="固定する名前">
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="main">
+      <div class="editor-wrap">
+        <div class="editor-backdrop-clip" aria-hidden="true">
+          <div class="editor-backdrop" id="backdrop"></div>
+        </div>
+        <textarea id="editor" spellcheck="false"></textarea>
+      </div>
+      <aside class="cast-panel" aria-label="登場人物一覧">
+        <div class="panel-head">
+          CAST
+          <p class="panel-note">敬称（さん・くん など）や発話（〇〇が言った）から名前を推定します。一般名詞は拾いにくくしています。</p>
+        </div>
+        <div class="cast-list" id="cast-list"></div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="../shared/editor-prefs.js"></script>
+  <script src="../shared/editor-library.js"></script>
+  <script src="../shared/cast-engine.js"></script>
+  <script>
+    const MIN_COUNT_KEY = 'cast-min-count';
+    const PREFS_KEY = 'cast-prefs';
+    const DEFAULT_MIN_COUNT = 2;
+
+    const editor = document.getElementById('editor');
+    const workTitle = document.getElementById('work-title');
+    const backdrop = document.getElementById('backdrop');
+    const castList = document.getElementById('cast-list');
+    const charCountEl = document.getElementById('char-count');
+    const castCountEl = document.getElementById('cast-count');
+    const warnCountEl = document.getElementById('warn-count');
+    const minCountInput = document.getElementById('min-count-input');
+    const minCountSlider = document.getElementById('min-count-slider');
+    const excludeTags = document.getElementById('exclude-tags');
+    const excludeInput = document.getElementById('exclude-input');
+    const pinTags = document.getElementById('pin-tags');
+    const pinInput = document.getElementById('pin-input');
+
+    let excludeWords = [];
+    let pinnedWords = [];
+    let activeKey = null;
+    let lastAnalysis = { groups: [], spans: [] };
+
+    TadekuEditorPrefs.trackEditor('cast');
+
+    const library = TadekuEditorLibrary.createLibrarySession(
+      'cast',
+      () => ({ title: workTitle.value, body: editor.value }),
+      {
+        onLoad: ({ title, body }) => {
+          workTitle.value = title || '';
+          editor.value = body || '';
+          render();
+        },
+        onTitleResolved: (uniqueTitle) => {
+          if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
+        },
+      },
+    );
+
+    function scheduleSave() {
+      library.scheduleSave();
+    }
+
+    function defaultPrefs() {
+      return { excludes: [], pinned: [] };
+    }
+
+    function loadPrefs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+          return {
+            excludes: Array.isArray(saved.excludes) ? saved.excludes : [],
+            pinned: Array.isArray(saved.pinned) ? saved.pinned : [],
+          };
+        }
+      } catch (_) {}
+      return defaultPrefs();
+    }
+
+    function savePrefs() {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({
+        excludes: excludeWords,
+        pinned: pinnedWords,
+      }));
+    }
+
+    function loadMinCount() {
+      const saved = localStorage.getItem(MIN_COUNT_KEY);
+      const n = saved !== null ? parseInt(saved, 10) : DEFAULT_MIN_COUNT;
+      return Number.isFinite(n) && n >= 1 ? Math.min(20, n) : DEFAULT_MIN_COUNT;
+    }
+
+    function saveMinCount(value) {
+      localStorage.setItem(MIN_COUNT_KEY, String(value));
+    }
+
+    function syncMinCountControls(value) {
+      minCountInput.value = value;
+      minCountSlider.value = Math.min(value, 10);
+    }
+
+    function getMinCount() {
+      const n = parseInt(minCountInput.value, 10);
+      return Number.isFinite(n) && n >= 1 ? Math.min(20, n) : DEFAULT_MIN_COUNT;
+    }
+
+    function setMinCount(n, { save = true } = {}) {
+      const value = Math.min(20, Math.max(1, Math.round(n)));
+      syncMinCountControls(value);
+      if (save) saveMinCount(value);
+      render();
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function renderTagList(container, words, className, onRemove) {
+      container.innerHTML = words.map((word, index) => (
+        `<span class="tag-item ${className}">`
+        + `<span>${escapeHtml(word)}</span>`
+        + `<button type="button" class="tag-remove" data-index="${index}" aria-label="${escapeHtml(word)} を削除">×</button>`
+        + `</span>`
+      )).join('');
+      container.onclick = (e) => {
+        const btn = e.target.closest('.tag-remove');
+        if (!btn) return;
+        onRemove(Number(btn.dataset.index));
+      };
+    }
+
+    function renderPrefTags() {
+      renderTagList(excludeTags, excludeWords, 'is-exclude', (index) => {
+        excludeWords.splice(index, 1);
+        renderPrefTags();
+        savePrefs();
+        render();
+      });
+      renderTagList(pinTags, pinnedWords, 'is-pin', (index) => {
+        pinnedWords.splice(index, 1);
+        renderPrefTags();
+        savePrefs();
+        render();
+      });
+    }
+
+    function addWord(list, raw, inputEl) {
+      const word = TadekuCastEngine.normalizeSurface(raw);
+      if (!word) return false;
+      if (list.includes(word)) return false;
+      list.push(word);
+      inputEl.value = '';
+      renderPrefTags();
+      savePrefs();
+      render();
+      return true;
+    }
+
+    function bindTagInput(inputEl, list) {
+      let composing = false;
+      let justEnded = false;
+
+      inputEl.addEventListener('compositionstart', () => {
+        composing = true;
+      });
+      inputEl.addEventListener('compositionend', () => {
+        composing = false;
+        justEnded = true;
+        setTimeout(() => {
+          justEnded = false;
+        }, 0);
+      });
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        if (e.isComposing || e.keyCode === 229 || composing || justEnded) return;
+        e.preventDefault();
+        addWord(list, inputEl.value, inputEl);
+      });
+    }
+
+    function renderCastList(groups) {
+      if (!groups.length) {
+        castList.innerHTML = '<p class="cast-empty">原稿を入力すると、登場人物名を推定して一覧表示します。</p>';
+        return;
+      }
+
+      castList.innerHTML = groups.map((group) => {
+        const variants = group.surfaces.length > 1
+          ? `<span class="cast-warn">表記ゆれ：${escapeHtml(group.surfaces.join(' / '))}</span>`
+          : '';
+        const pinned = group.pinned ? ' · 固定' : '';
+        return (
+          `<button type="button" class="cast-item${activeKey === group.key ? ' is-active' : ''}" data-key="${escapeHtml(group.key)}">`
+          + `<div class="cast-item-top">`
+          + `<span class="cast-dot cast-dot-${group.colorIndex}" aria-hidden="true"></span>`
+          + `<span class="cast-name">${escapeHtml(group.primary)}</span>`
+          + `<span class="cast-count">${group.count}回</span>`
+          + `</div>`
+          + `<div class="cast-meta">${escapeHtml(group.surfaces.join(' · '))}${pinned}${variants ? '<br>' + variants : ''}</div>`
+          + `</button>`
+        );
+      }).join('');
+    }
+
+    function renderBackdrop(text, spans) {
+      let html = '';
+      let cursor = 0;
+
+      for (const span of spans) {
+        if (cursor < span.start) {
+          html += escapeHtml(text.slice(cursor, span.start));
+        }
+        html += `<span class="cast-${span.colorIndex}">${escapeHtml(text.slice(span.start, span.end))}</span>`;
+        cursor = span.end;
+      }
+
+      if (cursor < text.length) {
+        html += escapeHtml(text.slice(cursor));
+      }
+
+      backdrop.innerHTML = html;
+    }
+
+    function render() {
+      const text = editor.value;
+      const analysis = TadekuCastEngine.analyzeCast(text, {
+        minCount: getMinCount(),
+        excludes: excludeWords,
+        pinned: pinnedWords,
+      });
+
+      lastAnalysis = analysis;
+      renderBackdrop(text, analysis.spans);
+      renderCastList(analysis.groups);
+
+      charCountEl.textContent = text.length;
+      castCountEl.textContent = analysis.groups.length;
+      warnCountEl.textContent = analysis.warnings;
+      syncScroll();
+    }
+
+    function syncScroll() {
+      backdrop.style.transform = `translate3d(${-editor.scrollLeft}px, ${-editor.scrollTop}px, 0)`;
+    }
+
+    let scrollSyncUntil = 0;
+    let scrollSyncRaf = 0;
+
+    function trackScrollSync() {
+      syncScroll();
+      scrollSyncUntil = performance.now() + 480;
+      if (scrollSyncRaf) return;
+      const tick = () => {
+        syncScroll();
+        if (performance.now() < scrollSyncUntil) {
+          scrollSyncRaf = requestAnimationFrame(tick);
+        } else {
+          scrollSyncRaf = 0;
+        }
+      };
+      scrollSyncRaf = requestAnimationFrame(tick);
+    }
+
+    function scrollToGroup(key) {
+      const group = lastAnalysis.groups.find((g) => g.key === key);
+      if (!group) return;
+
+      activeKey = key;
+      renderCastList(lastAnalysis.groups);
+
+      const span = lastAnalysis.spans.find((s) => s.key === key);
+      if (!span) return;
+
+      editor.focus();
+      editor.setSelectionRange(span.start, span.end);
+      trackScrollSync();
+    }
+
+    castList.addEventListener('click', (e) => {
+      const item = e.target.closest('.cast-item');
+      if (!item) return;
+      scrollToGroup(item.dataset.key);
+    });
+
+    workTitle.addEventListener('input', scheduleSave);
+
+    minCountInput.addEventListener('change', () => setMinCount(parseInt(minCountInput.value, 10)));
+    minCountSlider.addEventListener('input', () => setMinCount(parseInt(minCountSlider.value, 10)));
+    minCountInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        minCountInput.blur();
+      }
+    });
+
+    bindTagInput(excludeInput, excludeWords);
+    bindTagInput(pinInput, pinnedWords);
+
+    editor.addEventListener('input', () => {
+      activeKey = null;
+      render();
+      scheduleSave();
+    });
+    editor.addEventListener('scroll', trackScrollSync, { passive: true });
+    window.addEventListener('resize', syncScroll);
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        activeKey = null;
+        render();
+        scheduleSave();
+      }, 0);
+    });
+
+    (async () => {
+      const prefs = loadPrefs();
+      excludeWords = prefs.excludes;
+      pinnedWords = prefs.pinned;
+      renderPrefTags();
+      setMinCount(loadMinCount(), { save: false });
+      await library.initFromUrl();
+      render();
+      editor.focus();
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

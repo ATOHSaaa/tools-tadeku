@@ -217,7 +217,6 @@
   <link rel="stylesheet" href="../shared/site-link.css">
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-mobile.css">
-  <link rel="stylesheet" href="../shared/editor-save-indicator.css">
 </head>
 <body id="body">
   <div class="layout">
@@ -226,7 +225,6 @@
         <div class="header-row">
           <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Tachometer</div>
           <div class="stats">
-            <span class="save-indicator" id="save-indicator"></span>
             <span>文字数 <strong id="char-count">0</strong></span>
           </div>
         </div>
@@ -267,7 +265,6 @@
     const etaDisplay = document.getElementById('eta');
     const progressDisplay = document.getElementById('progress');
     const goalInput = document.getElementById('goal-chars');
-    const saveIndicator = document.getElementById('save-indicator');
     const charCountEl = document.getElementById('char-count');
 
     let charHistory = [];
@@ -289,20 +286,10 @@
         onTitleResolved: (uniqueTitle) => {
           if (document.activeElement !== workTitle) workTitle.value = uniqueTitle;
         },
-        onSaved: () => {
-          saveIndicator.textContent = '保存済み';
-          saveIndicator.classList.add('saved');
-        },
-        onError: () => {
-          saveIndicator.textContent = '保存エラー';
-          saveIndicator.classList.remove('saved');
-        },
       },
     );
 
     function scheduleSave() {
-      saveIndicator.textContent = '保存中…';
-      saveIndicator.classList.remove('saved');
       library.scheduleSave();
     }
 

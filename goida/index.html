@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WordFall と PedantryFall の語彙で打つタイピングゲーム。物書きの語彙辞典と衒学語を60秒で入力し、速度と正確さを計測します。">
+  <title>Goida — 語彙タイピング | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #1a1a1a;
+      --surface: #fff;
+      --ok: #2d6a4f;
+      --ok-soft: #d8f3dc;
+      --warn: #9b2226;
+      --warn-soft: #ffe5e5;
+      --current: #3d6b8c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: clamp(0.62rem, 2.6vw, 0.92rem);
+      color: var(--muted);
+      white-space: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .lead::-webkit-scrollbar { display: none; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1.75rem;
+    }
+
+    .stat {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.65rem 0.75rem;
+      min-width: 0;
+    }
+
+    .stat-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .stat-value {
+      font-size: clamp(1.1rem, 3.5vw, 1.45rem);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .stat-unit {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-left: 0.1rem;
+    }
+
+    .stage {
+      margin-top: 1.5rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: clamp(1.5rem, 4vw, 2.5rem) 1.25rem 1.75rem;
+      min-height: 16rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.35rem;
+    }
+
+    .source-tag {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .target {
+      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      font-size: clamp(1.75rem, 6vw, 2.75rem);
+      font-weight: 900;
+      line-height: 1.45;
+      text-align: center;
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    .target-char {
+      opacity: 0.28;
+      transition: opacity 0.08s, color 0.08s;
+    }
+
+    .target-char.is-done {
+      opacity: 1;
+      color: var(--ok);
+    }
+
+    .target-char.is-current {
+      opacity: 1;
+      color: var(--current);
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+      text-decoration-thickness: 3px;
+    }
+
+    .ref-link {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 0.14em;
+    }
+
+    .ref-link:hover { color: var(--ink); }
+
+    .ref-link[hidden] { display: none; }
+
+    .type-input {
+      width: min(100%, 28rem);
+      border: 2px solid var(--border);
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.7rem 0.85rem;
+      text-align: center;
+      caret-color: var(--current);
+    }
+
+    .type-input:focus {
+      outline: 2px solid var(--current);
+      outline-offset: 2px;
+    }
+
+    .type-input.is-error {
+      border-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .type-input:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 1.25rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      opacity: 0.88;
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .result {
+      display: none;
+      margin-top: 1.25rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .result.is-visible { display: block; }
+
+    .result-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+
+    .result-item {
+      border: 1px solid #e8e4da;
+      padding: 0.75rem 0.5rem;
+    }
+
+    .result-item-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .result-item-value {
+      font-size: 1.35rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.15rem;
+    }
+
+    .result-words {
+      margin-top: 1.25rem;
+      text-align: left;
+    }
+
+    .result-words[hidden] { display: none; }
+
+    .result-words-title {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .word-list {
+      list-style: none;
+      max-height: 16rem;
+      overflow-y: auto;
+      border: 1px solid #e8e4da;
+      padding: 0.35rem 0.75rem;
+    }
+
+    .word-list li {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #f0ece4;
+      font-size: 0.88rem;
+    }
+
+    .word-list li:last-child { border-bottom: none; }
+
+    .word-list a {
+      color: var(--ink);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+    }
+
+    .word-list a:hover { color: var(--current); }
+
+    .word-list .word-plain { font-weight: 700; }
+
+    .word-list .word-source {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Goida</h1>
+      <p class="lead">WordFall と PedantryFall の語彙を60秒で打つ</p>
+    </header>
+
+    <div class="stats" aria-live="polite">
+      <div class="stat">
+        <div class="stat-label">残り</div>
+        <div class="stat-value"><span id="time-left">60</span><span class="stat-unit">秒</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">完答</div>
+        <div class="stat-value"><span id="word-count">0</span><span class="stat-unit">語</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">正確率</div>
+        <div class="stat-value"><span id="accuracy">—</span><span class="stat-unit">%</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">速度</div>
+        <div class="stat-value"><span id="speed">0</span><span class="stat-unit">字/分</span></div>
+      </div>
+    </div>
+
+    <section class="stage" aria-labelledby="target-label">
+      <p class="source-tag" id="source-tag">—</p>
+      <div class="target" id="target" aria-live="polite"></div>
+      <a class="ref-link" id="ref-link" href="#" target="_blank" rel="noopener noreferrer" hidden>参照</a>
+      <input type="text" class="type-input" id="type-input" autocomplete="off" autocapitalize="off" spellcheck="false" disabled>
+    </section>
+
+    <div class="toolbar">
+      <button type="button" class="btn btn-primary" id="start-btn">スタート</button>
+    </div>
+
+    <section class="result" id="result" aria-live="polite">
+      <p class="result-title">結果</p>
+      <div class="result-grid">
+        <div class="result-item">
+          <div class="result-item-label">完答</div>
+          <div class="result-item-value"><span id="result-word-count">0</span> 語</div>
+        </div>
+        <div class="result-item">
+          <div class="result-item-label">正確率</div>
+          <div class="result-item-value"><span id="result-accuracy">0</span>%</div>
+        </div>
+        <div class="result-item">
+          <div class="result-item-label">速度</div>
+          <div class="result-item-value"><span id="result-speed">0</span> 字/分</div>
+        </div>
+      </div>
+      <div class="result-words" id="result-word-list" hidden>
+        <p class="result-words-title">出てきた語</p>
+        <ul class="word-list" id="word-list"></ul>
+      </div>
+    </section>
+  </div>
+
+  <script src="../shared/wordfall-words.js"></script>
+  <script>
+    const wordfallItems = (window.WORDFALL_CONFIG?.words || []).map((entry) => ({
+      word: (entry.word || '').trim(),
+      url: entry.url || '',
+      source: 'WordFall',
+    }));
+  </script>
+  <script src="../shared/pedantryfall-words.js"></script>
+  <script>
+    const pedantryItems = (window.WORDFALL_CONFIG?.words || []).map((entry) => ({
+      word: (entry.word || '').trim(),
+      url: entry.url || '',
+      source: 'PedantryFall',
+    }));
+  </script>
+  <script>
+    const ROUND_SEC = 60;
+    const MAX_WORD_LEN = 28;
+    const DICT_BASE = 'https://scrapbox.io/monokaki-goi-jiten/';
+
+    const els = {
+      timeLeft: document.getElementById('time-left'),
+      wordCount: document.getElementById('word-count'),
+      accuracy: document.getElementById('accuracy'),
+      speed: document.getElementById('speed'),
+      sourceTag: document.getElementById('source-tag'),
+      target: document.getElementById('target'),
+      refLink: document.getElementById('ref-link'),
+      input: document.getElementById('type-input'),
+      startBtn: document.getElementById('start-btn'),
+      result: document.getElementById('result'),
+      resultWordCount: document.getElementById('result-word-count'),
+      resultAccuracy: document.getElementById('result-accuracy'),
+      resultSpeed: document.getElementById('result-speed'),
+      resultWordList: document.getElementById('result-word-list'),
+      wordList: document.getElementById('word-list'),
+    };
+
+    function isPlayable(item) {
+      const word = item.word;
+      if (!word) return false;
+      if (word.length > MAX_WORD_LEN) return false;
+      if (/一覧/.test(word)) return false;
+      return true;
+    }
+
+    function resolveUrl(item) {
+      if (item.url) return item.url;
+      if (item.source === 'WordFall') return DICT_BASE + encodeURIComponent(item.word);
+      return '';
+    }
+
+    function buildPool() {
+      const seen = new Set();
+      const pool = [];
+      [...wordfallItems, ...pedantryItems].forEach((item) => {
+        if (!isPlayable(item) || seen.has(item.word)) return;
+        seen.add(item.word);
+        pool.push({ ...item, url: resolveUrl(item) });
+      });
+      return pool;
+    }
+
+    function shuffle(list) {
+      const copy = list.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    const allWords = buildPool();
+    let queue = [];
+    let current = null;
+    let playing = false;
+    let composing = false;
+    let timeLeft = ROUND_SEC;
+    let timerId = null;
+    let wordsDone = 0;
+    let charsDone = 0;
+    let missCount = 0;
+    let startedAt = 0;
+    let suppressInput = false;
+    let appearedWords = [];
+
+    function pickNext() {
+      if (!queue.length) queue = shuffle(allWords);
+      current = queue.pop() || null;
+      return current;
+    }
+
+    function renderTarget(typedLen) {
+      if (!current) {
+        els.target.textContent = '—';
+        return;
+      }
+      const chars = [...current.word];
+      els.target.innerHTML = chars.map((ch, index) => {
+        let cls = 'target-char';
+        if (index < typedLen) cls += ' is-done';
+        else if (index === typedLen) cls += ' is-current';
+        return '<span class="' + cls + '">' + escapeHtml(ch) + '</span>';
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function showWord() {
+      if (!current) pickNext();
+      if (current) appearedWords.push({ ...current });
+      els.sourceTag.hidden = false;
+      els.sourceTag.textContent = current ? current.source : '—';
+      renderTarget(0);
+      const url = current ? current.url : '';
+      if (url) {
+        els.refLink.href = url;
+        els.refLink.hidden = false;
+        els.refLink.textContent = current.source === 'PedantryFall' ? 'Wikipedia' : '用例';
+      } else {
+        els.refLink.hidden = true;
+      }
+    }
+
+    function clearStage() {
+      current = null;
+      els.sourceTag.hidden = true;
+      els.target.textContent = '';
+      els.refLink.hidden = true;
+      els.input.value = '';
+      els.input.classList.remove('is-error');
+    }
+
+    function calcAccuracy() {
+      const attempts = wordsDone + missCount;
+      if (!attempts) return null;
+      return Math.round((wordsDone / attempts) * 100);
+    }
+
+    function calcSpeed() {
+      if (!startedAt || !charsDone) return 0;
+      const elapsedMin = Math.max((Date.now() - startedAt) / 60000, 1 / 60);
+      return Math.round(charsDone / elapsedMin);
+    }
+
+    function renderWordList() {
+      els.wordList.replaceChildren();
+      if (!appearedWords.length) {
+        els.resultWordList.hidden = true;
+        return;
+      }
+      els.resultWordList.hidden = false;
+      appearedWords.forEach((item) => {
+        const li = document.createElement('li');
+        if (item.url) {
+          const link = document.createElement('a');
+          link.href = item.url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = item.word;
+          li.appendChild(link);
+        } else {
+          const word = document.createElement('span');
+          word.className = 'word-plain';
+          word.textContent = item.word;
+          li.appendChild(word);
+        }
+        const source = document.createElement('span');
+        source.className = 'word-source';
+        source.textContent = item.source;
+        li.appendChild(source);
+        els.wordList.appendChild(li);
+      });
+    }
+
+    function updateHud() {
+      els.timeLeft.textContent = String(timeLeft);
+      els.wordCount.textContent = String(wordsDone);
+      const acc = calcAccuracy();
+      els.accuracy.textContent = acc === null ? '—' : String(acc);
+      els.speed.textContent = String(playing || wordsDone ? calcSpeed() : 0);
+    }
+
+    function finishRound() {
+      playing = false;
+      clearInterval(timerId);
+      timerId = null;
+      els.input.disabled = true;
+      clearStage();
+      els.startBtn.hidden = false;
+      els.startBtn.textContent = 'もう一度';
+      els.result.classList.add('is-visible');
+      els.resultWordCount.textContent = String(wordsDone);
+      els.resultAccuracy.textContent = String(calcAccuracy() ?? 100);
+      els.resultSpeed.textContent = String(calcSpeed());
+      renderWordList();
+      updateHud();
+    }
+
+    function clearInput() {
+      els.input.value = '';
+      els.input.classList.remove('is-error');
+    }
+
+    function completeWord() {
+      if (!current) return;
+      wordsDone += 1;
+      charsDone += current.word.length;
+      suppressInput = true;
+      clearInput();
+      pickNext();
+      showWord();
+      updateHud();
+      requestAnimationFrame(() => {
+        clearInput();
+        requestAnimationFrame(() => {
+          suppressInput = false;
+        });
+      });
+    }
+
+    function handleInput(rawValue) {
+      if (!playing || !current) return;
+      if (suppressInput) {
+        clearInput();
+        return;
+      }
+      const value = rawValue;
+      const target = current.word;
+
+      if (!value) {
+        els.input.classList.remove('is-error');
+        renderTarget(0);
+        return;
+      }
+
+      if (!target.startsWith(value)) {
+        if (!els.input.classList.contains('is-error')) missCount += 1;
+        els.input.classList.add('is-error');
+        return;
+      }
+
+      els.input.classList.remove('is-error');
+      renderTarget(value.length);
+
+      if (value === target) completeWord();
+    }
+
+    function tick() {
+      timeLeft -= 1;
+      updateHud();
+      if (timeLeft <= 0) finishRound();
+    }
+
+    function startRound() {
+      queue = shuffle(allWords);
+      current = null;
+      playing = true;
+      composing = false;
+      timeLeft = ROUND_SEC;
+      wordsDone = 0;
+      charsDone = 0;
+      missCount = 0;
+      appearedWords = [];
+      startedAt = Date.now();
+      els.result.classList.remove('is-visible');
+      els.resultWordList.hidden = true;
+      els.startBtn.hidden = true;
+      els.input.disabled = false;
+      els.input.value = '';
+      els.input.classList.remove('is-error');
+      pickNext();
+      showWord();
+      updateHud();
+      clearInterval(timerId);
+      timerId = setInterval(tick, 1000);
+      els.input.focus();
+    }
+
+    els.startBtn.addEventListener('click', startRound);
+
+    document.addEventListener('keydown', (event) => {
+      if (playing || els.startBtn.hidden || els.startBtn.disabled) return;
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target === els.startBtn) return;
+      event.preventDefault();
+      startRound();
+    });
+
+    els.input.addEventListener('compositionstart', () => {
+      composing = true;
+    });
+
+    els.input.addEventListener('compositionend', (event) => {
+      composing = false;
+      requestAnimationFrame(() => {
+        if (!suppressInput) handleInput(event.target.value);
+      });
+    });
+
+    els.input.addEventListener('input', () => {
+      if (!composing) handleInput(els.input.value);
+    });
+
+    els.input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && playing && els.input.value === current?.word) {
+        event.preventDefault();
+        completeWord();
+      }
+    });
+
+    if (!allWords.length) {
+      els.target.textContent = '語彙を読み込めませんでした';
+      els.startBtn.disabled = true;
+    } else {
+      clearStage();
+      updateHud();
+    }
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

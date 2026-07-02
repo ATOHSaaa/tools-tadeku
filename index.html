@@ -54,7 +54,7 @@
       font-weight: 500;
       line-height: 1.75;
       color: var(--ink);
-      margin-bottom: 2.75rem;
+      margin-bottom: 1rem;
     }
     .intro a {
       color: var(--ink);
@@ -140,12 +140,42 @@
     .library-link:hover {
       opacity: 0.85;
     }
+    .share-x {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      width: fit-content;
+      margin-left: auto;
+      margin-bottom: 2.75rem;
+      padding: 0.65rem 1rem;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+    .share-x:hover {
+      opacity: 0.85;
+    }
+    .share-x svg {
+      width: 0.85rem;
+      height: 0.85rem;
+      fill: currentColor;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>tadeku-tools</h1>
     <p class="intro"><a href="https://tadeku.net" target="_blank" rel="noopener noreferrer">蓼食う本の虫</a>が提供する、執筆に役立つツールをまとめています</p>
+    <button type="button" class="share-x" id="share-x-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Xでシェア
+    </button>
     <nav aria-label="ツール一覧">
       <section class="category">
         <h2 class="category-title">語彙</h2>
@@ -175,6 +205,11 @@
             <div class="accent-line" aria-hidden="true"></div>
             <p>三題噺用に3つのお題をランダムで表示します。カードを固定して引き直しながら、短編や執筆練習のアイデアを得られます。</p>
           </a>
+          <a class="item" href="goida/">
+            <h3>Goida</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>WordFall と PedantryFall の語彙を60秒で打つタイピングゲーム。完答数・正確率・字/分を計測します。</p>
+          </a>
         </div>
       </section>
       <section class="category">
@@ -194,6 +229,16 @@
             <h3>Tachometer</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>執筆速度をリアルタイムで計測するエディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認できます。</p>
+          </a>
+          <a class="item" href="wanlapse/">
+            <h3>Wanlapse</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>ワンアワーライティングの執筆過程をタイムラプス動画にするツール。倍速を選んで書き、停止すると MP4 / WebM をブラウザ内で生成します。</p>
+          </a>
+          <a class="item" href="etude/">
+            <h3>Etude</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>1時間刻みのお題で即興小説を書くツール。同じ時間帯は同じお題。制限時間内に書き、Twitterでシェアできます。</p>
           </a>
           <a class="item" href="Interval/">
             <h3>Interval</h3>
@@ -224,6 +269,11 @@
             <h3>Echo</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>200字以内に2回以上現れる語を色分けしてハイライトするエディタ。同じ語は同じ色で、近い反復の見落としを防ぎます。</p>
+          </a>
+          <a class="item" href="cast/">
+            <h3>Cast</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>原稿から登場人物名を自動抽出し、表記ゆれを警告するエディタ。敬称や地の文から名前を推定し、一覧と色分けで確認できます。</p>
           </a>
           <a class="item" href="mirage/">
             <h3>Mirage</h3>
@@ -261,5 +311,12 @@
     </nav>
     <footer>tools.tadeku.net</footer>
   </div>
+  <script>
+    document.getElementById('share-x-btn').addEventListener('click', () => {
+      const text = '物書きのための無料Webツール集 tadeku-tools\nhttps://tools.tadeku.net/';
+      const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+      window.open(url, '_blank', 'noopener,noreferrer,width=550,height=420');
+    });
+  </script>
 </body>
 </html>

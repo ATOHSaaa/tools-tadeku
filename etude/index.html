@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="1時間刻みのお題で即興小説を書く Etude。同じ時間帯は同じお題。制限時間内に書き、Twitterでシェアできます。">
+  <title>Etude — 即興小説のお題 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #1a1a1a;
+      --surface: #ffffff;
+      --accent: #e8913a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.is-editor {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .prompt-view {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 5rem;
+    }
+
+    .prompt-header {
+      margin-bottom: 2.5rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.25rem;
+    }
+
+    .slot-range {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .countdown {
+      font-size: clamp(2.5rem, 10vw, 4rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .countdown.is-low {
+      color: var(--accent);
+    }
+
+    .prompt-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 2rem 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .prompt-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .prompt-text {
+      font-size: clamp(1.35rem, 4.5vw, 1.85rem);
+      font-weight: 900;
+      line-height: 1.45;
+      letter-spacing: -0.02em;
+    }
+
+    .completed-work {
+      margin-bottom: 2rem;
+    }
+
+    .completed-work[hidden] {
+      display: none !important;
+    }
+
+    .completed-prompt {
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .completed-body {
+      font-size: 0.95rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .completed-meta {
+      margin-top: 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .prompt-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .prompt-actions .btn[hidden] {
+      display: none !important;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.7rem 1.35rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .editor-view {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    body.is-editor .prompt-view {
+      display: none;
+    }
+
+    body.is-editor .editor-view {
+      display: flex;
+    }
+
+    .editor-header {
+      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .editor-header-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.85rem 1.25rem 0.65rem;
+    }
+
+    .editor-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stats strong {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .editor-prompt {
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.5;
+      padding: 0 1.25rem 0.75rem;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem 1rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+    }
+
+    #editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: var(--surface);
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.5rem 1.75rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+    }
+
+    #editor:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    body.is-locked #editor {
+      background: var(--bg);
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(26, 26, 26, 0.45);
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+
+    .modal-backdrop.is-open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem 1.35rem;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 1.25rem;
+    }
+
+    .image-export {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem 0.55rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .image-export-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .split-btns {
+      display: flex;
+      flex: 1;
+      gap: 0.35rem;
+      min-width: 8rem;
+    }
+
+    .split-btns .btn {
+      flex: 1;
+      padding: 0.5rem 0.25rem;
+      font-size: 0.75rem;
+    }
+
+    .split-btns .btn.is-active {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .image-export .btn-save {
+      flex-shrink: 0;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.75rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .btn-skip {
+      background: transparent;
+      border-color: transparent;
+      font-weight: 700;
+      opacity: 0.55;
+    }
+
+    .btn-skip:hover:not(:disabled) {
+      background: transparent;
+      color: var(--ink);
+      opacity: 1;
+    }
+
+    .locked-banner {
+      display: none;
+      flex-shrink: 0;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+      background: var(--surface);
+    }
+
+    body.is-locked .locked-banner {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="prompt-view" id="prompt-view">
+    <header class="prompt-header">
+      <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Etude</div>
+      <p class="slot-range" id="slot-range"></p>
+      <p class="countdown" id="countdown" aria-live="polite"></p>
+    </header>
+    <div class="prompt-card">
+      <p class="prompt-label">お題</p>
+      <p class="prompt-text" id="prompt-text"></p>
+    </div>
+    <div class="prompt-actions">
+      <button type="button" class="btn btn-primary" id="start-btn">書き始める</button>
+      <button type="button" class="btn btn-primary" id="resume-btn" hidden>続きを書く</button>
+    </div>
+    <div class="completed-work" id="completed-work" hidden>
+      <div class="prompt-card">
+        <p class="prompt-label">作品</p>
+        <p class="completed-prompt" id="completed-prompt"></p>
+        <div class="completed-body" id="completed-body"></div>
+        <p class="completed-meta" id="completed-meta"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="editor-view" id="editor-view">
+    <header class="editor-header">
+      <div class="editor-header-stack">
+        <div class="editor-header-top">
+          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Etude</div>
+          <div class="stats">
+            <span>残り <strong id="editor-countdown">00:00</strong></span>
+            <span>文字数 <strong id="char-count">0</strong></span>
+          </div>
+        </div>
+      </div>
+      <p class="editor-prompt" id="editor-prompt"></p>
+      <div class="editor-toolbar">
+        <button type="button" class="btn" id="share-start-btn">書き始めをシェア</button>
+        <button type="button" class="btn" id="finish-btn">書き終わる</button>
+      </div>
+    </header>
+    <div class="editor-wrap">
+      <textarea id="editor" spellcheck="false"></textarea>
+    </div>
+    <div class="locked-banner" id="locked-banner">制限時間が終了しました</div>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" hidden>
+    <div class="modal" role="dialog" aria-labelledby="confirm-modal-title">
+      <h2 class="modal-title" id="confirm-modal-title">本当に終了しますか？</h2>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="confirm-finish-btn">終了する</button>
+        <button type="button" class="btn btn-skip" id="cancel-finish-btn">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="share-modal" hidden>
+    <div class="modal" role="dialog" aria-labelledby="share-modal-title">
+      <h2 class="modal-title" id="share-modal-title">書き終わる</h2>
+      <div class="image-export">
+        <span class="image-export-label">画像の分割</span>
+        <div class="split-btns" id="split-btns">
+          <button type="button" class="btn is-active" data-splits="1">1枚</button>
+          <button type="button" class="btn" data-splits="2">2枚</button>
+          <button type="button" class="btn" data-splits="3">3枚</button>
+          <button type="button" class="btn" data-splits="4">4枚</button>
+        </div>
+        <button type="button" class="btn btn-save" id="download-images-btn">画像を保存</button>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="share-finish-btn">Twitterにシェア</button>
+        <button type="button" class="btn btn-skip" id="close-share-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/etude-data.js"></script>
+  <script src="../shared/etude-engine.js"></script>
+  <script>
+    const E = TadekuEtude;
+    const prompts = ETUDE_DATA.prompts;
+
+    const els = {
+      promptView: document.getElementById('prompt-view'),
+      editorView: document.getElementById('editor-view'),
+      slotRange: document.getElementById('slot-range'),
+      countdown: document.getElementById('countdown'),
+      promptText: document.getElementById('prompt-text'),
+      startBtn: document.getElementById('start-btn'),
+      resumeBtn: document.getElementById('resume-btn'),
+      completedWork: document.getElementById('completed-work'),
+      completedPrompt: document.getElementById('completed-prompt'),
+      completedBody: document.getElementById('completed-body'),
+      completedMeta: document.getElementById('completed-meta'),
+      editorCountdown: document.getElementById('editor-countdown'),
+      charCount: document.getElementById('char-count'),
+      editorPrompt: document.getElementById('editor-prompt'),
+      editor: document.getElementById('editor'),
+      shareStartBtn: document.getElementById('share-start-btn'),
+      finishBtn: document.getElementById('finish-btn'),
+      confirmModal: document.getElementById('confirm-modal'),
+      confirmFinishBtn: document.getElementById('confirm-finish-btn'),
+      cancelFinishBtn: document.getElementById('cancel-finish-btn'),
+      shareModal: document.getElementById('share-modal'),
+      splitBtns: document.getElementById('split-btns'),
+      downloadImagesBtn: document.getElementById('download-images-btn'),
+      shareFinishBtn: document.getElementById('share-finish-btn'),
+      closeShareBtn: document.getElementById('close-share-btn'),
+    };
+
+    let session = null;
+    let saveTimer = null;
+    let tickTimer = null;
+    let imageSplits = 1;
+
+    function now() {
+      return new Date();
+    }
+
+    function updateCharCount() {
+      els.charCount.textContent = els.editor.value.length;
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        session.body = els.editor.value;
+        try {
+          await E.putSession(session);
+        } catch (_) { /* silent */ }
+      }, 400);
+    }
+
+    function applyLockedState() {
+      const locked = E.isLocked(now(), session);
+      document.body.classList.toggle('is-locked', locked);
+      els.editor.disabled = locked;
+      if (locked && E.isWriting(session)) {
+        els.startBtn.disabled = true;
+      }
+    }
+
+    function setBtnShown(btn, shown) {
+      btn.hidden = !shown;
+      if (shown) btn.removeAttribute('hidden');
+      else btn.setAttribute('hidden', '');
+    }
+
+    function updatePromptActions() {
+      const timerActive = E.isTimerActive(now(), session);
+      setBtnShown(els.startBtn, !timerActive);
+      setBtnShown(els.resumeBtn, timerActive);
+    }
+
+    function renderCompletedWork() {
+      const work = session && session.lastWork;
+      if (!work || !work.body) {
+        els.completedWork.hidden = true;
+        return;
+      }
+      els.completedWork.hidden = false;
+      els.completedPrompt.textContent = 'お題：' + work.prompt;
+      els.completedBody.textContent = work.body;
+      const remain = work.stoppedRemainingMs != null
+        ? E.formatCountdown(work.stoppedRemainingMs)
+        : '';
+      els.completedMeta.textContent = work.charCount + '字' + (remain ? ' · 残り ' + remain : '');
+    }
+
+    function resumeWriting() {
+      showEditor();
+    }
+
+    function updateTimers() {
+      const remaining = E.getRemainingMs(now(), session);
+      const text = E.formatCountdown(remaining);
+      els.countdown.textContent = text;
+      els.editorCountdown.textContent = text;
+      const ticking = E.isTimerActive(now(), session);
+      els.countdown.classList.toggle('is-low', ticking && remaining > 0 && remaining < 5 * 60 * 1000);
+      els.slotRange.textContent = E.formatSlotRange(now());
+
+      if (!document.body.classList.contains('is-editor')) {
+        updatePromptActions();
+      }
+
+      if (E.isWriting(session) && remaining <= 0) {
+        applyLockedState();
+      }
+    }
+
+    function showEditor() {
+      document.body.classList.add('is-editor');
+      els.editorPrompt.textContent = 'お題：' + session.prompt;
+      els.editor.value = session.body || '';
+      updateCharCount();
+      applyLockedState();
+      updateTimers();
+      if (!E.isLocked(now(), session)) {
+        els.editor.focus();
+      }
+    }
+
+    function showPrompt() {
+      document.body.classList.remove('is-editor');
+      els.promptText.textContent = session.prompt;
+      renderCompletedWork();
+      updatePromptActions();
+      updateTimers();
+    }
+
+    function openModal(el) {
+      el.hidden = false;
+      el.classList.add('is-open');
+    }
+
+    function closeModal(el) {
+      el.classList.remove('is-open');
+      el.hidden = true;
+    }
+
+    function openConfirmModal() {
+      openModal(els.confirmModal);
+    }
+
+    function closeConfirmModal() {
+      closeModal(els.confirmModal);
+    }
+
+    function openShareModal() {
+      openModal(els.shareModal);
+    }
+
+    function closeShareModal() {
+      closeModal(els.shareModal);
+    }
+
+    async function completeFinish() {
+      const body = els.editor.value;
+      const stoppedRemainingMs = E.getRemainingMs(now(), session);
+      session.body = body;
+      session.stoppedRemainingMs = stoppedRemainingMs;
+      session.finishedAt = Date.now();
+      session.lastWork = E.buildLastWork(session, body, session.finishedAt, stoppedRemainingMs);
+      await E.putSession(session);
+      closeConfirmModal();
+      showPrompt();
+      openShareModal();
+    }
+
+    async function openFinishFlow() {
+      session.body = els.editor.value;
+      try {
+        await E.putSession(session);
+      } catch (_) { /* silent */ }
+      openConfirmModal();
+    }
+
+    async function startWriting({ share }) {
+      if (E.isTimerActive(now(), session)) return;
+      if (E.isLocked(now(), session) && !E.isFinished(session)) return;
+      if (E.isFinished(session)) {
+        session.body = '';
+        session.startedAt = Date.now();
+        session.finishedAt = null;
+        session.stoppedRemainingMs = null;
+      } else if (!session.startedAt) {
+        session.startedAt = Date.now();
+      }
+      await E.putSession(session);
+      if (share) {
+        E.openTwitterIntent(E.buildStartShareText(session.prompt));
+      }
+      showEditor();
+    }
+
+    els.startBtn.addEventListener('click', () => startWriting({ share: false }));
+    els.resumeBtn.addEventListener('click', () => resumeWriting());
+
+    els.shareStartBtn.addEventListener('click', () => {
+      E.openTwitterIntent(E.buildStartShareText(session.prompt));
+    });
+
+    els.finishBtn.addEventListener('click', openFinishFlow);
+
+    els.editor.addEventListener('input', () => {
+      if (els.editor.disabled) return;
+      updateCharCount();
+      scheduleSave();
+    });
+
+    els.confirmFinishBtn.addEventListener('click', completeFinish);
+    els.cancelFinishBtn.addEventListener('click', closeConfirmModal);
+
+    els.shareFinishBtn.addEventListener('click', () => {
+      const work = session.lastWork;
+      if (!work) return;
+      E.openTwitterIntent(E.buildFinishShareText(work.prompt, work.charCount));
+    });
+
+    els.closeShareBtn.addEventListener('click', closeShareModal);
+
+    els.splitBtns.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-splits]');
+      if (!btn) return;
+      imageSplits = Number(btn.dataset.splits) || 1;
+      els.splitBtns.querySelectorAll('.btn').forEach((b) => {
+        b.classList.toggle('is-active', b === btn);
+      });
+    });
+
+    els.downloadImagesBtn.addEventListener('click', async () => {
+      const work = session.lastWork;
+      if (!work || !work.body.trim()) return;
+      els.downloadImagesBtn.disabled = true;
+      try {
+        await E.downloadTextImages({
+          prompt: work.prompt,
+          body: work.body,
+          splits: imageSplits,
+          slotKey: session.slotKey,
+        });
+      } finally {
+        els.downloadImagesBtn.disabled = false;
+      }
+    });
+
+    async function init() {
+      try {
+        session = await E.loadOrCreateSession(now(), prompts);
+      } catch (_) {
+        session = {
+          slotKey: E.getSlotKey(now()),
+          prompt: E.getPromptForSlot(E.getSlotKey(now()), prompts),
+          body: '',
+          startedAt: null,
+          finishedAt: null,
+        };
+      }
+
+      const currentKey = E.getSlotKey(now());
+      const active = E.isTimerActive(now(), session);
+      if (!active && session.slotKey !== currentKey) {
+        session = await E.loadOrCreateSession(now(), prompts);
+      }
+
+      updateTimers();
+      tickTimer = setInterval(() => {
+        const key = E.getSlotKey(now());
+        const stillWriting = E.isTimerActive(now(), session);
+        if (!stillWriting && key !== session.slotKey) {
+          clearInterval(tickTimer);
+          location.reload();
+          return;
+        }
+        updateTimers();
+      }, 1000);
+
+      if (E.isWriting(session) && E.isLocked(now(), session)) {
+        showEditor();
+      } else {
+        showPrompt();
+      }
+    }
+
+    init();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>
