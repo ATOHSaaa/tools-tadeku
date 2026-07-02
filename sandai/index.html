@@ -245,6 +245,26 @@
       background: var(--surface);
       color: var(--ink);
     }
+
+    .btn-share {
+      gap: 0.45rem;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      transition: opacity 0.15s ease;
+    }
+
+    .btn-share:hover {
+      opacity: 0.85;
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-share svg {
+      width: 0.85rem;
+      height: 0.85rem;
+      fill: currentColor;
+    }
   </style>
 </head>
 <body>
@@ -257,6 +277,10 @@
     <div class="toolbar">
       <button type="button" class="btn" id="draw-unlocked">固定以外引き直す</button>
       <button type="button" class="btn" id="draw-all">全部引き直す</button>
+      <button type="button" class="btn btn-share" id="share-btn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        Xでシェア
+      </button>
     </div>
 
     <div class="cards" id="cards" aria-live="polite"></div>
@@ -267,6 +291,7 @@
     (function () {
       const INITIAL_COUNT = 3;
       const CARDS_PER_ROW = 3;
+      const SHARE_URL = 'https://tools.tadeku.net/sandai/';
       const allItems = (window.SANDAI_DATA?.items || []).slice();
       const cardsEl = document.getElementById('cards');
       const toolNameEl = document.getElementById('page-tool-name');
@@ -341,6 +366,17 @@
         toolNameEl.textContent = title;
         document.title = `${title} — アイデア発想 | tadeku-tools`;
         leadEl.textContent = `${kanji}題噺用に、${n}つのお題をランダムで表示します。カードを固定して引き直すこともできます`;
+      }
+
+      function buildShareText() {
+        const topics = state.map((slot) => slot.value).filter(Boolean).join(' × ');
+        return `${toolNameEl.textContent}を引いたよ👇️\n\n${topics}\n\n${SHARE_URL}`;
+      }
+
+      function openShare() {
+        const text = buildShareText();
+        const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+        window.open(url, '_blank', 'noopener,noreferrer,width=550,height=420');
       }
 
       function addCard() {
@@ -534,6 +570,8 @@
       document.getElementById('draw-all').addEventListener('click', () => {
         drawAll(true);
       });
+
+      document.getElementById('share-btn').addEventListener('click', openShare);
 
       renderCards();
       drawAll(false);
