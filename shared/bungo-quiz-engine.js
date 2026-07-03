@@ -45,6 +45,7 @@
         era: author.era,
         typeName: author.typeName,
         work: author.work,
+        workUrl: author.workUrl,
         traits: author.traits,
         blurb: author.blurb,
         score: raw,

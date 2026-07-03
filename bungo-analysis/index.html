@@ -235,6 +235,17 @@
       line-height: 1.7;
     }
 
+    .works-used a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+
+    .works-used a:hover {
+      color: var(--ink);
+    }
+
     .result-actions {
       display: flex;
       flex-wrap: wrap;
@@ -421,6 +432,11 @@
       });
     }
 
+    function formatWork(top) {
+      if (!top.workUrl) return esc(top.work) + '（青空文庫）';
+      return '<a href="' + esc(top.workUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(top.work) + '（青空文庫）</a>';
+    }
+
     function renderResult() {
       const { ranked, top } = window.BungoQuizEngine.rankAuthors(answers);
       lastTop = top;
@@ -434,7 +450,7 @@
           top.traits.map((t) => '<span class="trait">' + esc(t) + '</span>').join('') +
         '</div>' +
         '<p class="result-blurb">' + esc(top.blurb) + '</p>' +
-        '<p class="works-used">代表作：' + esc(top.work) + '</p>';
+        '<p class="works-used">代表作：' + formatWork(top) + '</p>';
 
       els.rankList.innerHTML = ranked.slice(0, 8).map((item, i) =>
         '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
