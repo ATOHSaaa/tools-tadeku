@@ -42,6 +42,11 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    .app.is-idle .stats,
+    .app.is-idle .result {
+      display: none;
+    }
+
     .app {
       max-width: 920px;
       margin: 0 auto;
@@ -58,6 +63,16 @@
     }
 
     .lead::-webkit-scrollbar { display: none; }
+
+    .lead a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+
+    .lead a:hover {
+      opacity: 0.7;
+    }
 
     .stats {
       display: grid;
@@ -95,6 +110,14 @@
       margin-left: 0.1rem;
     }
 
+    .stat-level {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--current);
+      margin-top: 0.2rem;
+      letter-spacing: 0.06em;
+    }
+
     .stage {
       margin-top: 1.5rem;
       border: 2px solid var(--border);
@@ -109,11 +132,13 @@
     }
 
     .source-tag {
+      width: 100%;
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       color: var(--muted);
       text-transform: uppercase;
+      text-align: center;
     }
 
     .target {
@@ -158,6 +183,7 @@
 
     .type-input {
       width: min(100%, 28rem);
+      margin-top: 2rem;
       border: 2px solid var(--border);
       background: var(--bg);
       font-family: inherit;
@@ -181,14 +207,6 @@
     .type-input:disabled {
       opacity: 0.45;
       cursor: not-allowed;
-    }
-
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.6rem;
-      margin-top: 1.25rem;
     }
 
     .btn {
@@ -228,6 +246,44 @@
       color: #fff;
     }
 
+    .btn-block {
+      width: min(100%, 16rem);
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+    }
+
+    .stage-start {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .stage.is-playing .stage-start {
+      display: none;
+    }
+
+    #stage-play[hidden] {
+      display: none !important;
+    }
+
+    #stage-play {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .word-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.65rem;
+    }
+
     .result {
       display: none;
       margin-top: 1.25rem;
@@ -245,6 +301,41 @@
       letter-spacing: 0.12em;
       color: var(--muted);
       margin-bottom: 0.55rem;
+    }
+
+    .result-level {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 900;
+      line-height: 1.3;
+      letter-spacing: 0.14em;
+      margin-bottom: 0.85rem;
+    }
+
+    .result-share {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .btn-share {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .btn-share:hover:not(:disabled) {
+      opacity: 0.88;
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-share svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      fill: currentColor;
     }
 
     .result-grid {
@@ -290,8 +381,6 @@
 
     .word-list {
       list-style: none;
-      max-height: 16rem;
-      overflow-y: auto;
       border: 1px solid #e8e4da;
       padding: 0.35rem 0.75rem;
     }
@@ -333,10 +422,10 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="app is-idle" id="app">
     <header class="header">
       <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Goida</h1>
-      <p class="lead">WordFall と PedantryFall の語彙を60秒で打つ</p>
+      <p class="lead"><a href="../WordFall/" target="_blank" rel="noopener noreferrer">WordFall</a> と <a href="../pedantryfall/" target="_blank" rel="noopener noreferrer">PedantryFall</a> の語彙を60秒で打つ</p>
     </header>
 
     <div class="stats" aria-live="polite">
@@ -355,22 +444,33 @@
       <div class="stat">
         <div class="stat-label">速度</div>
         <div class="stat-value"><span id="speed">0</span><span class="stat-unit">字/分</span></div>
+        <div class="stat-level" id="speed-level">—</div>
       </div>
     </div>
 
-    <section class="stage" aria-labelledby="target-label">
-      <p class="source-tag" id="source-tag">—</p>
-      <div class="target" id="target" aria-live="polite"></div>
-      <a class="ref-link" id="ref-link" href="#" target="_blank" rel="noopener noreferrer" hidden>参照</a>
-      <input type="text" class="type-input" id="type-input" autocomplete="off" autocapitalize="off" spellcheck="false" disabled>
+    <section class="stage" id="stage" aria-labelledby="target-label">
+      <div class="stage-start" id="stage-start">
+        <button type="button" class="btn btn-primary btn-block" id="start-btn">スタート</button>
+      </div>
+      <div id="stage-play" hidden>
+        <div class="word-stack">
+          <p class="source-tag" id="source-tag">—</p>
+          <div class="target" id="target" aria-live="polite"></div>
+          <a class="ref-link" id="ref-link" href="#" target="_blank" rel="noopener noreferrer" hidden>参照</a>
+        </div>
+        <input type="text" class="type-input" id="type-input" autocomplete="off" autocapitalize="off" spellcheck="false" disabled>
+      </div>
     </section>
 
-    <div class="toolbar">
-      <button type="button" class="btn btn-primary" id="start-btn">スタート</button>
-    </div>
-
     <section class="result" id="result" aria-live="polite">
-      <p class="result-title">結果</p>
+      <p class="result-title">あなたのタイピングレベルは……</p>
+      <p class="result-level" id="result-level">—</p>
+      <div class="result-share">
+        <button type="button" class="btn btn-share" id="share-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Xでシェアする
+        </button>
+      </div>
       <div class="result-grid">
         <div class="result-item">
           <div class="result-item-label">完答</div>
@@ -412,21 +512,43 @@
     const ROUND_SEC = 60;
     const MAX_WORD_LEN = 28;
     const DICT_BASE = 'https://scrapbox.io/monokaki-goi-jiten/';
+    const SHARE_URL = 'https://tools.tadeku.net/goida/';
+
+    const TYPING_LEVELS = [
+      { min: 180, name: '大文豪' },
+      { min: 130, name: '文豪' },
+      { min: 95, name: '名筆' },
+      { min: 65, name: '文士' },
+      { min: 30, name: '書生' },
+      { min: 0, name: '手習いはじめ' },
+    ];
+
+    function typingLevel(speed) {
+      const value = Math.max(0, Math.round(speed));
+      return TYPING_LEVELS.find((level) => value >= level.min) || TYPING_LEVELS[TYPING_LEVELS.length - 1];
+    }
 
     const els = {
+      app: document.getElementById('app'),
+      stage: document.getElementById('stage'),
+      stageStart: document.getElementById('stage-start'),
+      stagePlay: document.getElementById('stage-play'),
       timeLeft: document.getElementById('time-left'),
       wordCount: document.getElementById('word-count'),
       accuracy: document.getElementById('accuracy'),
       speed: document.getElementById('speed'),
+      speedLevel: document.getElementById('speed-level'),
       sourceTag: document.getElementById('source-tag'),
       target: document.getElementById('target'),
       refLink: document.getElementById('ref-link'),
       input: document.getElementById('type-input'),
       startBtn: document.getElementById('start-btn'),
       result: document.getElementById('result'),
+      resultLevel: document.getElementById('result-level'),
       resultWordCount: document.getElementById('result-word-count'),
       resultAccuracy: document.getElementById('result-accuracy'),
       resultSpeed: document.getElementById('result-speed'),
+      shareBtn: document.getElementById('share-btn'),
       resultWordList: document.getElementById('result-word-list'),
       wordList: document.getElementById('word-list'),
     };
@@ -478,6 +600,25 @@
     let startedAt = 0;
     let suppressInput = false;
     let appearedWords = [];
+    let lastShare = null;
+
+    function buildShareText(data) {
+      return 'Goidaでタイピングしたよ！ #Goida\n'
+        + 'タイピングレベルは「' + data.level + '」でした📝\n'
+        + '\n'
+        + '完答：' + data.words + '語\n'
+        + '正確率：' + data.accuracy + '％\n'
+        + '速度：' + data.speed + ' 字 / 分\n'
+        + '\n'
+        + SHARE_URL + '  ';
+    }
+
+    function openShare() {
+      if (!lastShare) return;
+      const text = buildShareText(lastShare);
+      const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+      window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
+    }
 
     function pickNext() {
       if (!queue.length) queue = shuffle(allWords);
@@ -578,7 +719,9 @@
       els.wordCount.textContent = String(wordsDone);
       const acc = calcAccuracy();
       els.accuracy.textContent = acc === null ? '—' : String(acc);
-      els.speed.textContent = String(playing || wordsDone ? calcSpeed() : 0);
+      const speed = playing || wordsDone ? calcSpeed() : 0;
+      els.speed.textContent = String(speed);
+      els.speedLevel.textContent = (playing || wordsDone) ? typingLevel(speed).name : '—';
     }
 
     function finishRound() {
@@ -587,12 +730,24 @@
       timerId = null;
       els.input.disabled = true;
       clearStage();
-      els.startBtn.hidden = false;
+      els.stageStart.hidden = false;
+      els.stagePlay.hidden = true;
+      els.stage.classList.remove('is-playing');
       els.startBtn.textContent = 'もう一度';
       els.result.classList.add('is-visible');
+      const finalSpeed = calcSpeed();
+      const level = typingLevel(finalSpeed);
+      const finalAccuracy = calcAccuracy() ?? 100;
+      lastShare = {
+        level: level.name,
+        words: wordsDone,
+        accuracy: finalAccuracy,
+        speed: finalSpeed,
+      };
+      els.resultLevel.textContent = level.name;
       els.resultWordCount.textContent = String(wordsDone);
-      els.resultAccuracy.textContent = String(calcAccuracy() ?? 100);
-      els.resultSpeed.textContent = String(calcSpeed());
+      els.resultAccuracy.textContent = String(finalAccuracy);
+      els.resultSpeed.textContent = String(finalSpeed);
       renderWordList();
       updateHud();
     }
@@ -663,9 +818,13 @@
       missCount = 0;
       appearedWords = [];
       startedAt = Date.now();
+      els.app.classList.remove('is-idle');
       els.result.classList.remove('is-visible');
       els.resultWordList.hidden = true;
-      els.startBtn.hidden = true;
+      els.stageStart.hidden = true;
+      els.stagePlay.hidden = false;
+      els.stage.classList.add('is-playing');
+      els.startBtn.textContent = 'スタート';
       els.input.disabled = false;
       els.input.value = '';
       els.input.classList.remove('is-error');
@@ -678,14 +837,7 @@
     }
 
     els.startBtn.addEventListener('click', startRound);
-
-    document.addEventListener('keydown', (event) => {
-      if (playing || els.startBtn.hidden || els.startBtn.disabled) return;
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      if (event.target === els.startBtn) return;
-      event.preventDefault();
-      startRound();
-    });
+    els.shareBtn.addEventListener('click', openShare);
 
     els.input.addEventListener('compositionstart', () => {
       composing = true;
@@ -710,6 +862,8 @@
     });
 
     if (!allWords.length) {
+      els.stageStart.hidden = true;
+      els.stagePlay.hidden = false;
       els.target.textContent = '語彙を読み込めませんでした';
       els.startBtn.disabled = true;
     } else {
