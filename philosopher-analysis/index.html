@@ -246,6 +246,41 @@
       color: var(--ink);
     }
 
+    .cross-banner {
+      display: block;
+      margin-top: 1.25rem;
+      padding: 1rem 1.1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .cross-banner-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #c62828;
+      margin-bottom: 0.35rem;
+    }
+
+    .cross-banner-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    .cross-banner-desc {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
     .result-actions {
       display: flex;
       flex-wrap: wrap;
@@ -338,19 +373,26 @@
       <ul class="choices" id="choices"></ul>
     </section>
 
-    <section class="panel view" id="view-result" hidden aria-live="polite">
-      <h2 class="panel-title">診断結果</h2>
-      <div class="result-top" id="result-top"></div>
-      <div class="result-actions">
-        <button type="button" class="btn btn-share" id="share-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          Xでシェア
-        </button>
-        <button type="button" class="btn" id="retry-btn">もう一度</button>
-      </div>
-      <h3 class="panel-title">ランキング</h3>
-      <ol class="rank-list" id="rank-list"></ol>
-    </section>
+    <div class="view" id="view-result-wrap" hidden aria-live="polite">
+      <section class="panel" id="view-result">
+        <h2 class="panel-title">診断結果</h2>
+        <div class="result-top" id="result-top"></div>
+        <div class="result-actions">
+          <button type="button" class="btn btn-share" id="share-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Xでシェア
+          </button>
+          <button type="button" class="btn" id="retry-btn">もう一度</button>
+        </div>
+        <h3 class="panel-title">ランキング</h3>
+        <ol class="rank-list" id="rank-list"></ol>
+      </section>
+      <a class="cross-banner" href="../bungo-analysis/">
+        <span class="cross-banner-label">次はこちら</span>
+        <span class="cross-banner-title">文豪診断で遊ぶ →</span>
+        <span class="cross-banner-desc">8つの質問で、あなたに近い文豪タイプを診断</span>
+      </a>
+    </div>
   </div>
 
   <a class="site-link brand" href="../">tadeku-tools</a>
@@ -365,7 +407,7 @@
     const els = {
       viewStart: document.getElementById('view-start'),
       viewQuiz: document.getElementById('view-quiz'),
-      viewResult: document.getElementById('view-result'),
+      viewResult: document.getElementById('view-result-wrap'),
       startBtn: document.getElementById('start-btn'),
       progressLabel: document.getElementById('progress-label'),
       progressFill: document.getElementById('progress-fill'),
