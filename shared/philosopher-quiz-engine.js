@@ -1,5 +1,5 @@
 (function () {
-  const { DIMENSIONS, AUTHORS } = window.BungoQuizData;
+  const { DIMENSIONS, AUTHORS } = window.PhilosopherQuizData;
 
   function emptyDims() {
     const dims = {};
@@ -45,7 +45,7 @@
         era: author.era,
         typeName: author.typeName,
         work: author.work,
-        workUrl: author.workUrl,
+        workAsin: author.workAsin,
         traits: author.traits,
         blurb: author.blurb,
         score: raw,
@@ -63,7 +63,7 @@
     return { userDims, ranked, top };
   }
 
-  window.BungoQuizEngine = {
+  window.PhilosopherQuizEngine = {
     computeUserDims,
     rankAuthors,
   };
