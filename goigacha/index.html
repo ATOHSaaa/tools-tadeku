@@ -90,26 +90,14 @@
       color: #fff;
     }
 
-    .cards {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.25rem;
-      margin-top: 2.25rem;
-      width: 100%;
-    }
-
-    .cards-row {
+    .cards-grid {
       --cards-gap: 1rem;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: var(--cards-gap);
-      row-gap: 1rem;
-      align-items: stretch;
+      gap: var(--cards-gap);
       width: 100%;
       max-width: 960px;
-      margin: 0 auto;
-      min-height: var(--cards-row-height, auto);
+      margin: 2.25rem auto 0;
     }
 
     .card-slot {
@@ -167,6 +155,37 @@
     .card-text.is-changing {
       opacity: 0;
     }
+
+    @media (max-width: 640px) {
+      .app {
+        padding: 1.25rem 1rem 4.5rem;
+      }
+
+      .lead {
+        white-space: normal;
+        overflow-x: visible;
+        font-size: 0.82rem;
+        line-height: 1.65;
+      }
+
+      .cards-grid {
+        --cards-gap: 0.75rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card-slot .card,
+      .card {
+        max-width: none;
+      }
+
+      .card-body {
+        padding: 0.85rem 0.5rem;
+      }
+
+      .card-text {
+        font-size: 1.1rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -180,14 +199,13 @@
       <button type="button" class="btn" id="draw-all">ガチャ</button>
     </div>
 
-    <div class="cards" id="cards" aria-live="polite"></div>
+    <div class="cards-grid" id="cards" aria-live="polite"></div>
   </div>
 
   <script src="../shared/wordfall-words.js"></script>
   <script>
     (function () {
       const CARD_COUNT = 30;
-      const CARDS_PER_ROW = 3;
       const cardsEl = document.getElementById('cards');
 
       const DICT_BASE = 'https://scrapbox.io/monokaki-goi-jiten/';
@@ -210,7 +228,6 @@
       }));
 
       let lockedCardHeight = 0;
-      let lockedRowHeight = 0;
 
       function lockCardDimensions() {
         if (lockedCardHeight) return;
@@ -222,11 +239,7 @@
           lockedCardHeight = Math.max(lockedCardHeight, card.offsetHeight);
         });
 
-        const firstRow = cardsEl.querySelector('.cards-row');
-        lockedRowHeight = firstRow ? firstRow.offsetHeight : lockedCardHeight;
-
         document.documentElement.style.setProperty('--card-height', `${lockedCardHeight}px`);
-        document.documentElement.style.setProperty('--cards-row-height', `${lockedRowHeight}px`);
       }
 
       function applyLockedDimensions() {
@@ -234,9 +247,6 @@
 
         cardsEl.querySelectorAll('.card').forEach((card) => {
           card.style.minHeight = `${lockedCardHeight}px`;
-        });
-        cardsEl.querySelectorAll('.cards-row').forEach((row) => {
-          row.style.minHeight = `${lockedRowHeight}px`;
         });
       }
 
@@ -314,22 +324,10 @@
         `;
       }
 
-      function renderRow(slots, rowStart) {
-        let html = '<div class="cards-row">';
-        for (let i = 0; i < CARDS_PER_ROW; i++) {
-          const index = rowStart + i;
-          html += `<div class="card-slot">${renderCard(slots[index], index)}</div>`;
-        }
-        html += '</div>';
-        return html;
-      }
-
       function renderCards() {
-        const rows = [];
-        for (let i = 0; i < CARD_COUNT; i += CARDS_PER_ROW) {
-          rows.push(renderRow(state, i));
-        }
-        cardsEl.innerHTML = rows.join('');
+        cardsEl.innerHTML = state.map((slot, index) => (
+          `<div class="card-slot">${renderCard(slot, index)}</div>`
+        )).join('');
         applyLockedDimensions();
       }
 
