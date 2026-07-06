@@ -139,6 +139,15 @@
       align-items: center;
     }
 
+    .cards-add {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      max-width: 800px;
+      margin: 0.6rem auto 0;
+    }
+
     .card-slot .card {
       width: 100%;
       max-width: 240px;
@@ -264,6 +273,81 @@
       width: 0.85rem;
       height: 0.85rem;
       fill: currentColor;
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        padding: 1.25rem 1rem 4.5rem;
+      }
+
+      .lead {
+        white-space: normal;
+        overflow-x: visible;
+        font-size: 0.82rem;
+        line-height: 1.65;
+      }
+
+      .toolbar {
+        gap: 0.5rem;
+      }
+
+      .btn {
+        font-size: 0.72rem;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .cards-row {
+        --cards-gap: 2.5rem;
+        grid-template-columns: 1fr;
+        row-gap: var(--cards-gap);
+        max-width: 320px;
+      }
+
+      .cards-row--with-seps .card-slot + .card-slot::before {
+        left: 50%;
+        top: calc(var(--cards-gap) / -2);
+        transform: translate(-50%, -50%);
+      }
+
+      .card-slot--empty {
+        display: none;
+      }
+
+      .cards-add {
+        max-width: 320px;
+      }
+
+      .card-slot .card,
+      .card {
+        max-width: none;
+      }
+
+      .card-body {
+        padding: 1.15rem 0.85rem;
+      }
+
+      .card-text {
+        font-size: 1.42rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-all;
+      }
+
+      .btn-add {
+        min-width: 3.25rem;
+        padding: 0.75rem 1.15rem;
+        font-size: 1.65rem;
+      }
+
+      .card-foot {
+        column-gap: 0.75rem;
+        padding: 0.5rem 0.55rem;
+      }
+
+      .card-action {
+        font-size: 0.68rem;
+        padding: 0.38rem 0.55rem;
+      }
     }
   </style>
 </head>
@@ -507,11 +591,7 @@
 
         let html = `<div class="cards-row${hasCardSeps ? ' cards-row--with-seps' : ''}">`;
         rowItems.forEach((item) => {
-          if (item.type === 'card') {
-            html += `<div class="card-slot">${renderCard(item.slot, item.index)}</div>`;
-          } else {
-            html += `<div class="card-slot card-slot--add">${renderAddButton()}</div>`;
-          }
+          html += `<div class="card-slot">${renderCard(item.slot, item.index)}</div>`;
         });
         for (let i = rowItems.length; i < CARDS_PER_ROW; i++) {
           html += '<div class="card-slot card-slot--empty" aria-hidden="true"></div>';
@@ -521,14 +601,15 @@
       }
 
       function renderCards() {
-        const items = state.map((slot, index) => ({ type: 'card', slot, index }));
-        items.push({ type: 'add' });
+        const cardItems = state.map((slot, index) => ({ type: 'card', slot, index }));
 
         const rows = [];
-        for (let i = 0; i < items.length; i += CARDS_PER_ROW) {
-          rows.push(renderRow(items.slice(i, i + CARDS_PER_ROW)));
+        for (let i = 0; i < cardItems.length; i += CARDS_PER_ROW) {
+          rows.push(renderRow(cardItems.slice(i, i + CARDS_PER_ROW)));
         }
-        cardsEl.innerHTML = rows.join('');
+
+        const addHtml = `<div class="cards-add">${renderAddButton()}</div>`;
+        cardsEl.innerHTML = rows.join('') + addHtml;
         applyLockedDimensions();
       }
 
