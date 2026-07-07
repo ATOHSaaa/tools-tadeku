@@ -182,13 +182,6 @@
       margin-bottom: 0.5rem;
     }
 
-    .result-type {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 0.35rem;
-    }
-
     .result-name {
       font-size: clamp(1.75rem, 5vw, 2.25rem);
       font-weight: 900;
@@ -535,7 +528,6 @@
 
       els.resultTop.innerHTML =
         '<p class="result-label">あなたに近い文学流派</p>' +
-        '<p class="result-type">' + esc(top.typeName) + '</p>' +
         '<p class="result-name">' + esc(top.name) + '</p>' +
         '<p class="result-era">' + esc(top.era) + '</p>' +
         '<div class="traits">' +
@@ -560,7 +552,7 @@
     }
 
     function buildShareText(top) {
-      return '文学流派診断の結果：' + top.name + 'タイプ（' + top.typeName + '）';
+      return '文学流派診断の結果：' + top.name + 'タイプ';
     }
 
     function openShare() {
