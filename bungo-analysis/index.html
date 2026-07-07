@@ -248,13 +248,38 @@
 
     .cross-banner {
       display: block;
-      margin-top: 1.25rem;
       padding: 1rem 1.1rem;
       background: var(--surface);
       border: 2px solid var(--border);
       color: var(--ink);
       text-decoration: none;
       text-align: center;
+    }
+
+    .cross-banner-list {
+      margin-top: 1.25rem;
+    }
+
+    .cross-banner-list-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #c62828;
+      text-align: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .cross-banner-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 560px) {
+      .cross-banner-grid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     .cross-banner-label {
@@ -270,7 +295,7 @@
       display: block;
       font-size: 1rem;
       font-weight: 900;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
     }
 
     .cross-banner-desc {
@@ -387,11 +412,19 @@
         <h3 class="panel-title">ランキング</h3>
         <ol class="rank-list" id="rank-list"></ol>
       </section>
-      <a class="cross-banner" href="../philosopher-analysis/">
-        <span class="cross-banner-label">次はこちら</span>
-        <span class="cross-banner-title">哲学診断で遊ぶ →</span>
-        <span class="cross-banner-desc">8つの質問で、あなたに近い哲学者タイプを診断</span>
-      </a>
+      <div class="cross-banner-list" aria-label="次に遊ぶ">
+        <span class="cross-banner-list-label">次に遊ぶ</span>
+        <div class="cross-banner-grid">
+          <a class="cross-banner" href="../philosopher-analysis/">
+            <span class="cross-banner-title">哲学者診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、あなたに近い哲学者タイプを診断</span>
+          </a>
+          <a class="cross-banner" href="../bungaku-ha/">
+            <span class="cross-banner-title">文学流派診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、自分に近い文学流派を診断</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
