@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="8つの質問に答えて、自然主義・新感覚派・無頼派など、自分に近い文学流派タイプを診断する無料Webツール。結果をXでシェアできます。">
+  <title>文学流派診断 — あなたはどの流派タイプ？ | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f2ebe4;
+      --ink: #1a1410;
+      --muted: #5c5248;
+      --border: #1a1410;
+      --surface: #fff;
+      --accent: #6b3a3a;
+      --accent-soft: #eadcda;
+      --gold: #8a5a48;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-top: 0.5rem;
+    }
+
+    .panel {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .btn-block {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+    }
+
+    .btn-share svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      fill: currentColor;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 0.35rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.25s ease;
+    }
+
+    .question-text {
+      font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+      font-weight: 900;
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+    }
+
+    .choices {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .choice-btn {
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.55;
+      letter-spacing: 0;
+    }
+
+    .result-top {
+      text-align: center;
+      padding: 0.5rem 0 1.25rem;
+      border-bottom: 1px dashed #ccc4b8;
+      margin-bottom: 1.25rem;
+    }
+
+    .result-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-type {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+
+    .result-name {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .result-era {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+
+    .result-blurb {
+      font-size: 0.9rem;
+      line-height: 1.85;
+      text-align: left;
+      margin-top: 1rem;
+    }
+
+    .traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+      margin-top: 0.85rem;
+    }
+
+    .trait {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.3rem 0.55rem;
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+    }
+
+    .works-used {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.85rem;
+      line-height: 1.7;
+    }
+
+    .works-list {
+      list-style: none;
+      margin-top: 0.45rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .works-list li {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .works-list a {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+
+    .works-list a:hover {
+      color: var(--accent);
+    }
+
+    .cross-banner {
+      display: block;
+      margin-top: 1.25rem;
+      padding: 1rem 1.1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .cross-banner-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+
+    .cross-banner-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .cross-banner-desc {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem;
+      margin: 1.25rem 0;
+    }
+
+    .rank-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .rank-item {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+    }
+
+    .rank-num {
+      font-size: 0.82rem;
+      font-weight: 900;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .rank-item.is-top .rank-num { color: var(--accent); }
+
+    .rank-body { min-width: 0; }
+
+    .rank-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .rank-bar {
+      height: 0.65rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .rank-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+
+    .rank-item.is-top .rank-fill { background: var(--gold); }
+
+    .rank-pct {
+      font-size: 0.78rem;
+      font-weight: 700;
+      min-width: 2.5rem;
+      text-align: right;
+    }
+
+    .view[hidden] { display: none !important; }
+
+    @media (max-width: 520px) {
+      .rank-item {
+        grid-template-columns: 1.75rem 1fr auto;
+        gap: 0.45rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>文学流派診断</h1>
+      <p class="lead">8つの質問に答えると、自然主義・新感覚派・無頼派など、あなたに近い文学流派がわかります。</p>
+    </header>
+
+    <section class="panel view" id="view-start">
+      <div class="start-actions">
+        <button type="button" class="btn btn-primary btn-block" id="start-btn">はじめる</button>
+      </div>
+    </section>
+
+    <section class="panel view" id="view-quiz" hidden>
+      <div class="progress">
+        <span id="progress-label">1 / 8</span>
+        <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill" style="width:12.5%"></div></div>
+      </div>
+      <h2 class="question-text" id="question-text"></h2>
+      <ul class="choices" id="choices"></ul>
+    </section>
+
+    <div class="view" id="view-result-wrap" hidden aria-live="polite">
+      <section class="panel" id="view-result">
+        <h2 class="panel-title">診断結果</h2>
+        <div class="result-top" id="result-top"></div>
+        <div class="result-actions">
+          <button type="button" class="btn btn-share" id="share-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Xでシェア
+          </button>
+          <button type="button" class="btn" id="retry-btn">もう一度</button>
+        </div>
+        <h3 class="panel-title">流派ランキング</h3>
+        <ol class="rank-list" id="rank-list"></ol>
+      </section>
+      <a class="cross-banner" href="../bungakushi-quiz/">
+        <span class="cross-banner-label">知識も試す</span>
+        <span class="cross-banner-title">文学史クイズで遊ぶ →</span>
+        <span class="cross-banner-desc">上代から近代まで、500問の4択クイズで流派の知識を確認</span>
+      </a>
+    </div>
+  </div>
+
+  <script src="../shared/bungaku-ha-quiz-data.js"></script>
+  <script src="../shared/bungaku-ha-quiz-engine.js"></script>
+  <script>
+    const SHARE_URL = 'https://tools.tadeku.net/bungaku-ha/';
+    const QUESTIONS = window.BungakuHaQuizData.QUESTIONS;
+
+    const els = {
+      viewStart: document.getElementById('view-start'),
+      viewQuiz: document.getElementById('view-quiz'),
+      viewResult: document.getElementById('view-result-wrap'),
+      startBtn: document.getElementById('start-btn'),
+      progressLabel: document.getElementById('progress-label'),
+      progressFill: document.getElementById('progress-fill'),
+      questionText: document.getElementById('question-text'),
+      choices: document.getElementById('choices'),
+      resultTop: document.getElementById('result-top'),
+      rankList: document.getElementById('rank-list'),
+      shareBtn: document.getElementById('share-btn'),
+      retryBtn: document.getElementById('retry-btn'),
+    };
+
+    let step = 0;
+    let answers = [];
+    let lastTop = null;
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showView(name) {
+      els.viewStart.hidden = name !== 'start';
+      els.viewQuiz.hidden = name !== 'quiz';
+      els.viewResult.hidden = name !== 'result';
+    }
+
+    function resetQuiz() {
+      step = 0;
+      answers = [];
+      lastTop = null;
+      showView('start');
+    }
+
+    function startQuiz() {
+      step = 0;
+      answers = [];
+      showView('quiz');
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const q = QUESTIONS[step];
+      const total = QUESTIONS.length;
+      els.progressLabel.textContent = (step + 1) + ' / ' + total;
+      els.progressFill.style.width = ((step + 1) / total * 100) + '%';
+      els.questionText.textContent = q.text;
+      els.choices.innerHTML = q.choices.map((choice, i) =>
+        '<li><button type="button" class="btn choice-btn" data-index="' + i + '">' + esc(choice.text) + '</button></li>'
+      ).join('');
+
+      els.choices.querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const index = Number(btn.dataset.index);
+          answers.push(q.choices[index]);
+          step += 1;
+          if (step >= QUESTIONS.length) {
+            renderResult();
+          } else {
+            renderQuestion();
+          }
+        });
+      });
+    }
+
+    function formatWorkLink(ex) {
+      const label = '『' + ex.work + '』';
+      if (!ex.workUrl) return esc(label);
+      return '<a href="' + esc(ex.workUrl) + '" target="_blank" rel="noopener noreferrer">' +
+        esc(label) + '</a>';
+    }
+
+    function formatExamples(examples) {
+      if (!examples || !examples.length) return '';
+      const items = examples.map((ex) =>
+        '<li>' + esc(ex.author) + formatWorkLink(ex) + '</li>'
+      ).join('');
+      return '<p class="works-used">代表</p><ul class="works-list">' + items + '</ul>';
+    }
+
+    function renderResult() {
+      const { ranked, top } = window.BungakuHaQuizEngine.rankMovements(answers);
+      lastTop = top;
+
+      els.resultTop.innerHTML =
+        '<p class="result-label">あなたに近い文学流派</p>' +
+        '<p class="result-type">' + esc(top.typeName) + '</p>' +
+        '<p class="result-name">' + esc(top.name) + '</p>' +
+        '<p class="result-era">' + esc(top.era) + '</p>' +
+        '<div class="traits">' +
+          top.traits.map((t) => '<span class="trait">' + esc(t) + '</span>').join('') +
+        '</div>' +
+        '<p class="result-blurb">' + esc(top.blurb) + '</p>' +
+        formatExamples(top.examples);
+
+      els.rankList.innerHTML = ranked.slice(0, 8).map((item, i) =>
+        '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
+          '<span class="rank-num">' + (i + 1) + '</span>' +
+          '<div class="rank-body">' +
+            '<div class="rank-name">' + esc(item.name) + '</div>' +
+            '<div class="rank-bar"><div class="rank-fill" style="width:' + item.barPct + '%"></div></div>' +
+          '</div>' +
+          '<span class="rank-pct">' + item.matchPct + '</span>' +
+        '</li>'
+      ).join('');
+
+      showView('result');
+      els.viewResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function buildShareText(top) {
+      return '文学流派診断の結果：' + top.name + 'タイプ（' + top.typeName + '）';
+    }
+
+    function openShare() {
+      if (!lastTop) return;
+      const text = buildShareText(lastTop) + '\n' + SHARE_URL;
+      const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+      window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
+    }
+
+    els.startBtn.addEventListener('click', startQuiz);
+    els.retryBtn.addEventListener('click', resetQuiz);
+    els.shareBtn.addEventListener('click', openShare);
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>
