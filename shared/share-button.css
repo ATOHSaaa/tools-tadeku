@@ -1,0 +1,16 @@
+.btn.btn-share,
+button.btn-share,
+.share-x {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+.btn.btn-share:hover:not(:disabled),
+button.btn-share:hover:not(:disabled),
+.share-x:hover {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+  opacity: 0.85;
+}
