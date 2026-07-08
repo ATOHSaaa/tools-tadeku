@@ -53,9 +53,13 @@
   function formatSlotRange(date) {
     const start = getSlotStart(date);
     return (
-      formatDate(date) + '  ' +
+      formatDate(date) + ' ' +
       pad2(start.getHours()) + ':00 — ' + pad2(start.getHours()) + ':59'
     );
+  }
+
+  function formatSlotPromptLabel(date) {
+    return formatSlotRange(date) + ' のお題';
   }
 
   function getWritingEnd(session) {
@@ -189,11 +193,11 @@
   }
 
   function buildStartShareText(prompt) {
-    return 'お題「' + prompt + '」で書き始めました ' + HASHTAG;
+    return 'お題「' + prompt + '」で書き始めました ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net';
   }
 
   function buildFinishShareText(prompt, charCount) {
-    return 'お題「' + prompt + '」\n' + charCount + '字 ' + HASHTAG;
+    return 'お題「' + prompt + '」\n' + charCount + '字 ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net';
   }
 
   function openTwitterIntent(text) {
@@ -399,6 +403,7 @@
     getWritingEnd,
     formatDate,
     formatSlotRange,
+    formatSlotPromptLabel,
     getRemainingMs,
     formatCountdown,
     getPromptForSlot,

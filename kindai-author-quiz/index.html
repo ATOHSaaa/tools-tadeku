@@ -10,22 +10,25 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="8つの質問に答えて、自分に近い文豪タイプを診断する無料Webツール。結果をXでシェアできます。">
-  <title>文豪診断 — あなたに近い文豪は？ | tadeku-tools</title>
+  <meta name="description" content="近代文学クイズ。100問の作品から10問がランダム出題。結果と解説は最後にまとめて表示されます。">
+  <title>近代文学クイズ | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/site-link.css">
   <style>
     :root {
-      --bg: #f0ebe0;
-      --ink: #1a1814;
-      --muted: #5c564c;
-      --border: #1a1814;
+      --bg: #f2ebe4;
+      --ink: #1a1410;
+      --muted: #5c5248;
+      --border: #1a1410;
       --surface: #fff;
-      --accent: #6b4c2a;
-      --accent-soft: #e8ddd0;
-      --gold: #9a7340;
+      --accent: #6b3a3a;
+      --accent-soft: #eadcda;
+      --ok: #2d5a3a;
+      --ok-soft: #d8eadc;
+      --ng: #8a3a32;
+      --ng-soft: #f0ddd8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,7 +86,7 @@
       padding: 0.55rem 0.9rem;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.12s, color 0.12s;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
     }
 
     .btn:hover:not(:disabled) {
@@ -118,10 +121,6 @@
       fill: currentColor;
     }
 
-    .start-actions {
-      margin-top: 0;
-    }
-
     .progress {
       display: flex;
       align-items: center;
@@ -145,6 +144,14 @@
       height: 100%;
       background: var(--accent);
       transition: width 0.25s ease;
+    }
+
+    .mode-note {
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      text-align: center;
+      line-height: 1.7;
+      color: var(--muted);
     }
 
     .question-text {
@@ -171,6 +178,30 @@
       letter-spacing: 0;
     }
 
+    .choice-btn.is-selected {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .quiz-nav {
+      display: flex;
+      align-items: center;
+      margin-top: 1rem;
+      min-height: 2.5rem;
+    }
+
+    .quiz-nav-prev {
+      margin-right: auto;
+    }
+
+    .quiz-nav-next {
+      margin-left: auto;
+    }
+
+    .quiz-nav [hidden] {
+      display: none;
+    }
+
     .result-top {
       text-align: center;
       padding: 0.5rem 0 1.25rem;
@@ -182,15 +213,8 @@
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.14em;
-      color: var(--gold);
-      margin-bottom: 0.5rem;
-    }
-
-    .result-type {
-      font-size: 0.88rem;
-      font-weight: 700;
       color: var(--accent);
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.5rem;
     }
 
     .result-name {
@@ -199,55 +223,66 @@
       line-height: 1.35;
     }
 
-    .result-era {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 0.35rem;
+    .result-score {
+      font-size: 1.1rem;
+      font-weight: 900;
+      margin-top: 0.5rem;
     }
 
     .result-blurb {
       font-size: 0.9rem;
       line-height: 1.85;
-      text-align: left;
-      margin-top: 1rem;
+      color: var(--muted);
+      margin-top: 0.65rem;
     }
 
-    .traits {
+    .review-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .review-item {
+      padding: 0.85rem 0.95rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+    }
+
+    .review-item.is-ok {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .review-item.is-ng {
+      border-color: var(--ng);
+      background: var(--ng-soft);
+    }
+
+    .review-q {
+      font-size: 0.88rem;
+      font-weight: 900;
+      line-height: 1.55;
+      margin-bottom: 0.45rem;
+    }
+
+    .review-meta {
+      font-size: 0.78rem;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .result-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.4rem;
       justify-content: center;
-      margin-top: 0.85rem;
-    }
-
-    .trait {
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.3rem 0.55rem;
-      border: 1px solid var(--border);
-      background: var(--accent-soft);
-    }
-
-    .works-used {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 0.85rem;
-      line-height: 1.7;
-    }
-
-    .works-used a {
-      color: var(--accent);
-      font-weight: 700;
-      text-decoration: underline;
-      text-underline-offset: 0.15em;
-    }
-
-    .works-used a:hover {
-      color: var(--ink);
+      gap: 0.55rem;
+      margin: 1.25rem 0;
     }
 
     .cross-banner {
       display: block;
+      margin-top: 1.25rem;
       padding: 1rem 1.1rem;
       background: var(--surface);
       border: 2px solid var(--border);
@@ -256,38 +291,12 @@
       text-align: center;
     }
 
-    .cross-banner-list {
-      margin-top: 1.25rem;
-    }
-
-    .cross-banner-list-label {
-      display: block;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: #c62828;
-      text-align: center;
-      margin-bottom: 0.65rem;
-    }
-
-    .cross-banner-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-
-    @media (min-width: 560px) {
-      .cross-banner-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
     .cross-banner-label {
       display: block;
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.12em;
-      color: #c62828;
+      color: var(--accent);
       margin-bottom: 0.35rem;
     }
 
@@ -306,102 +315,39 @@
       color: var(--muted);
     }
 
-    .result-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.55rem;
-      margin: 1.25rem 0;
-    }
-
-    .rank-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
-    }
-
-    .rank-item {
-      display: grid;
-      grid-template-columns: 2rem 1fr auto;
-      gap: 0.65rem;
-      align-items: center;
-    }
-
-    .rank-num {
-      font-size: 0.82rem;
-      font-weight: 900;
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .rank-item.is-top .rank-num { color: var(--accent); }
-
-    .rank-body { min-width: 0; }
-
-    .rank-name {
-      font-size: 0.88rem;
-      font-weight: 700;
-      margin-bottom: 0.3rem;
-    }
-
-    .rank-bar {
-      height: 0.65rem;
-      border: 1px solid var(--border);
-      background: var(--bg);
-    }
-
-    .rank-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.4s ease;
-    }
-
-    .rank-item.is-top .rank-fill { background: var(--gold); }
-
-    .rank-pct {
-      font-size: 0.78rem;
-      font-weight: 700;
-      min-width: 2.5rem;
-      text-align: right;
-    }
-
     .view[hidden] { display: none !important; }
-
-    @media (max-width: 520px) {
-      .rank-item {
-        grid-template-columns: 1.75rem 1fr auto;
-        gap: 0.45rem;
-      }
-    }
   </style>
   <link rel="stylesheet" href="../shared/share-button.css">
 </head>
 <body>
   <div class="app">
     <header>
-      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>文豪診断</h1>
-      <p class="lead">8つの質問に答えると、あなたに近い文豪タイプがわかります。</p>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>近代文学クイズ</h1>
+      <p class="lead">作品名から作者を当てる4択クイズ。全100問から10問がランダム出題。結果と解説は最後にまとめて表示されます。</p>
     </header>
 
     <section class="panel view" id="view-start">
-      <div class="start-actions">
-        <button type="button" class="btn btn-primary btn-block" id="start-btn">はじめる</button>
-      </div>
+      <button type="button" class="btn btn-primary btn-block" id="start-btn">クイズを始める</button>
+      <p class="mode-note">1回の挑戦は10問。100問の中からランダムに出題されます。</p>
     </section>
 
     <section class="panel view" id="view-quiz" hidden>
       <div class="progress">
-        <span id="progress-label">1 / 8</span>
-        <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill" style="width:12.5%"></div></div>
+        <span id="progress-label">1 / 10</span>
+        <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
       </div>
+      <p class="panel-title">近代文学</p>
       <h2 class="question-text" id="question-text"></h2>
       <ul class="choices" id="choices"></ul>
+      <div class="quiz-nav">
+        <button type="button" class="btn btn-primary quiz-nav-prev" id="prev-btn" hidden>前の問題に戻る</button>
+        <button type="button" class="btn btn-primary quiz-nav-next" id="next-btn" hidden>次の問題へ</button>
+      </div>
     </section>
 
     <div class="view" id="view-result-wrap" hidden aria-live="polite">
       <section class="panel" id="view-result">
-        <h2 class="panel-title">診断結果</h2>
+        <h2 class="panel-title">結果</h2>
         <div class="result-top" id="result-top"></div>
         <div class="result-actions">
           <button type="button" class="btn btn-share" id="share-btn">
@@ -410,30 +356,23 @@
           </button>
           <button type="button" class="btn" id="retry-btn">もう一度</button>
         </div>
-        <h3 class="panel-title">ランキング</h3>
-        <ol class="rank-list" id="rank-list"></ol>
+        <h3 class="panel-title">復習</h3>
+        <ul class="review-list" id="review-list"></ul>
       </section>
-      <div class="cross-banner-list" aria-label="次に遊ぶ">
-        <span class="cross-banner-list-label">次に遊ぶ</span>
-        <div class="cross-banner-grid">
-          <a class="cross-banner" href="../philosopher-analysis/">
-            <span class="cross-banner-title">哲学者診断 →</span>
-            <span class="cross-banner-desc">8つの質問で、あなたに近い哲学者タイプを診断</span>
-          </a>
-          <a class="cross-banner" href="../bungaku-ha/">
-            <span class="cross-banner-title">文学流派診断 →</span>
-            <span class="cross-banner-desc">8つの質問で、自分に近い文学流派を診断</span>
-          </a>
-        </div>
-      </div>
+      <a class="cross-banner" href="../bungakushi-quiz/">
+        <span class="cross-banner-label">次はこちら</span>
+        <span class="cross-banner-title">文学史クイズで遊ぶ →</span>
+        <span class="cross-banner-desc">上代から近代まで、全500問の文学史4択クイズ</span>
+      </a>
     </div>
   </div>
 
-  <script src="../shared/bungo-quiz-data.js"></script>
-  <script src="../shared/bungo-quiz-engine.js"></script>
+  <script src="../shared/kindai-author-quiz-data.js"></script>
+  <script src="../shared/kindai-author-quiz-engine.js"></script>
   <script>
-    const SHARE_URL = 'https://tools.tadeku.net/bungo-analysis/';
-    const QUESTIONS = window.BungoQuizData.QUESTIONS;
+    const SHARE_URL = 'https://tools.tadeku.net/kindai-author-quiz/';
+    const ROUND_SIZE = window.KindaiAuthorQuizData.ROUND_SIZE;
+    const ADVANCE_DELAY_MS = 280;
 
     const els = {
       viewStart: document.getElementById('view-start'),
@@ -444,15 +383,19 @@
       progressFill: document.getElementById('progress-fill'),
       questionText: document.getElementById('question-text'),
       choices: document.getElementById('choices'),
+      prevBtn: document.getElementById('prev-btn'),
+      nextBtn: document.getElementById('next-btn'),
       resultTop: document.getElementById('result-top'),
-      rankList: document.getElementById('rank-list'),
+      reviewList: document.getElementById('review-list'),
       shareBtn: document.getElementById('share-btn'),
       retryBtn: document.getElementById('retry-btn'),
     };
 
+    let questions = [];
     let step = 0;
     let answers = [];
-    let lastTop = null;
+    let lastResult = null;
+    let advanceTimer = null;
 
     function esc(s) {
       return String(s)
@@ -468,14 +411,32 @@
       els.viewResult.hidden = name !== 'result';
     }
 
+    function clearAdvanceTimer() {
+      if (advanceTimer) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
+    }
+
+    function updateNavigation() {
+      els.prevBtn.hidden = step <= 0;
+      const showNext = answers[step] !== undefined && !advanceTimer;
+      els.nextBtn.hidden = !showNext;
+      els.nextBtn.textContent = step >= questions.length - 1 ? '結果を見る' : '次の問題へ';
+    }
+
     function resetQuiz() {
+      clearAdvanceTimer();
+      questions = [];
       step = 0;
       answers = [];
-      lastTop = null;
+      lastResult = null;
       showView('start');
     }
 
     function startQuiz() {
+      clearAdvanceTimer();
+      questions = window.KindaiAuthorQuizEngine.startRound(ROUND_SIZE);
       step = 0;
       answers = [];
       showView('quiz');
@@ -483,76 +444,101 @@
     }
 
     function renderQuestion() {
-      const q = QUESTIONS[step];
-      const total = QUESTIONS.length;
+      clearAdvanceTimer();
+      const q = questions[step];
+      const total = questions.length;
+      const saved = answers[step];
       els.progressLabel.textContent = (step + 1) + ' / ' + total;
       els.progressFill.style.width = ((step + 1) / total * 100) + '%';
       els.questionText.textContent = q.text;
+
       els.choices.innerHTML = q.choices.map((choice, i) =>
-        '<li><button type="button" class="btn choice-btn" data-index="' + i + '">' + esc(choice.text) + '</button></li>'
+        '<li><button type="button" class="btn choice-btn' + (saved === i ? ' is-selected' : '') + '" data-index="' + i + '">' + esc(choice) + '</button></li>'
       ).join('');
 
       els.choices.querySelectorAll('.choice-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const index = Number(btn.dataset.index);
-          answers.push(q.choices[index]);
-          step += 1;
-          if (step >= QUESTIONS.length) {
-            renderResult();
-          } else {
-            renderQuestion();
-          }
-        });
+        btn.addEventListener('click', () => pickAnswer(Number(btn.dataset.index)));
       });
+
+      updateNavigation();
     }
 
-    function formatWork(top) {
-      if (!top.workUrl) return esc(top.work) + '（青空文庫）';
-      return '<a href="' + esc(top.workUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(top.work) + '（青空文庫）</a>';
+    function pickAnswer(index) {
+      clearAdvanceTimer();
+      const isNewAnswer = answers[step] === undefined;
+      answers[step] = index;
+
+      els.choices.querySelectorAll('.choice-btn').forEach((btn, i) => {
+        btn.classList.toggle('is-selected', i === index);
+      });
+
+      if (isNewAnswer) {
+        advanceTimer = setTimeout(goNext, ADVANCE_DELAY_MS);
+        updateNavigation();
+        return;
+      }
+
+      updateNavigation();
+    }
+
+    function goPrev() {
+      clearAdvanceTimer();
+      if (step <= 0) return;
+      step -= 1;
+      renderQuestion();
+    }
+
+    function goNext() {
+      clearAdvanceTimer();
+      if (answers[step] === undefined) return;
+      if (step >= questions.length - 1) {
+        renderResult();
+        return;
+      }
+      step += 1;
+      renderQuestion();
     }
 
     function renderResult() {
-      const { ranked, top } = window.BungoQuizEngine.rankAuthors(answers);
-      lastTop = top;
+      lastResult = window.KindaiAuthorQuizEngine.scoreRound(questions, answers);
+      const grade = window.KindaiAuthorQuizEngine.resolveGrade(lastResult.pct);
 
       els.resultTop.innerHTML =
-        '<p class="result-label">あなたに近い文豪</p>' +
-        '<p class="result-type">' + esc(top.typeName) + '</p>' +
-        '<p class="result-name">' + esc(top.name) + '</p>' +
-        '<p class="result-era">' + esc(top.era) + '</p>' +
-        '<div class="traits">' +
-          top.traits.map((t) => '<span class="trait">' + esc(t) + '</span>').join('') +
-        '</div>' +
-        '<p class="result-blurb">' + esc(top.blurb) + '</p>' +
-        '<p class="works-used">代表作：' + formatWork(top) + '</p>';
+        '<p class="result-label">近代文学クイズ</p>' +
+        '<p class="result-name">' + esc(grade.name) + '</p>' +
+        '<p class="result-score">' + lastResult.correct + ' / ' + lastResult.total + ' 問正解（' + lastResult.pct + '%）</p>' +
+        '<p class="result-blurb">' + esc(grade.blurb) + '</p>';
 
-      els.rankList.innerHTML = ranked.slice(0, 8).map((item, i) =>
-        '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
-          '<span class="rank-num">' + (i + 1) + '</span>' +
-          '<div class="rank-body">' +
-            '<div class="rank-name">' + esc(item.name) + '</div>' +
-            '<div class="rank-bar"><div class="rank-fill" style="width:' + item.barPct + '%"></div></div>' +
-          '</div>' +
-          '<span class="rank-pct">' + item.matchPct + '</span>' +
-        '</li>'
-      ).join('');
+      els.reviewList.innerHTML = lastResult.details.map((item) => {
+        const q = item.question;
+        const selectedText = q.choices[item.selected];
+        const correctText = q.choices[q.correct];
+        return '<li class="review-item ' + (item.ok ? 'is-ok' : 'is-ng') + '">' +
+          '<p class="review-q">' + esc(q.text) + '</p>' +
+          '<p class="review-meta">' +
+            (item.ok
+              ? '正解：' + esc(correctText)
+              : 'あなたの回答：' + esc(selectedText) + '／正解：' + esc(correctText)) +
+          '</p>' +
+          '<p class="review-meta" style="margin-top:0.35rem">' + esc(q.explanation) + '</p>' +
+        '</li>';
+      }).join('');
 
       showView('result');
       els.viewResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function buildShareText(top) {
-      return '文豪診断の結果：' + top.name + 'タイプ（' + top.typeName + '）';
-    }
-
     function openShare() {
-      if (!lastTop) return;
-      const text = buildShareText(lastTop) + '\n' + SHARE_URL + ' @tadeku_net';
+      if (!lastResult) return;
+      const grade = window.KindaiAuthorQuizEngine.resolveGrade(lastResult.pct);
+      const text = '近代文学クイズの結果：' + grade.name + '（' + lastResult.correct + '/' + lastResult.total + '問正解）\n' + SHARE_URL + ' @tadeku_net';
       const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
       window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
     }
 
     els.startBtn.addEventListener('click', startQuiz);
+    els.prevBtn.addEventListener('click', goPrev);
+    els.nextBtn.addEventListener('click', goNext);
     els.retryBtn.addEventListener('click', resetQuiz);
     els.shareBtn.addEventListener('click', openShare);
   </script>

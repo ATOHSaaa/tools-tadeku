@@ -10,8 +10,8 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="8つの質問に答えて、自分に近い文豪タイプを診断する無料Webツール。結果をXでシェアできます。">
-  <title>文豪診断 — あなたに近い文豪は？ | tadeku-tools</title>
+  <meta name="description" content="8つの質問に答えて、自分の執筆スタイルタイプを診断する無料Webツール。結果をXでシェアできます。">
+  <title>執筆スタイル診断 — あなたの執筆タイプは？ | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
@@ -23,9 +23,9 @@
       --muted: #5c564c;
       --border: #1a1814;
       --surface: #fff;
-      --accent: #6b4c2a;
-      --accent-soft: #e8ddd0;
-      --gold: #9a7340;
+      --accent: #3d5a4a;
+      --accent-soft: #dce8e0;
+      --gold: #6b8f71;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -118,10 +118,6 @@
       fill: currentColor;
     }
 
-    .start-actions {
-      margin-top: 0;
-    }
-
     .progress {
       display: flex;
       align-items: center;
@@ -199,7 +195,7 @@
       line-height: 1.35;
     }
 
-    .result-era {
+    .result-subtitle {
       font-size: 0.82rem;
       color: var(--muted);
       margin-top: 0.35rem;
@@ -210,6 +206,67 @@
       line-height: 1.85;
       text-align: left;
       margin-top: 1rem;
+    }
+
+    .tool-picks {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed #ccc4b8;
+    }
+
+    .tool-pick-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .tool-pick-card {
+      display: block;
+      padding: 0.85rem 0.95rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .tool-pick-card:hover {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .tool-pick-title {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.35rem;
+    }
+
+    .tool-pick-about {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 400;
+      line-height: 1.65;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .tool-pick-card:hover .tool-pick-about {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .tool-pick-point {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.65;
+      color: var(--accent);
+    }
+
+    .tool-pick-card:hover .tool-pick-point {
+      color: rgba(255, 255, 255, 0.92);
     }
 
     .traits {
@@ -228,26 +285,64 @@
       background: var(--accent-soft);
     }
 
-    .works-used {
+    .axis-chart {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.1rem;
+    }
+
+    .axis-pie {
+      width: min(220px, 72vw);
+      height: auto;
+      display: block;
+      border: 2px solid var(--border);
+      background: var(--bg);
+    }
+
+    .axis-slice {
+      stroke: var(--surface);
+      stroke-width: 1.5;
+    }
+
+    .axis-legend {
+      list-style: none;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 0.85rem;
+    }
+
+    .axis-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
       font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 0.85rem;
-      line-height: 1.7;
-    }
-
-    .works-used a {
-      color: var(--accent);
       font-weight: 700;
-      text-decoration: underline;
-      text-underline-offset: 0.15em;
+      min-width: 0;
     }
 
-    .works-used a:hover {
-      color: var(--ink);
+    .axis-swatch {
+      width: 0.65rem;
+      height: 0.65rem;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .axis-legend-label {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .axis-legend-pct {
+      color: var(--muted);
+      font-weight: 700;
+      flex-shrink: 0;
     }
 
     .cross-banner {
       display: block;
+      margin-top: 1.25rem;
       padding: 1rem 1.1rem;
       background: var(--surface);
       border: 2px solid var(--border);
@@ -256,38 +351,12 @@
       text-align: center;
     }
 
-    .cross-banner-list {
-      margin-top: 1.25rem;
-    }
-
-    .cross-banner-list-label {
-      display: block;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: #c62828;
-      text-align: center;
-      margin-bottom: 0.65rem;
-    }
-
-    .cross-banner-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-
-    @media (min-width: 560px) {
-      .cross-banner-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
     .cross-banner-label {
       display: block;
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.12em;
-      color: #c62828;
+      color: #6b4c2a;
       margin-bottom: 0.35rem;
     }
 
@@ -314,64 +383,11 @@
       margin: 1.25rem 0;
     }
 
-    .rank-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
-    }
-
-    .rank-item {
-      display: grid;
-      grid-template-columns: 2rem 1fr auto;
-      gap: 0.65rem;
-      align-items: center;
-    }
-
-    .rank-num {
-      font-size: 0.82rem;
-      font-weight: 900;
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .rank-item.is-top .rank-num { color: var(--accent); }
-
-    .rank-body { min-width: 0; }
-
-    .rank-name {
-      font-size: 0.88rem;
-      font-weight: 700;
-      margin-bottom: 0.3rem;
-    }
-
-    .rank-bar {
-      height: 0.65rem;
-      border: 1px solid var(--border);
-      background: var(--bg);
-    }
-
-    .rank-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.4s ease;
-    }
-
-    .rank-item.is-top .rank-fill { background: var(--gold); }
-
-    .rank-pct {
-      font-size: 0.78rem;
-      font-weight: 700;
-      min-width: 2.5rem;
-      text-align: right;
-    }
-
     .view[hidden] { display: none !important; }
 
     @media (max-width: 520px) {
-      .rank-item {
-        grid-template-columns: 1.75rem 1fr auto;
-        gap: 0.45rem;
+      .axis-legend {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -380,8 +396,8 @@
 <body>
   <div class="app">
     <header>
-      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>文豪診断</h1>
-      <p class="lead">8つの質問に答えると、あなたに近い文豪タイプがわかります。</p>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>執筆スタイル診断</h1>
+      <p class="lead">8つの質問に答えると、あなたの執筆タイプがわかります。構成派か、直感派か、人物重視か——執筆の傾向をチェックしてみましょう。</p>
     </header>
 
     <section class="panel view" id="view-start">
@@ -410,30 +426,32 @@
           </button>
           <button type="button" class="btn" id="retry-btn">もう一度</button>
         </div>
-        <h3 class="panel-title">ランキング</h3>
-        <ol class="rank-list" id="rank-list"></ol>
+        <h3 class="panel-title">あなたの傾向</h3>
+        <div class="axis-chart" id="axis-chart"></div>
+        <div id="tool-picks"></div>
       </section>
-      <div class="cross-banner-list" aria-label="次に遊ぶ">
-        <span class="cross-banner-list-label">次に遊ぶ</span>
-        <div class="cross-banner-grid">
-          <a class="cross-banner" href="../philosopher-analysis/">
-            <span class="cross-banner-title">哲学者診断 →</span>
-            <span class="cross-banner-desc">8つの質問で、あなたに近い哲学者タイプを診断</span>
-          </a>
-          <a class="cross-banner" href="../bungaku-ha/">
-            <span class="cross-banner-title">文学流派診断 →</span>
-            <span class="cross-banner-desc">8つの質問で、自分に近い文学流派を診断</span>
-          </a>
-        </div>
-      </div>
+      <a class="cross-banner" href="../bungo-analysis/">
+        <span class="cross-banner-label">次はこちら</span>
+        <span class="cross-banner-title">文豪診断で遊ぶ →</span>
+        <span class="cross-banner-desc">8つの質問で、あなたに近い文豪タイプを診断</span>
+      </a>
     </div>
   </div>
 
-  <script src="../shared/bungo-quiz-data.js"></script>
-  <script src="../shared/bungo-quiz-engine.js"></script>
+  <script src="../shared/style-quiz-data.js"></script>
+  <script src="../shared/style-quiz-engine.js"></script>
   <script>
-    const SHARE_URL = 'https://tools.tadeku.net/bungo-analysis/';
-    const QUESTIONS = window.BungoQuizData.QUESTIONS;
+    const SHARE_URL = 'https://tools.tadeku.net/style-analysis/';
+    const QUESTIONS = window.StyleQuizData.QUESTIONS;
+    const DIMENSION_LABELS = window.StyleQuizData.DIMENSION_LABELS;
+    const AXIS_COLORS = {
+      structure: '#3d5a4a',
+      character: '#6b8f71',
+      world: '#5a7a8a',
+      prose: '#8a7348',
+      intuition: '#7a688a',
+      theme: '#8a5a58',
+    };
 
     const els = {
       viewStart: document.getElementById('view-start'),
@@ -445,7 +463,8 @@
       questionText: document.getElementById('question-text'),
       choices: document.getElementById('choices'),
       resultTop: document.getElementById('result-top'),
-      rankList: document.getElementById('rank-list'),
+      axisChart: document.getElementById('axis-chart'),
+      toolPicks: document.getElementById('tool-picks'),
       shareBtn: document.getElementById('share-btn'),
       retryBtn: document.getElementById('retry-btn'),
     };
@@ -472,6 +491,7 @@
       step = 0;
       answers = [];
       lastTop = null;
+      els.toolPicks.innerHTML = '';
       showView('start');
     }
 
@@ -506,43 +526,104 @@
       });
     }
 
-    function formatWork(top) {
-      if (!top.workUrl) return esc(top.work) + '（青空文庫）';
-      return '<a href="' + esc(top.workUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(top.work) + '（青空文庫）</a>';
+    function polarToCartesian(cx, cy, r, angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+
+    function describeSlice(cx, cy, r, startAngle, endAngle) {
+      if (endAngle - startAngle >= 359.99) {
+        return 'M ' + cx + ' ' + cy + ' m -' + r + ',0 a ' + r + ',' + r + ' 0 1,0 ' + (r * 2) + ',0 a ' + r + ',' + r + ' 0 1,0 -' + (r * 2) + ',0';
+      }
+      const start = polarToCartesian(cx, cy, r, endAngle);
+      const end = polarToCartesian(cx, cy, r, startAngle);
+      const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+      return 'M ' + cx + ' ' + cy +
+        ' L ' + start.x + ' ' + start.y +
+        ' A ' + r + ' ' + r + ' 0 ' + largeArc + ' 0 ' + end.x + ' ' + end.y +
+        ' Z';
+    }
+
+    function renderAxisChart(userAxis) {
+      const sorted = userAxis.slice().sort((a, b) => b.value - a.value);
+      const total = sorted.reduce((sum, item) => sum + item.value, 0);
+      const cx = 100;
+      const cy = 100;
+      const r = 82;
+      let angle = 0;
+      let slices = '';
+      let legend = '';
+
+      if (total <= 0) {
+        slices = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#dce8e0" />';
+      } else {
+        sorted.forEach((item) => {
+          const sweep = (item.value / total) * 360;
+          if (sweep <= 0) return;
+          const color = AXIS_COLORS[item.key] || '#3d5a4a';
+          const label = DIMENSION_LABELS[item.key];
+          const pct = Math.round((item.value / total) * 100);
+          slices += '<path class="axis-slice" fill="' + color + '" d="' + describeSlice(cx, cy, r, angle, angle + sweep) + '">' +
+            '<title>' + esc(label) + ' ' + pct + '%</title></path>';
+          angle += sweep;
+          legend += '<li class="axis-legend-item">' +
+            '<span class="axis-swatch" style="background:' + color + '"></span>' +
+            '<span class="axis-legend-label">' + esc(label) + '</span>' +
+            '<span class="axis-legend-pct">' + pct + '%</span>' +
+            '</li>';
+        });
+      }
+
+      els.axisChart.innerHTML =
+        '<svg class="axis-pie" viewBox="0 0 200 200" role="img" aria-label="執筆傾向の円グラフ">' +
+          slices +
+        '</svg>' +
+        '<ul class="axis-legend">' + legend + '</ul>';
+    }
+
+    function renderToolPicks(picks) {
+      if (!picks || !picks.length) {
+        els.toolPicks.innerHTML = '';
+        return;
+      }
+      els.toolPicks.innerHTML =
+        '<div class="tool-picks">' +
+          '<h3 class="panel-title">tadeku-toolsのおすすめ</h3>' +
+          '<div class="tool-pick-grid">' +
+            picks.map((pick) =>
+              '<a class="tool-pick-card" href="' + esc(pick.href) + '">' +
+                '<span class="tool-pick-title">' + esc(pick.title) + '</span>' +
+                '<span class="tool-pick-about">' + esc(pick.about) + '</span>' +
+                '<span class="tool-pick-point">' + esc(pick.point) + '</span>' +
+              '</a>'
+            ).join('') +
+          '</div>' +
+        '</div>';
     }
 
     function renderResult() {
-      const { ranked, top } = window.BungoQuizEngine.rankAuthors(answers);
+      const { userAxis, top } = window.StyleQuizEngine.rankTypes(answers);
       lastTop = top;
 
       els.resultTop.innerHTML =
-        '<p class="result-label">あなたに近い文豪</p>' +
+        '<p class="result-label">あなたの執筆スタイル</p>' +
         '<p class="result-type">' + esc(top.typeName) + '</p>' +
         '<p class="result-name">' + esc(top.name) + '</p>' +
-        '<p class="result-era">' + esc(top.era) + '</p>' +
+        '<p class="result-subtitle">' + esc(top.subtitle) + '</p>' +
         '<div class="traits">' +
           top.traits.map((t) => '<span class="trait">' + esc(t) + '</span>').join('') +
         '</div>' +
-        '<p class="result-blurb">' + esc(top.blurb) + '</p>' +
-        '<p class="works-used">代表作：' + formatWork(top) + '</p>';
+        '<p class="result-blurb">' + esc(top.blurb) + '</p>';
 
-      els.rankList.innerHTML = ranked.slice(0, 8).map((item, i) =>
-        '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
-          '<span class="rank-num">' + (i + 1) + '</span>' +
-          '<div class="rank-body">' +
-            '<div class="rank-name">' + esc(item.name) + '</div>' +
-            '<div class="rank-bar"><div class="rank-fill" style="width:' + item.barPct + '%"></div></div>' +
-          '</div>' +
-          '<span class="rank-pct">' + item.matchPct + '</span>' +
-        '</li>'
-      ).join('');
+      renderAxisChart(userAxis);
+      renderToolPicks(top.picks);
 
       showView('result');
       els.viewResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function buildShareText(top) {
-      return '文豪診断の結果：' + top.name + 'タイプ（' + top.typeName + '）';
+      return '執筆スタイル診断の結果：' + top.name + 'タイプ（' + top.typeName + '）';
     }
 
     function openShare() {

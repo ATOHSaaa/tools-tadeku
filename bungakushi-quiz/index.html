@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="日本文学史の4択クイズ。上代・中古・中世・近世・近代から選ぶか全500問から挑戦。各時代100問、10問ランダム出題。">
+  <title>文学史クイズ — 日本文学の知識を試す | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f2ebe4;
+      --ink: #1a1410;
+      --muted: #5c5248;
+      --border: #1a1410;
+      --surface: #fff;
+      --accent: #6b3a3a;
+      --accent-soft: #eadcda;
+      --ok: #2d5a3a;
+      --ok-soft: #d8eadc;
+      --ng: #8a3a32;
+      --ng-soft: #f0ddd8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-top: 0.5rem;
+    }
+
+    .panel {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.55rem 0.65rem;
+      min-width: 0;
+    }
+
+    .stat-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .stat-value {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .btn-block {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+    }
+
+    .btn-share svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      fill: currentColor;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 0.35rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.25s ease;
+    }
+
+    .era-tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin: 0;
+      min-width: 0;
+    }
+
+    .quiz-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .btn-next {
+      flex-shrink: 0;
+      min-width: 6.75rem;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.76rem;
+      white-space: nowrap;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .btn-next.is-ready {
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .era-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+    }
+
+    .era-card {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 0.95rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      font-family: inherit;
+      color: inherit;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .era-card:hover {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .era-card.is-all {
+      grid-column: 1 / -1;
+    }
+
+    .era-card-name {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.2rem;
+    }
+
+    .era-card-meta {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .era-card:hover .era-card-meta {
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .era-card-desc {
+      display: block;
+      font-size: 0.76rem;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .era-card:hover .era-card-desc {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .era-card-count {
+      display: block;
+      margin-top: 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .era-card:hover .era-card-count {
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .mode-note {
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .question-text {
+      font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+      font-weight: 900;
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+    }
+
+    .choices {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .choice-btn {
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.55;
+      letter-spacing: 0;
+    }
+
+    .choice-btn.is-correct {
+      background: var(--ok-soft);
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    .choice-btn.is-wrong {
+      background: var(--ng-soft);
+      border-color: var(--ng);
+      color: var(--ng);
+    }
+
+    .feedback {
+      margin-top: 1rem;
+      padding: 0.85rem 0.95rem;
+      border: 2px solid var(--border);
+      background: var(--accent-soft);
+      font-size: 0.88rem;
+      line-height: 1.75;
+    }
+
+    .feedback.is-ok {
+      background: var(--ok-soft);
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    .feedback.is-ng {
+      background: var(--ng-soft);
+      border-color: var(--ng);
+      color: var(--ng);
+    }
+
+    .feedback-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+
+    .feedback.is-ok .feedback-label {
+      color: var(--ok);
+    }
+
+    .feedback.is-ng .feedback-label {
+      color: var(--ng);
+    }
+
+    .result-top {
+      text-align: center;
+      padding: 0.5rem 0 1.25rem;
+      border-bottom: 1px dashed #ccc4b8;
+      margin-bottom: 1.25rem;
+    }
+
+    .result-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-name {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .result-score {
+      font-size: 1.1rem;
+      font-weight: 900;
+      margin-top: 0.5rem;
+    }
+
+    .result-blurb {
+      font-size: 0.9rem;
+      line-height: 1.85;
+      color: var(--muted);
+      margin-top: 0.65rem;
+    }
+
+    .review-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .review-item {
+      padding: 0.85rem 0.95rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+    }
+
+    .review-item.is-ok {
+      border-color: var(--ok);
+      background: var(--ok-soft);
+    }
+
+    .review-item.is-ng {
+      border-color: var(--ng);
+      background: var(--ng-soft);
+    }
+
+    .review-q {
+      font-size: 0.88rem;
+      font-weight: 900;
+      line-height: 1.55;
+      margin-bottom: 0.45rem;
+    }
+
+    .review-meta {
+      font-size: 0.78rem;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem;
+      margin: 1.25rem 0;
+    }
+
+    .cross-banner {
+      display: block;
+      margin-top: 1.25rem;
+      padding: 1rem 1.1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .cross-banner-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+
+    .cross-banner-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .cross-banner-desc {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .view[hidden] { display: none !important; }
+
+    @media (max-width: 520px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stats .stat:last-child { grid-column: 1 / -1; }
+      .era-grid { grid-template-columns: 1fr; }
+      .era-card.is-all { grid-column: auto; }
+    }
+  </style>
+  <link rel="stylesheet" href="../shared/share-button.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>文学史クイズ</h1>
+      <p class="lead">時代を選んで4択問題に挑戦。各時代100問・全500問から10問がランダム出題。解説付きで復習できます。</p>
+    </header>
+
+    <div class="stats" id="stats" hidden aria-live="polite">
+      <div class="stat">
+        <div class="stat-label">正解</div>
+        <div class="stat-value"><span id="stat-correct">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">問題</div>
+        <div class="stat-value"><span id="stat-step">0</span><span id="stat-total" style="font-size:0.72rem;font-weight:700"> / 10</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">正解率</div>
+        <div class="stat-value"><span id="stat-rate">—</span><span style="font-size:0.72rem;font-weight:700">%</span></div>
+      </div>
+    </div>
+
+    <section class="panel view" id="view-start">
+      <p class="panel-title">出題範囲を選ぶ</p>
+      <div class="era-grid" id="era-grid"></div>
+      <p class="mode-note">1回の挑戦は10問。同じ問題が続くことはありません。</p>
+    </section>
+
+    <section class="panel view" id="view-quiz" hidden>
+      <div class="progress">
+        <span id="progress-label">1 / 10</span>
+        <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+      </div>
+      <div class="quiz-meta">
+        <p class="era-tag" id="era-tag"></p>
+        <button type="button" class="btn btn-primary btn-next" id="next-btn" tabindex="-1" aria-hidden="true">次の問題へ</button>
+      </div>
+      <h2 class="question-text" id="question-text"></h2>
+      <ul class="choices" id="choices"></ul>
+      <div id="feedback-wrap" hidden>
+        <div class="feedback" id="feedback">
+          <p class="feedback-label" id="feedback-label"></p>
+          <p id="feedback-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="view" id="view-result-wrap" hidden aria-live="polite">
+      <section class="panel" id="view-result">
+        <h2 class="panel-title">結果</h2>
+        <div class="result-top" id="result-top"></div>
+        <div class="result-actions">
+          <button type="button" class="btn btn-share" id="share-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Xでシェア
+          </button>
+          <button type="button" class="btn" id="retry-btn">もう一度</button>
+        </div>
+        <h3 class="panel-title">復習</h3>
+        <ul class="review-list" id="review-list"></ul>
+      </section>
+      <a class="cross-banner" href="../bungo-analysis/">
+        <span class="cross-banner-label">次はこちら</span>
+        <span class="cross-banner-title">文豪診断で遊ぶ →</span>
+        <span class="cross-banner-desc">8つの質問で、あなたに近い文豪タイプを診断</span>
+      </a>
+    </div>
+  </div>
+
+  <script src="../shared/bungakushi-quiz-data.js"></script>
+  <script src="../shared/bungakushi-quiz-engine.js"></script>
+  <script>
+    const SHARE_URL = 'https://tools.tadeku.net/bungakushi-quiz/';
+    const ROUND_SIZE = window.BungakushiQuizData.ROUND_SIZE;
+    const ERAS = window.BungakushiQuizData.ERAS;
+    const ERA_COUNTS = window.BungakushiQuizData.ERA_COUNTS;
+
+    const els = {
+      stats: document.getElementById('stats'),
+      statCorrect: document.getElementById('stat-correct'),
+      statStep: document.getElementById('stat-step'),
+      statTotal: document.getElementById('stat-total'),
+      statRate: document.getElementById('stat-rate'),
+      viewStart: document.getElementById('view-start'),
+      viewQuiz: document.getElementById('view-quiz'),
+      viewResult: document.getElementById('view-result-wrap'),
+      eraGrid: document.getElementById('era-grid'),
+      progressLabel: document.getElementById('progress-label'),
+      progressFill: document.getElementById('progress-fill'),
+      eraTag: document.getElementById('era-tag'),
+      questionText: document.getElementById('question-text'),
+      choices: document.getElementById('choices'),
+      feedbackWrap: document.getElementById('feedback-wrap'),
+      feedback: document.getElementById('feedback'),
+      feedbackLabel: document.getElementById('feedback-label'),
+      feedbackText: document.getElementById('feedback-text'),
+      nextBtn: document.getElementById('next-btn'),
+      resultTop: document.getElementById('result-top'),
+      reviewList: document.getElementById('review-list'),
+      shareBtn: document.getElementById('share-btn'),
+      retryBtn: document.getElementById('retry-btn'),
+    };
+
+    let questions = [];
+    let step = 0;
+    let answers = [];
+    let lastResult = null;
+    let selectedEra = null;
+
+    function renderEraGrid() {
+      els.eraGrid.innerHTML = ERAS.map((era) => {
+        const count = era.id === 'all'
+          ? Object.values(ERA_COUNTS).reduce((sum, n) => sum + n, 0)
+          : (ERA_COUNTS[era.id] || 0);
+        return '<button type="button" class="era-card' + (era.id === 'all' ? ' is-all' : '') + '" data-era="' + esc(era.id) + '">' +
+          '<span class="era-card-name">' + esc(era.name) + '</span>' +
+          '<span class="era-card-meta">' + esc(era.period) + '</span>' +
+          '<span class="era-card-desc">' + esc(era.blurb) + '</span>' +
+          '<span class="era-card-count">' + count + '問</span>' +
+        '</button>';
+      }).join('');
+
+      els.eraGrid.querySelectorAll('.era-card').forEach((btn) => {
+        btn.addEventListener('click', () => startQuiz(btn.dataset.era));
+      });
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showView(name) {
+      els.viewStart.hidden = name !== 'start';
+      els.viewQuiz.hidden = name !== 'quiz';
+      els.viewResult.hidden = name !== 'result';
+      els.stats.hidden = name === 'start';
+      if (name !== 'quiz') hideNextBtn();
+    }
+
+    function isNextReady() {
+      return els.nextBtn.classList.contains('is-ready');
+    }
+
+    function hideNextBtn() {
+      els.nextBtn.classList.remove('is-ready');
+      els.nextBtn.setAttribute('aria-hidden', 'true');
+      els.nextBtn.tabIndex = -1;
+    }
+
+    function showNextBtn() {
+      els.nextBtn.classList.add('is-ready');
+      els.nextBtn.setAttribute('aria-hidden', 'false');
+      els.nextBtn.tabIndex = 0;
+      requestAnimationFrame(() => {
+        els.nextBtn.focus({ preventScroll: true });
+      });
+    }
+
+    function updateLiveStats() {
+      const answered = answers.length;
+      const correctSoFar = questions.slice(0, answered).reduce((sum, q, i) => {
+        return sum + (window.BungakushiQuizEngine.isCorrect(q, answers[i]) ? 1 : 0);
+      }, 0);
+      els.statCorrect.textContent = String(correctSoFar);
+      els.statStep.textContent = String(Math.min(answered + (!isNextReady() ? 1 : 0), questions.length));
+      els.statTotal.textContent = ' / ' + questions.length;
+      els.statRate.textContent = answered ? String(Math.round((correctSoFar / answered) * 100)) : '—';
+    }
+
+    function resetQuiz() {
+      questions = [];
+      step = 0;
+      answers = [];
+      lastResult = null;
+      selectedEra = null;
+      showView('start');
+    }
+
+    function startQuiz(eraId) {
+      selectedEra = eraId;
+      questions = window.BungakushiQuizEngine.startRound(ROUND_SIZE, eraId);
+      step = 0;
+      answers = [];
+      showView('quiz');
+      renderQuestion();
+      updateLiveStats();
+    }
+
+    function renderQuestion() {
+      const q = questions[step];
+      const total = questions.length;
+      els.progressLabel.textContent = (step + 1) + ' / ' + total;
+      els.progressFill.style.width = ((step + 1) / total * 100) + '%';
+      els.eraTag.textContent = selectedEra === 'all'
+        ? 'すべて'
+        : (window.BungakushiQuizEngine.getEraLabel(selectedEra) + ' · ' + q.era);
+      els.questionText.textContent = q.text;
+      els.feedbackWrap.hidden = true;
+      els.feedback.classList.remove('is-ok', 'is-ng');
+      hideNextBtn();
+      els.nextBtn.textContent = step >= total - 1 ? '結果を見る' : '次の問題へ';
+
+      els.choices.innerHTML = q.choices.map((choice, i) =>
+        '<li><button type="button" class="btn choice-btn" data-index="' + i + '">' + esc(choice) + '</button></li>'
+      ).join('');
+
+      els.choices.querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => pickAnswer(Number(btn.dataset.index)));
+      });
+
+      updateLiveStats();
+    }
+
+    function pickAnswer(index) {
+      const q = questions[step];
+      if (answers.length > step) return;
+
+      answers[step] = index;
+      const ok = window.BungakushiQuizEngine.isCorrect(q, index);
+
+      els.choices.querySelectorAll('.choice-btn').forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('is-correct');
+        else if (i === index) btn.classList.add('is-wrong');
+      });
+
+      els.feedbackLabel.textContent = ok ? '正解' : '不正解';
+      els.feedbackText.textContent = q.explanation;
+      els.feedback.classList.remove('is-ok', 'is-ng');
+      els.feedback.classList.add(ok ? 'is-ok' : 'is-ng');
+      els.feedbackWrap.hidden = false;
+      showNextBtn();
+      updateLiveStats();
+    }
+
+    function goNext() {
+      if (answers.length <= step) return;
+      if (step >= questions.length - 1) {
+        hideNextBtn();
+        renderResult();
+        return;
+      }
+      step += 1;
+      renderQuestion();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function onQuizKeydown(event) {
+      if (els.viewQuiz.hidden || !isNextReady()) return;
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target.closest('.choice-btn')) return;
+      event.preventDefault();
+      goNext();
+    }
+
+    function renderResult() {
+      lastResult = window.BungakushiQuizEngine.scoreRound(questions, answers);
+      const grade = window.BungakushiQuizEngine.resolveGrade(lastResult.pct);
+
+      els.resultTop.innerHTML =
+        '<p class="result-label">' + esc(window.BungakushiQuizEngine.getEraLabel(selectedEra)) + '</p>' +
+        '<p class="result-name">' + esc(grade.name) + '</p>' +
+        '<p class="result-score">' + lastResult.correct + ' / ' + lastResult.total + ' 問正解（' + lastResult.pct + '%）</p>' +
+        '<p class="result-blurb">' + esc(grade.blurb) + '</p>';
+
+      els.reviewList.innerHTML = lastResult.details.map((item) => {
+        const q = item.question;
+        const selectedText = q.choices[item.selected];
+        const correctText = q.choices[q.correct];
+        return '<li class="review-item ' + (item.ok ? 'is-ok' : 'is-ng') + '">' +
+          '<p class="review-q">' + esc(q.text) + '</p>' +
+          '<p class="review-meta">' +
+            (item.ok
+              ? '正解：' + esc(correctText)
+              : 'あなたの回答：' + esc(selectedText) + '／正解：' + esc(correctText)) +
+          '</p>' +
+          '<p class="review-meta" style="margin-top:0.35rem">' + esc(q.explanation) + '</p>' +
+        '</li>';
+      }).join('');
+
+      showView('result');
+      els.viewResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function openShare() {
+      if (!lastResult) return;
+      const grade = window.BungakushiQuizEngine.resolveGrade(lastResult.pct);
+      const eraLabel = window.BungakushiQuizEngine.getEraLabel(selectedEra);
+      const text = '文学史クイズ（' + eraLabel + '）の結果：' + grade.name + '（' + lastResult.correct + '/' + lastResult.total + '問正解）\n' + SHARE_URL + ' @tadeku_net';
+      const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+      window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
+    }
+
+    renderEraGrid();
+    els.nextBtn.addEventListener('click', goNext);
+    document.addEventListener('keydown', onQuizKeydown);
+    els.retryBtn.addEventListener('click', resetQuiz);
+    els.shareBtn.addEventListener('click', openShare);
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>
