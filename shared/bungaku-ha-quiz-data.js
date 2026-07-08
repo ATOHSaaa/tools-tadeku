@@ -74,7 +74,7 @@
     },
     {
       id: 'yubiha',
-      name: '唯美派',
+      name: '耽美派',
       era: '1910年代〜',
       typeName: 'Aestheticism',
       examples: [
