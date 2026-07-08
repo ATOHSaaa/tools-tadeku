@@ -531,7 +531,7 @@
     function openShare() {
       if (!lastResult) return;
       const grade = window.KindaiAuthorQuizEngine.resolveGrade(lastResult.pct);
-      const text = '近代文学クイズの結果：' + grade.name + '（' + lastResult.correct + '/' + lastResult.total + '問正解）\n' + SHARE_URL + ' @tadeku_net';
+      const text = '近代文学クイズの結果：' + grade.name + '（' + lastResult.correct + '/' + lastResult.total + '問正解）\n' + SHARE_URL + ' @tadeku_net #TadekuTools';
       const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
       window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
     }

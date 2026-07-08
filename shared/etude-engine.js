@@ -193,11 +193,11 @@
   }
 
   function buildStartShareText(prompt) {
-    return 'お題「' + prompt + '」で書き始めました ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net';
+    return 'お題「' + prompt + '」で書き始めました ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net #TadekuTools';
   }
 
   function buildFinishShareText(prompt, charCount) {
-    return 'お題「' + prompt + '」\n' + charCount + '字 ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net';
+    return 'お題「' + prompt + '」\n' + charCount + '字 ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net #TadekuTools';
   }
 
   function openTwitterIntent(text) {

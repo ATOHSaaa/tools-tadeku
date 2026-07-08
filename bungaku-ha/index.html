@@ -558,7 +558,7 @@
 
     function openShare() {
       if (!lastTop) return;
-      const text = buildShareText(lastTop) + '\n' + SHARE_URL + ' @tadeku_net';
+      const text = buildShareText(lastTop) + '\n' + SHARE_URL + ' @tadeku_net #TadekuTools';
       const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
       window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
     }
