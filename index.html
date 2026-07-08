@@ -140,6 +140,15 @@
     .library-link:hover {
       opacity: 0.85;
     }
+    .library-note {
+      width: 100%;
+      margin: 0.85rem 0 0;
+      font-size: 0.78rem;
+      font-weight: 400;
+      line-height: 1.75;
+      color: var(--muted);
+      text-align: left;
+    }
     .share-x {
       display: flex;
       align-items: center;
@@ -263,6 +272,7 @@
           </a>
         </div>
         <a class="library-link" href="library/">保存したテキスト一覧</a>
+        <p class="library-note">※テキストはIndexedDBを用いてお使いのブラウザ上に保存されており、外部サーバーへの送信は行っておりません。</p>
       </section>
       <section class="category">
         <h2 class="category-title">プロット</h2>
@@ -291,6 +301,11 @@
             <h3>文学流派診断</h3>
             <div class="accent-line" aria-hidden="true"></div>
             <p>8つの質問に答えて、自然主義・新感覚派・無頼派など、自分に近い文学流派を診断します。結果をXでシェアできます。</p>
+          </a>
+          <a class="item" href="dazai-work/">
+            <h3>太宰治作品診断</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>8つの質問に答えて、あなたにおすすめの太宰治作品を診断します。結果をXでシェアできます。</p>
           </a>
         </div>
       </section>

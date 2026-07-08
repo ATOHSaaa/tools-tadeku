@@ -310,12 +310,21 @@
     return all.filter((d) => d.editorId === editorId);
   }
 
+  function isLibraryDocument(doc) {
+    return LIBRARY_EDITOR_IDS.includes(doc?.editorId);
+  }
+
   async function getAllDocuments() {
     const db = await openDB();
     if (!db.objectStoreNames.contains(DOCS_STORE)) return [];
     const tx = db.transaction(DOCS_STORE, 'readonly');
     const all = await promisifyRequest(tx.objectStore(DOCS_STORE).getAll());
     return all.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  }
+
+  async function getLibraryDocuments() {
+    const all = await getAllDocuments();
+    return all.filter(isLibraryDocument);
   }
 
   async function getDocument(id) {
@@ -408,6 +417,8 @@
     documentDisplayTitle,
     isPlaceholderTitle,
     getAllDocuments,
+    getLibraryDocuments,
+    isLibraryDocument,
     getDocumentsByEditorId,
     getDocument,
     deleteDocument,

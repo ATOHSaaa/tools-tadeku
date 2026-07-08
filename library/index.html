@@ -44,7 +44,7 @@
     h1 {
       font-size: clamp(2rem, 6vw, 2.75rem);
       font-weight: 900;
-      letter-spacing: -0.03em;
+      letter-spacing: 0.03em;
       line-height: 1;
       margin-bottom: 0.5rem;
     }
@@ -127,7 +127,7 @@
     .col-editor { white-space: nowrap; font-size: 0.82rem; font-weight: 700; }
     .doc-title {
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: 0.03em;
       line-height: 1.35;
     }
     .num, .date { white-space: nowrap; color: var(--muted); font-size: 0.82rem; font-weight: 500; }
@@ -192,7 +192,7 @@
     .modal-title {
       font-size: 1rem;
       font-weight: 900;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       margin-bottom: 0.75rem;
     }
     .modal-message {
@@ -220,7 +220,7 @@
 <body>
   <div class="wrap">
     <h1>Library</h1>
-    <p class="intro">Plain / Stoic / Tachometer / Interval / Cue / Genko / Length / Seam で書いたテキストが、入力とともに自動保存されます。</p>
+    <p class="intro">tadeku-toolsのテキストエディタで書いたテキストが自動保存されています。<br>※テキストはIndexedDBを用いてお使いのブラウザ上に保存されており、外部サーバーへの送信は行っておりません。</p>
     <div class="toolbar">
       <input type="file" id="import-input" accept=".txt,.md,text/plain" multiple>
       <button class="import-btn" id="import-btn" type="button">インポート</button>
@@ -556,7 +556,7 @@
         return;
       }
       try {
-        const docs = await P.getAllDocuments();
+        const docs = await P.getLibraryDocuments();
         if (!docs.length) {
           showEmpty();
           return;
@@ -571,7 +571,7 @@
     }
 
     bulkExportBtn.addEventListener('click', async () => {
-      const docs = await P.getAllDocuments();
+      const docs = await P.getLibraryDocuments();
       if (!docs.length) return;
       const format = await ExportUtils.showExportFormatModal(
         `${docs.length} 件を ZIP で書き出します`,
