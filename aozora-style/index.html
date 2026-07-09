@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="青空文庫の読み心地をスライダーで調整するプレビューツール。縦書き・ゴシック・余白などをリアルタイムに試せます。">
+  <title>Aozora Style — 青空文庫スタイル調整 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ui-bg: #f0eeea;
+      --ui-ink: #1a1a1a;
+      --ui-muted: #5a5a5a;
+      --ui-border: #d4d0c8;
+      --ui-surface: #ffffff;
+      --ui-accent: #1a1a1a;
+      --ui-accent-soft: #e8e6e1;
+      --ui-workspace: #e8e6e1;
+
+      --ao-ink: #1a1a1a;
+      --ao-muted: #444444;
+      --ao-bg: #ffffff;
+      --ao-font-size: 18px;
+      --ao-line-height: 2;
+      --ao-letter-spacing: 0.05em;
+      --ao-font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+      --ao-writing-mode: vertical-rl;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ui-ink);
+      background: var(--ui-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.7rem 1rem;
+      background: var(--ui-surface);
+      border-bottom: 1px solid var(--ui-border);
+      flex-shrink: 0;
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+
+    .brand a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .header-note {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--ui-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .preview-shell {
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      background: var(--ui-workspace);
+      padding: 0;
+    }
+
+    .aozora-preview {
+      min-height: 100%;
+      padding: 8vh 8vw;
+      background: var(--ao-bg);
+      color: var(--ao-ink);
+      font-family: var(--ao-font-family);
+      writing-mode: var(--ao-writing-mode);
+      text-orientation: mixed;
+      font-size: var(--ao-font-size);
+      line-height: var(--ao-line-height);
+      letter-spacing: var(--ao-letter-spacing);
+    }
+
+    .aozora-preview[data-writing="horizontal"] {
+      max-width: 42rem;
+      margin: 0 auto;
+    }
+
+    .aozora-preview[data-writing="vertical"],
+    .aozora-preview[data-writing="vertical"] .main_text {
+      text-align: justify;
+      text-justify: inter-character;
+      line-break: strict;
+      hanging-punctuation: allow-end;
+    }
+
+    .aozora-preview[data-writing="vertical"] h1.title,
+    .aozora-preview[data-writing="vertical"] h2.author,
+    .aozora-preview[data-writing="vertical"] h4 {
+      text-align: start;
+    }
+
+    .aozora-preview h1.title {
+      font-size: calc(var(--ao-font-size) * 1.8);
+      font-weight: 700;
+      line-height: 1.4;
+      letter-spacing: 0.12em;
+      margin: 0 0 1.5em 0;
+    }
+
+    .aozora-preview h2.author {
+      font-size: calc(var(--ao-font-size) * 1.1);
+      font-weight: 400;
+      line-height: 1.4;
+      letter-spacing: 0.08em;
+      margin: 0 0 2em 0;
+      color: var(--ao-muted);
+    }
+
+    .aozora-preview .main_text {
+      line-height: var(--ao-line-height);
+    }
+
+    .aozora-preview ruby {
+      ruby-position: over;
+    }
+
+    .aozora-preview h4.naka-midashi {
+      font-size: calc(var(--ao-font-size) * 1.15);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      margin: 2em 0 1em;
+    }
+
+    .aozora-preview .midashi_anchor {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .aozora-preview img.gaiji {
+      width: 1em;
+      height: 1em;
+      vertical-align: text-top;
+    }
+
+    .aozora-preview br {
+      display: block;
+      content: "";
+      margin-bottom: 0.5em;
+    }
+
+    .sidebar {
+      min-height: 0;
+      overflow: auto;
+      background: var(--ui-surface);
+      border-left: 1px solid var(--ui-border);
+      padding: 1rem 1rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--ui-muted);
+      margin: 1.1rem 0 0.45rem;
+    }
+
+    .section-label:first-child {
+      margin-top: 0;
+    }
+
+    .spacing-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .spacing-field-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .spacing-field-head span {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--ui-muted);
+    }
+
+    .spacing-field input[type="range"] {
+      width: 100%;
+      accent-color: var(--ui-accent);
+    }
+
+    .toggle-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .toggle-btn {
+      border: 1px solid var(--ui-border);
+      background: var(--ui-bg);
+      color: var(--ui-ink);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.45rem 0.65rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .toggle-btn.active {
+      background: var(--ui-accent-soft);
+      border-color: var(--ui-accent);
+    }
+
+    .color-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .color-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      padding: 0.4rem 0.35rem;
+    }
+
+    .color-swatch {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+      border: 1px solid var(--ui-border);
+      flex-shrink: 0;
+    }
+
+    .action-btn {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--ui-border);
+      background: var(--ui-bg);
+      color: var(--ui-ink);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.55rem 0.75rem;
+      margin-top: 0.35rem;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .action-btn:hover {
+      background: var(--ui-accent);
+      color: #fff;
+    }
+
+    .action-btn.primary {
+      background: var(--ui-accent);
+      color: #fff;
+      border-color: var(--ui-accent);
+    }
+
+    .action-btn.primary:hover {
+      opacity: 0.85;
+    }
+
+    .css-output {
+      display: none;
+      margin-top: 0.75rem;
+    }
+
+    .css-output.open {
+      display: block;
+    }
+
+    .css-output textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid var(--ui-border);
+      background: var(--ui-bg);
+      color: var(--ui-ink);
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 0.68rem;
+      line-height: 1.5;
+      padding: 0.6rem;
+      resize: vertical;
+    }
+
+    .css-output-actions {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.35rem;
+    }
+
+    .css-output-actions .action-btn {
+      margin-top: 0;
+      flex: 1;
+    }
+
+    .hint {
+      font-size: 0.68rem;
+      line-height: 1.6;
+      color: var(--ui-muted);
+      margin-top: 0.35rem;
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .sidebar {
+        border-left: none;
+        border-top: 1px solid var(--ui-border);
+        max-height: 42vh;
+      }
+
+      .header-note {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand"><a href="../">tadeku-tools</a> / Aozora Style</div>
+      <p class="header-note">Chrome拡張の<a href="privacy.html">プライバシーポリシー</a></p>
+    </header>
+
+    <main class="preview-shell" id="preview-shell">
+      <div class="aozora-preview" id="aozora-preview" data-writing="vertical">
+          <h1 class="title">あらくれ</h1>
+          <h2 class="author">徳田秋声</h2>
+          <div class="main_text">
+            <h4 class="naka-midashi"><a class="midashi_anchor" href="#midashi10">一</a></h4>
+            <p>　お<ruby><rb>島</rb><rp>（</rp><rt>しま</rt><rp>）</rp></ruby>が<ruby><rb>養親</rb><rp>（</rp><rt>やしないおや</rt><rp>）</rp></ruby>の口から、近いうちに自分に<ruby><rb>入婿</rb><rp>（</rp><rt>いりむこ</rt><rp>）</rp></ruby>の来るよしをほのめかされた時に、彼女の<ruby><rb>頭脳</rb><rp>（</rp><rt>あたま</rt><rp>）</rp></ruby>には、まだ何等の<ruby><rb>分明</rb><rp>（</rp><rt>はっきり</rt><rp>）</rp></ruby>した考えも起って来なかった。</p>
+            <p>　十八になったお島は、その頃その<ruby><rb>界隈</rb><rp>（</rp><rt>かいわい</rt><rp>）</rp></ruby>で<ruby><rb>男嫌</rb><rp>（</rp><rt>おとこぎら</rt><rp>）</rp></ruby>いという評判を立てられていた。そんなことをしずとも、町屋の娘と同じに、裁縫やお琴の<ruby><rb>稽古</rb><rp>（</rp><rt>けいこ</rt><rp>）</rp></ruby>でもしていれば、立派に年頃の<ruby><rb>綺麗</rb><rp>（</rp><rt>きれい</rt><rp>）</rp></ruby>な娘で通して行かれる養家の家柄ではあったが、<ruby><rb>手頭</rb><rp>（</rp><rt>てさき</rt><rp>）</rp></ruby>などの器用に産れついていない彼女は、じっと部屋のなかに坐っているようなことは余り好まなかったので、<ruby><rb>稚</rb><rp>（</rp><rt>ちいさ</rt><rp>）</rp></ruby>いおりから善く外へ出て田畑の土を<ruby><rb>弄</rb><rp>（</rp><rt>いじ</rt><rp>）</rp></ruby>ったり、若い男たちと一緒に、田植に出たり、稲刈に働いたりした。</p>
+            <p>　お島は今でもその頃のことを善く覚えているが、彼女がここへ<ruby><rb>貰</rb><rp>（</rp><rt>もら</rt><rp>）</rp></ruby>われてきたのは、七つの年であった。お島は<ruby><rb>昔気質</rb><rp>（</rp><rt>むかしかたぎ</rt><rp>）</rp></ruby>の<ruby><rb>律義</rb><rp>（</rp><rt>りちぎ</rt><rp>）</rp></ruby>な父親に手をひかれて、或日の晩方、自分に深い憎しみを持っている母親の<ruby><rb>暴</rb><rp>（</rp><rt>あら</rt><rp>）</rp></ruby>い怒と<ruby><rb>惨酷</rb><rp>（</rp><rt>ざんこく</rt><rp>）</rp></ruby>な<ruby><rb>折檻</rb><rp>（</rp><rt>せっかん</rt><rp>）</rp></ruby>から<ruby><rb>脱</rb><rp>（</rp><rt>のが</rt><rp>）</rp></ruby>れるために、野原をそっち<ruby><rb>此方</rb><rp>（</rp><rt>こっち</rt><rp>）</rp></ruby><ruby><rb>彷徨</rb><rp>（</rp><rt>うろつ</rt><rp>）</rp></ruby>いていた。</p>
+            <h4 class="naka-midashi"><a class="midashi_anchor" href="#midashi20">二</a></h4>
+            <p>　その時お島の父親は、どういう<ruby><rb>心算</rb><rp>（</rp><rt>つもり</rt><rp>）</rp></ruby>で水のほとりへなぞ彼女をつれて行ったのか、今考えてみても父親の心持は<ruby><rb>素</rb><rp>（</rp><rt>もと</rt><rp>）</rp></ruby>より解らない。<ruby><rb>或</rb><rp>（</rp><rt>あるい</rt><rp>）</rp></ruby>は渡しを向うへ渡って、そこで知合の<ruby><rb>家</rb><rp>（</rp><rt>うち</rt><rp>）</rp></ruby>を尋ねてお島の体の始末をする目算であったであろうが、お島はその場合、水を見ている父親の暗い顔の底に、或<ruby><rb>可恐</rb><rp>（</rp><rt>おそろ</rt><rp>）</rp></ruby>しい<ruby><rb>惨忍</rb><rp>（</rp><rt>ざんにん</rt><rp>）</rp></ruby>な<ruby><rb>思着</rb><rp>（</rp><rt>おもいつき</rt><rp>）</rp></ruby>が潜んでいるのではないかと、ふと幼心に感づいて、<ruby><rb>怯</rb><rp>（</rp><rt>おび</rt><rp>）</rp></ruby>えた。</p>
+          </div>
+    </main>
+
+    <aside class="sidebar" aria-label="スタイル調整">
+      <div class="section-label">プリセット</div>
+      <button type="button" class="action-btn primary" id="preset-btn">縦書きゴシック（画像どおり）</button>
+      <button type="button" class="action-btn" id="reset-btn">初期値に戻す</button>
+
+      <div class="section-label">組み方向・フォント</div>
+      <div class="toggle-group" id="writing-group">
+        <button type="button" class="toggle-btn active" data-writing="vertical">縦書き</button>
+        <button type="button" class="toggle-btn" data-writing="horizontal">横書き</button>
+      </div>
+      <div class="toggle-group" id="font-group" style="margin-top:0.35rem">
+        <button type="button" class="toggle-btn active" data-font="sans">ゴシック</button>
+        <button type="button" class="toggle-btn" data-font="serif">明朝</button>
+      </div>
+
+      <div class="section-label">背景色</div>
+      <div class="toggle-group color-group" id="theme-group">
+        <button type="button" class="toggle-btn color-btn active" data-theme="white"><span class="color-swatch" style="background:#ffffff"></span>白</button>
+        <button type="button" class="toggle-btn color-btn" data-theme="cream"><span class="color-swatch" style="background:#f5f0e6"></span>クリーム</button>
+        <button type="button" class="toggle-btn color-btn" data-theme="washi"><span class="color-swatch" style="background:#faf6ed"></span>生成り</button>
+        <button type="button" class="toggle-btn color-btn" data-theme="sepia"><span class="color-swatch" style="background:#ebe4d5"></span>セピア</button>
+        <button type="button" class="toggle-btn color-btn" data-theme="dark"><span class="color-swatch" style="background:#1c1c1e"></span>ダーク</button>
+        <button type="button" class="toggle-btn color-btn" data-theme="night"><span class="color-swatch" style="background:#2a2836"></span>夜読み</button>
+      </div>
+
+      <div class="section-label">文字サイズ・行間・字間</div>
+      <div class="spacing-field">
+        <div class="spacing-field-head">文字サイズ <span id="font-size-value">18px</span></div>
+        <input type="range" id="font-size-slider" min="14" max="26" step="1" value="18">
+      </div>
+      <div class="spacing-field">
+        <div class="spacing-field-head">行間 <span id="line-height-value">2.0</span></div>
+        <input type="range" id="line-height-slider" min="14" max="30" step="1" value="20">
+      </div>
+      <div class="spacing-field">
+        <div class="spacing-field-head">字間 <span id="letter-spacing-value">0.05em</span></div>
+        <input type="range" id="letter-spacing-slider" min="0" max="20" value="5">
+      </div>
+
+      <div class="section-label">CSS出力</div>
+      <button type="button" class="action-btn" id="export-btn">CSSを表示</button>
+      <div class="css-output" id="css-output">
+        <textarea id="css-text" readonly></textarea>
+        <div class="css-output-actions">
+          <button type="button" class="action-btn" id="copy-btn">コピー</button>
+          <button type="button" class="action-btn" id="close-css-btn">閉じる</button>
+        </div>
+      </div>
+      <p class="hint">サンプルは『あらくれ』（徳田秋声）冒頭です。拡張機能と同じ設定を共有します。</p>
+    </aside>
+  </div>
+
+  <script src="extension/settings.js"></script>
+  <script>
+    (function () {
+      const STORAGE_KEY = 'aozora-style-preview-v2';
+      const {
+        PRESET, DEFAULTS, FONT_SANS, FONT_SERIF,
+        lineHeightFromSlider, letterSpacingFromSlider, normalize, getTheme, buildCss,
+      } = AozoraStyleSettings;
+
+      const state = { ...DEFAULTS };
+
+      const els = {
+        previewShell: document.getElementById('preview-shell'),
+        preview: document.getElementById('aozora-preview'),
+        fontSizeSlider: document.getElementById('font-size-slider'),
+        fontSizeValue: document.getElementById('font-size-value'),
+        lineHeightSlider: document.getElementById('line-height-slider'),
+        lineHeightValue: document.getElementById('line-height-value'),
+        letterSpacingSlider: document.getElementById('letter-spacing-slider'),
+        letterSpacingValue: document.getElementById('letter-spacing-value'),
+        cssOutput: document.getElementById('css-output'),
+        cssText: document.getElementById('css-text'),
+      };
+
+      function syncSliders() {
+        els.fontSizeSlider.value = String(state.fontSize);
+        els.fontSizeValue.textContent = state.fontSize + 'px';
+        els.lineHeightSlider.value = String(state.lineHeight);
+        els.lineHeightValue.textContent = lineHeightFromSlider(state.lineHeight);
+        els.letterSpacingSlider.value = String(state.letterSpacing);
+        els.letterSpacingValue.textContent = letterSpacingFromSlider(state.letterSpacing);
+
+        document.querySelectorAll('#writing-group .toggle-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.writing === state.writing);
+        });
+        document.querySelectorAll('#font-group .toggle-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.font === state.font);
+        });
+        document.querySelectorAll('#theme-group .toggle-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.theme === state.theme);
+        });
+      }
+
+      function apply() {
+        const root = document.documentElement;
+        const writingMode = state.writing === 'vertical' ? 'vertical-rl' : 'horizontal-tb';
+        const fontFamily = state.font === 'sans' ? FONT_SANS : FONT_SERIF;
+        const theme = getTheme(state.theme);
+
+        root.style.setProperty('--ao-font-size', state.fontSize + 'px');
+        root.style.setProperty('--ao-line-height', lineHeightFromSlider(state.lineHeight));
+        root.style.setProperty('--ao-letter-spacing', letterSpacingFromSlider(state.letterSpacing));
+        root.style.setProperty('--ao-font-family', fontFamily);
+        root.style.setProperty('--ao-writing-mode', writingMode);
+        root.style.setProperty('--ao-bg', theme.bg);
+        root.style.setProperty('--ao-ink', theme.color);
+        root.style.setProperty('--ao-muted', theme.muted);
+
+        els.preview.dataset.writing = state.writing;
+
+        syncSliders();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (_) {}
+      }
+
+      function setState(patch) {
+        Object.assign(state, patch);
+        Object.assign(state, normalize(state));
+        apply();
+      }
+
+      els.fontSizeSlider.addEventListener('input', () => setState({ fontSize: Number(els.fontSizeSlider.value) }));
+      els.lineHeightSlider.addEventListener('input', () => setState({ lineHeight: Number(els.lineHeightSlider.value) }));
+      els.letterSpacingSlider.addEventListener('input', () => setState({ letterSpacing: Number(els.letterSpacingSlider.value) }));
+
+      document.getElementById('writing-group').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-writing]');
+        if (!btn) return;
+        setState({ writing: btn.dataset.writing });
+      });
+
+      document.getElementById('font-group').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-font]');
+        if (!btn) return;
+        setState({ font: btn.dataset.font });
+      });
+
+      document.getElementById('theme-group').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-theme]');
+        if (!btn) return;
+        setState({ theme: btn.dataset.theme });
+      });
+
+      document.getElementById('preset-btn').addEventListener('click', () => setState({ ...PRESET }));
+      document.getElementById('reset-btn').addEventListener('click', () => setState({ ...DEFAULTS }));
+
+      document.getElementById('export-btn').addEventListener('click', () => {
+        els.cssText.value = buildCss(state);
+        els.cssOutput.classList.add('open');
+      });
+
+      document.getElementById('close-css-btn').addEventListener('click', () => {
+        els.cssOutput.classList.remove('open');
+      });
+
+      document.getElementById('copy-btn').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(els.cssText.value);
+          document.getElementById('copy-btn').textContent = 'コピーしました';
+          setTimeout(() => {
+            document.getElementById('copy-btn').textContent = 'コピー';
+          }, 1500);
+        } catch (_) {
+          els.cssText.select();
+          document.execCommand('copy');
+        }
+      });
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (saved) Object.assign(state, normalize(saved));
+      } catch (_) {}
+
+      els.previewShell.addEventListener('wheel', (e) => {
+        if (state.writing !== 'vertical') return;
+        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+        const el = els.previewShell;
+        const before = el.scrollLeft;
+        el.scrollLeft -= e.deltaY;
+        if (el.scrollLeft !== before) e.preventDefault();
+      }, { passive: false });
+
+      apply();
+    })();
+  </script>
+</body>
+</html>

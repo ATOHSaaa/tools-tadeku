@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Aozora Style",
+  "description": "青空文庫の読み心地をスライダーで調整。縦書き・ゴシック・余白などを自由に変更できます。",
+  "version": "0.1.2",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Aozora Style",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["panel.css"],
+      "matches": ["https://www.aozora.gr.jp/*"]
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.aozora.gr.jp/cards/*/files/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.aozora.gr.jp/cards/*/files/*"],
+      "js": ["settings.js", "panel.js", "content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
