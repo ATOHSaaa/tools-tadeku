@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ブラウザ上で動く日本語誤字脱字検出ツール。ONNX Runtime（Transformers.js）で文章を解析し、疑わしい箇所をハイライトします。原稿は外部に送信されません。">
+  <title>Proof — 誤字脱字検出 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #000000;
+      --muted: #4a4a4a;
+      --border: #000000;
+      --surface: #ffffff;
+      --accent: #e8913a;
+      --warn: #b23b3b;
+      --panel: #faf9f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4.5rem;
+    }
+
+    .brand {
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagline {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .notice {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 1.5rem;
+      padding: 0.85rem 1rem;
+      border: 2px solid var(--border);
+      background: var(--panel);
+    }
+
+    .status {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      min-height: 1.2em;
+    }
+
+    .status.loading { color: var(--accent); }
+    .status.error { color: var(--warn); }
+    .status.ready { color: var(--muted); }
+
+    .progress {
+      height: 4px;
+      background: var(--border);
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+
+    .progress[aria-hidden="false"] { display: block; }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.2s ease;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .panel-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.45rem 0.85rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .btn:hover:not(:disabled) { border-color: var(--ink); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #333;
+      border-color: #333;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.85;
+      padding: 0.85rem;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .result-body {
+      min-height: 120px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.85rem;
+      font-size: 0.95rem;
+      line-height: 1.85;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .result-body mark {
+      background: #fde8d0;
+      color: inherit;
+      padding: 0 0.05em;
+      border-bottom: 2px solid var(--accent);
+      cursor: help;
+    }
+
+    .result-body mark.err-kanji { background: #fde0e0; border-bottom-color: var(--warn); }
+    .result-body mark.err-insertion { background: #e8f4fd; border-bottom-color: #3a7bd5; }
+    .result-body mark.err-deletion { background: #f0e8ff; border-bottom-color: #7b3ad5; }
+    .result-body mark.err-substitution,
+    .result-body mark.err-transposition,
+    .result-body mark.err-others { background: #f5f5e8; border-bottom-color: #8a8a3a; }
+
+    .summary {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .issue-list {
+      list-style: none;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .issue-list li {
+      font-size: 0.82rem;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .issue-list .char {
+      font-weight: 900;
+      margin-right: 0.35rem;
+    }
+
+    .issue-list .meta {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 400;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+
+    .legend span::before {
+      content: '';
+      display: inline-block;
+      width: 0.75rem;
+      height: 0.75rem;
+      margin-right: 0.3rem;
+      vertical-align: -0.1rem;
+      background: #fde8d0;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .legend .kanji::before { background: #fde0e0; border-bottom-color: var(--warn); }
+    .legend .insertion::before { background: #e8f4fd; border-bottom-color: #3a7bd5; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <p class="brand">Proof</p>
+    <p class="tagline">ブラウザ上の AI で誤字脱字の疑いを検出します（ONNX Runtime Web）</p>
+
+    <p class="notice">
+      初回アクセス時に約 100MB のモデルをダウンロードします。文章はすべてお使いの端末内で解析され、外部サーバーへは送信されません。
+      検出のみ行い、自動修正はしません。小説の推敲補助としてご利用ください。
+    </p>
+
+    <p class="status loading" id="status" role="status">モデルを読み込み中…</p>
+    <div class="progress" id="progress" aria-hidden="true">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-label">INPUT</span>
+        <button class="btn" type="button" id="sample-btn">サンプルを入れる</button>
+      </div>
+      <textarea id="input" placeholder="校正したい文章を入力…" spellcheck="false"></textarea>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-label">ACTION</span>
+        <button class="btn btn-primary" type="button" id="analyze-btn" disabled>検査する</button>
+      </div>
+    </div>
+
+    <div class="panel" id="result-panel" hidden>
+      <p class="summary" id="summary"></p>
+      <div class="panel-label">ハイライト</div>
+      <div class="result-body" id="result-body"></div>
+      <ul class="issue-list" id="issue-list"></ul>
+      <div class="legend" aria-hidden="true">
+        <span class="kanji">漢字の誤変換</span>
+        <span>その他の誤り</span>
+        <span class="insertion">余分な文字</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/proof-engine.js"></script>
+  <script>
+    const SAMPLE = 'これは日本語の誤植を検出する真相学習モデルです。隣の町の町長が、長い話を聞いていました。';
+
+    const statusEl = document.getElementById('status');
+    const progressEl = document.getElementById('progress');
+    const progressBar = document.getElementById('progress-bar');
+    const inputEl = document.getElementById('input');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const sampleBtn = document.getElementById('sample-btn');
+    const resultPanel = document.getElementById('result-panel');
+    const summaryEl = document.getElementById('summary');
+    const resultBody = document.getElementById('result-body');
+    const issueList = document.getElementById('issue-list');
+
+    let ready = false;
+    let msgId = 0;
+    const pending = new Map();
+
+    const worker = new Worker(new URL('../shared/proof-worker.js', import.meta.url), { type: 'module' });
+
+    function post(type, payload = {}) {
+      const id = ++msgId;
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        worker.postMessage({ id, type, ...payload });
+      });
+    }
+
+    worker.addEventListener('message', (event) => {
+      const { id, type, data, tokens, message } = event.data || {};
+      const handler = pending.get(id);
+
+      if (type === 'progress' && data) {
+        progressEl.setAttribute('aria-hidden', 'false');
+        const pct = data.progress != null ? Math.round(data.progress * 100) : null;
+        if (pct != null) progressBar.style.width = pct + '%';
+        if (data.status) statusEl.textContent = data.status;
+        return;
+      }
+
+      if (!handler) return;
+      pending.delete(id);
+
+      if (type === 'ready') {
+        handler.resolve();
+        return;
+      }
+      if (type === 'result') {
+        handler.resolve(tokens);
+        return;
+      }
+      if (type === 'error') {
+        handler.reject(new Error(message || 'Worker error'));
+        return;
+      }
+    });
+
+    function setReady() {
+      ready = true;
+      analyzeBtn.disabled = false;
+      statusEl.textContent = '準備完了';
+      statusEl.className = 'status ready';
+      progressEl.setAttribute('aria-hidden', 'true');
+      progressBar.style.width = '100%';
+    }
+
+    function setError(msg) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status error';
+      progressEl.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderResult(text, issues) {
+      resultPanel.hidden = false;
+      summaryEl.textContent = issues.length
+        ? `${issues.length} 箇所に誤りの疑いがあります`
+        : '誤りの疑いは見つかりませんでした';
+
+      resultBody.innerHTML = ProofEngine.buildHighlightedHtml(text, issues);
+      issueList.innerHTML = '';
+
+      for (const issue of issues) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="char">「${issue.char}」</span>${issue.label}<span class="meta"> — ${Math.round(issue.score * 100)}%</span>`;
+        issueList.appendChild(li);
+      }
+    }
+
+    sampleBtn.addEventListener('click', () => {
+      inputEl.value = SAMPLE;
+      inputEl.focus();
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      const text = inputEl.value;
+      if (!text.trim()) return;
+
+      analyzeBtn.disabled = true;
+      statusEl.textContent = '検査中…';
+      statusEl.className = 'status loading';
+
+      try {
+        const tokens = await post('analyze', { text });
+        const issues = ProofEngine.analyzeTokens(text, tokens);
+        renderResult(text, issues);
+        statusEl.textContent = '検査完了';
+        statusEl.className = 'status ready';
+      } catch (err) {
+        setError('検査に失敗しました: ' + err.message);
+      } finally {
+        analyzeBtn.disabled = !ready;
+      }
+    });
+
+    post('load').then(setReady).catch((err) => {
+      setError('モデルの読み込みに失敗しました。ページを再読み込みしてください。 (' + err.message + ')');
+    });
+  </script>
+</body>
+</html>
