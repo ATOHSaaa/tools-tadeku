@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>404 — この頁は白紙です | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1a1a1a;
+      --muted: #5a5a5a;
+      --accent: #e8913a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+      --paper: #fffdf8;
+      --grid: #d8d2c6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    .brand {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .brand a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .brand a:hover { text-decoration: underline; }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (min-width: 760px) {
+      .stage {
+        grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+        gap: 2.5rem;
+      }
+    }
+
+    .copy h1 {
+      font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
+      font-size: clamp(1.7rem, 5vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.45;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.85rem;
+    }
+
+    .code {
+      display: inline-block;
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .path-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.85rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 1.75rem;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      word-break: break-all;
+    }
+
+    .path-label {
+      flex: none;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding-top: 0.1rem;
+    }
+
+    .path-value {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.82rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.6rem;
+      padding: 0.55rem 1.15rem;
+      border: 2px solid transparent;
+      font-family: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--ink);
+      opacity: 1;
+    }
+
+    .suggest-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .suggest-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .suggest-link {
+      display: block;
+      padding: 0.8rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: inherit;
+      text-decoration: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .suggest-link:hover { border-color: var(--ink); }
+
+    .suggest-link strong {
+      display: block;
+      font-size: 0.92rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .suggest-link span {
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .manuscript {
+      position: relative;
+      justify-self: center;
+      width: min(100%, 320px);
+      aspect-ratio: 1 / 1.414;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.8) inset,
+        0 18px 40px rgba(26, 26, 26, 0.08);
+      overflow: hidden;
+    }
+
+    .manuscript::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .manuscript-inner {
+      position: relative;
+      height: 100%;
+      padding: 10% 12% 10% 18%;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-family: "Noto Serif JP", "Hiragino Mincho ProN", serif;
+      color: rgba(26, 26, 26, 0.18);
+      font-size: clamp(1rem, 3vw, 1.15rem);
+      line-height: 2;
+      letter-spacing: 0.12em;
+    }
+
+    .manuscript-code {
+      color: rgba(232, 145, 58, 0.72);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 0.08em;
+      height: 1.1em;
+      margin-right: 0.35em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      animation: blink 1.1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .margin-note {
+      position: absolute;
+      left: 0.55rem;
+      top: 50%;
+      transform: translateY(-50%);
+      writing-mode: vertical-rl;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      color: rgba(90, 90, 90, 0.45);
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="brand"><a href="/">tadeku-tools</a></p>
+
+    <div class="stage">
+      <section class="copy">
+        <p class="code" aria-hidden="true">404</p>
+        <h1>この頁は、まだ白紙です。</h1>
+        <p class="lead">お探しの URL は見つかりませんでした。リンク切れか、まだ書かれていない頁かもしれません。</p>
+
+        <div class="path-box">
+          <span class="path-label">PATH</span>
+          <code class="path-value" id="missing-path">—</code>
+        </div>
+
+        <div class="actions">
+          <a class="btn btn-primary" href="/">トップへ戻る</a>
+          <button class="btn btn-secondary" type="button" id="back-btn">前のページへ</button>
+        </div>
+
+        <p class="suggest-title">よく使われるツール</p>
+        <div class="suggest-grid">
+          <a class="suggest-link" href="/genko/">
+            <strong>Genko</strong>
+            <span>原稿用紙エディタ</span>
+          </a>
+          <a class="suggest-link" href="/plain/">
+            <strong>Plain</strong>
+            <span>シンプルなエディタ</span>
+          </a>
+          <a class="suggest-link" href="/shaper/">
+            <strong>Shaper</strong>
+            <span>原稿の整形</span>
+          </a>
+          <a class="suggest-link" href="/aozora-style/">
+            <strong>Aozora Style</strong>
+            <span>青空文庫の読み心地調整</span>
+          </a>
+        </div>
+      </section>
+
+      <aside class="manuscript" aria-hidden="true">
+        <span class="margin-note">白紙</span>
+        <div class="manuscript-inner">
+          <span class="cursor"></span>
+          <span class="manuscript-code">四〇四</span>
+          行が見つかりません
+        </div>
+      </aside>
+    </div>
+
+    <footer>tools.tadeku.net</footer>
+  </div>
+
+  <script>
+    (function () {
+      const pathEl = document.getElementById('missing-path');
+      const path = window.location.pathname + window.location.search + window.location.hash;
+      pathEl.textContent = path || '/';
+
+      document.getElementById('back-btn').addEventListener('click', () => {
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        window.location.href = '/';
+      });
+    })();
+  </script>
+</body>
+</html>
