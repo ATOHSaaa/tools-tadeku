@@ -282,7 +282,6 @@
 
     .cross-banner {
       display: block;
-      margin-top: 1.25rem;
       padding: 1rem 1.1rem;
       background: var(--surface);
       border: 2px solid var(--border);
@@ -291,13 +290,30 @@
       text-align: center;
     }
 
-    .cross-banner-label {
+    .cross-banner-list {
+      margin-top: 1.25rem;
+    }
+
+    .cross-banner-list-label {
       display: block;
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.12em;
       color: var(--accent);
-      margin-bottom: 0.35rem;
+      text-align: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .cross-banner-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 560px) {
+      .cross-banner-grid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     .cross-banner-title {
@@ -359,11 +375,23 @@
         <h3 class="panel-title">復習</h3>
         <ul class="review-list" id="review-list"></ul>
       </section>
-      <a class="cross-banner" href="../bungakushi-quiz/">
-        <span class="cross-banner-label">次はこちら</span>
-        <span class="cross-banner-title">文学史クイズで遊ぶ →</span>
-        <span class="cross-banner-desc">上代から近代まで、全500問の文学史4択クイズ</span>
-      </a>
+      <div class="cross-banner-list" aria-label="診断でも遊ぶ">
+        <span class="cross-banner-list-label">診断でも遊ぶ</span>
+        <div class="cross-banner-grid">
+          <a class="cross-banner" href="../bungo-analysis/">
+            <span class="cross-banner-title">文豪診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、あなたに近い文豪タイプを診断</span>
+          </a>
+          <a class="cross-banner" href="../philosopher-analysis/">
+            <span class="cross-banner-title">哲学者診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、あなたに近い哲学者タイプを診断</span>
+          </a>
+          <a class="cross-banner" href="../bungaku-ha/">
+            <span class="cross-banner-title">文学流派診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、自分に近い文学流派を診断</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
