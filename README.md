@@ -25,6 +25,7 @@
 | `genko/` | Genko — 400字詰め原稿用紙エディタ |
 | `zenhan/` | Zenhan — 全角半角変換ツール |
 | `shaper/` | Shaper — 小説テキスト整形ツール |
+| `proof/` | Proof — ブラウザ上の誤字脱字検出（ONNX Runtime Web） |
 
 ルートの `index.html` から各ツールへのリンク一覧を表示します。`CNAME` でカスタムドメイン `tools.tadeku.net` を指定しています。
 
