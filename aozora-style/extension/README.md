@@ -21,7 +21,7 @@
 
 | 項目 | URL |
 |------|-----|
-| ホームページ | https://tools.tadeku.net/aozora-style/ |
+| ホームページ | https://tools.tadeku.net/aozora-style/（拡張機能の紹介ページ） |
 | プライバシーポリシー | https://tools.tadeku.net/aozora-style/privacy.html |
 
 ### 権限の説明（審査用メモ）
