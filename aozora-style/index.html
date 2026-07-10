@@ -128,23 +128,18 @@
       font-weight: 700;
       letter-spacing: 0.04em;
       text-decoration: none;
-      cursor: not-allowed;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .store-btn:hover {
+      background: var(--ink);
+      color: #fff;
     }
 
     .store-btn svg {
       width: 1.1rem;
       height: 1.1rem;
       flex-shrink: 0;
-    }
-
-    .store-badge {
-      display: inline-block;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      color: var(--ink);
-      background: var(--accent-soft);
-      padding: 0.35rem 0.65rem;
     }
 
     .meta-link {
@@ -266,12 +261,10 @@
           <a href="https://www.aozora.gr.jp/" target="_blank" rel="noopener noreferrer">青空文庫</a>の作品本文を、自分好みの読み心地に整える拡張機能です。縦書き・ゴシック・余白・行間などをスライダーで調整でき、設定は自動保存されます。
         </p>
         <div class="cta-row">
-          <!-- STORE_URL: Chrome Web Store 公開後に href を差し替える -->
-          <span class="store-btn" aria-disabled="true" title="公開準備中">
+          <a class="store-btn" href="https://chromewebstore.google.com/detail/aozora-style/fnjgkknceiebfapialgldmleojipanaf" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
             Chrome Web Store
-          </span>
-          <span class="store-badge">公開準備中</span>
+          </a>
         </div>
         <p class="meta-link" style="margin-top:0.85rem">
           <a href="privacy.html">プライバシーポリシー</a>
@@ -305,7 +298,7 @@
         <span class="step-num">1</span>
         <div>
           <strong>拡張機能をインストール</strong>
-          <p>Chrome Web Store から追加します（現在準備中）。</p>
+          <p><a href="https://chromewebstore.google.com/detail/aozora-style/fnjgkknceiebfapialgldmleojipanaf" target="_blank" rel="noopener noreferrer">Chrome Web Store</a> から追加します。</p>
         </div>
       </div>
       <div class="step">
