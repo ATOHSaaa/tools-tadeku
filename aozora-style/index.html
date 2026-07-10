@@ -246,7 +246,29 @@
       letter-spacing: 0.06em;
       color: var(--ink);
     }
+
+    .share-x {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 2.75rem;
+      padding: 0.6rem 1rem;
+      border: none;
+      font-family: inherit;
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .share-x svg {
+      width: 0.85rem;
+      height: 0.85rem;
+      fill: currentColor;
+    }
   </style>
+  <link rel="stylesheet" href="../shared/share-button.css">
 </head>
 <body>
   <div class="wrap">
@@ -265,6 +287,10 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
             Chrome Web Store
           </a>
+          <button type="button" class="share-x" id="share-x-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Xでシェア
+          </button>
         </div>
         <p class="meta-link" style="margin-top:0.85rem">
           <a href="privacy.html">プライバシーポリシー</a>
@@ -323,5 +349,13 @@
 
     <footer>tools.tadeku.net</footer>
   </div>
+  <script>
+    const SHARE_URL = 'https://tools.tadeku.net/aozora-style/';
+    document.getElementById('share-x-btn').addEventListener('click', () => {
+      const text = 'Aozora Style — 青空文庫の読み心地をスライダーで調整するChrome拡張\n' + SHARE_URL + ' @tadeku_net #TadekuTools';
+      const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+      window.open(url, '_blank', 'noopener,noreferrer,width=550,height=420');
+    });
+  </script>
 </body>
 </html>
