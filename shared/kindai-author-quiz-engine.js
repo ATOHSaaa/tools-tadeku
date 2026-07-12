@@ -28,6 +28,10 @@
     return shuffle(QUESTIONS).slice(0, count).map(shuffleChoices);
   }
 
+  function startMaxRound() {
+    return startRound(QUESTIONS.length);
+  }
+
   function isCorrect(question, choiceIndex) {
     return choiceIndex === question.correct;
   }
@@ -55,6 +59,7 @@
 
   window.KindaiAuthorQuizEngine = {
     startRound,
+    startMaxRound,
     isCorrect,
     scoreRound,
     resolveGrade,

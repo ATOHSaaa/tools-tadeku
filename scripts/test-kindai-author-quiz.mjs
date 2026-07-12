@@ -37,6 +37,9 @@ if (result.correct !== 10) issues.push(`scoreRound: ${result.correct}/10`);
 const grade = resolveGrade(100);
 if (!grade.name) issues.push('resolveGrade failed');
 
+const maxRound = startRound(100);
+if (maxRound.length !== 100) issues.push(`startRound(100): ${maxRound.length}問（100必要）`);
+
 if (issues.length) {
   console.error('FAILED');
   issues.forEach((msg) => console.error(' -', msg));
