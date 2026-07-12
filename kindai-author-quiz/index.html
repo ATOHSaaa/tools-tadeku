@@ -333,6 +333,7 @@
 
     .view[hidden] { display: none !important; }
   </style>
+  <link rel="stylesheet" href="../shared/quiz-promo.css">
   <link rel="stylesheet" href="../shared/share-button.css">
 </head>
 <body>
@@ -397,6 +398,7 @@
 
   <script src="../shared/kindai-author-quiz-data.js"></script>
   <script src="../shared/kindai-author-quiz-engine.js"></script>
+  <script src="../shared/quiz-promo.js"></script>
   <script>
     const SHARE_URL = 'https://tools.tadeku.net/kindai-author-quiz/';
     const ROUND_SIZE = window.KindaiAuthorQuizData.ROUND_SIZE;
@@ -437,6 +439,7 @@
       els.viewStart.hidden = name !== 'start';
       els.viewQuiz.hidden = name !== 'quiz';
       els.viewResult.hidden = name !== 'result';
+      window.QuizPromo?.onViewChange(name);
     }
 
     function clearAdvanceTimer() {

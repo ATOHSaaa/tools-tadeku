@@ -362,6 +362,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="../shared/quiz-promo.css">
   <link rel="stylesheet" href="../shared/share-button.css">
 </head>
 <body>
@@ -418,6 +419,7 @@
 
   <script src="../shared/dazai-work-quiz-data.js"></script>
   <script src="../shared/dazai-work-quiz-engine.js"></script>
+  <script src="../shared/quiz-promo.js"></script>
   <script>
     const SHARE_URL = 'https://tools.tadeku.net/dazai-work/';
     const QUESTIONS = window.DazaiWorkQuizData.QUESTIONS;
@@ -453,6 +455,7 @@
       els.viewStart.hidden = name !== 'start';
       els.viewQuiz.hidden = name !== 'quiz';
       els.viewResult.hidden = name !== 'result';
+      window.QuizPromo?.onViewChange(name);
     }
 
     function resetQuiz() {

@@ -375,6 +375,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="../shared/quiz-promo.css">
   <link rel="stylesheet" href="../shared/share-button.css">
 </head>
 <body>
@@ -440,6 +441,7 @@
 
   <script src="../shared/philosopher-quiz-data.js"></script>
   <script src="../shared/philosopher-quiz-engine.js"></script>
+  <script src="../shared/quiz-promo.js"></script>
   <script>
     const SHARE_URL = 'https://tools.tadeku.net/philosopher-analysis/';
     const AMAZON_ASSOCIATE_TAG = 'philosopher-analysis-22';
@@ -476,6 +478,7 @@
       els.viewStart.hidden = name !== 'start';
       els.viewQuiz.hidden = name !== 'quiz';
       els.viewResult.hidden = name !== 'result';
+      window.QuizPromo?.onViewChange(name);
     }
 
     function resetQuiz() {
