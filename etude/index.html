@@ -15,7 +15,7 @@
   <title>Etude — 即興小説のお題 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/site-link.css">
   <style>
     :root {
@@ -54,31 +54,22 @@
       margin-bottom: 2.5rem;
     }
 
-    .brand {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+    .prompt-header .page-title {
       margin-bottom: 1.25rem;
     }
 
-    .slot-range {
+    .editor-header .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .slot-prompt-label {
       font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
-
-    .countdown {
-      font-size: clamp(2.5rem, 10vw, 4rem);
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .countdown.is-low {
-      color: var(--accent);
+      margin-bottom: 1rem;
     }
 
     .prompt-card {
@@ -100,47 +91,224 @@
       font-size: clamp(1.35rem, 4.5vw, 1.85rem);
       font-weight: 900;
       line-height: 1.45;
-      letter-spacing: -0.02em;
-    }
-
-    .completed-work {
-      margin-bottom: 2rem;
-    }
-
-    .completed-work[hidden] {
-      display: none !important;
-    }
-
-    .completed-prompt {
-      font-size: 0.88rem;
-      font-weight: 700;
-      line-height: 1.5;
-      margin-bottom: 1rem;
-    }
-
-    .completed-body {
-      font-size: 0.95rem;
-      line-height: 2;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .completed-meta {
-      margin-top: 1rem;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--muted);
     }
 
     .prompt-actions {
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 0.65rem;
     }
 
     .prompt-actions .btn[hidden] {
       display: none !important;
+    }
+
+    .tool-about {
+      margin-top: 2.25rem;
+      padding: 0 0.25rem;
+    }
+
+    .tool-about-list {
+      list-style: none;
+      font-size: 0.98rem;
+      line-height: 1.9;
+      color: var(--ink);
+    }
+
+    .tool-about-list li {
+      position: relative;
+      padding-left: 1.25rem;
+    }
+
+    .tool-about-list li::before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .tool-about-list code {
+      font-size: 0.95em;
+      font-family: inherit;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .history-section {
+      margin-top: 2.5rem;
+      padding: 0 0.25rem;
+    }
+
+    .history-section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .history-section-titles {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-export-all-btn {
+      flex-shrink: 0;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.72rem;
+    }
+
+    .history-section[hidden] {
+      display: none !important;
+    }
+
+    .history-heading {
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .history-notice {
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--ink);
+      margin-bottom: 0;
+    }
+
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.85rem 0.9rem;
+      cursor: pointer;
+    }
+
+    .history-item > div:first-child {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-prompt {
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 0.35rem;
+    }
+
+    .history-meta {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .history-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .history-actions .btn {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.72rem;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .reader-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 200;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 2rem 1rem;
+    }
+
+    .reader-backdrop.is-open {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .reader-panel {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem 1.35rem;
+    }
+
+    .reader-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .reader-header-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .reader-prompt {
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.5;
+      margin-bottom: 0.35rem;
+    }
+
+    .reader-meta {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .reader-body {
+      font-size: 0.95rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 1.5rem;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .reader-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .reader-actions .btn {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.72rem;
     }
 
     .btn {
@@ -298,11 +466,22 @@
       padding: 1.5rem 1.35rem;
     }
 
+    .modal.has-image-preview {
+      display: flex;
+      flex-direction: column;
+      max-width: 520px;
+      width: min(100%, 520px);
+      height: min(92vh, 52rem);
+      max-height: min(92vh, 52rem);
+      overflow: hidden;
+    }
+
     .modal-title {
       font-size: 1rem;
       font-weight: 900;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       margin-bottom: 1.25rem;
+      flex-shrink: 0;
     }
 
     .image-export {
@@ -310,7 +489,8 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 0.45rem 0.55rem;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
+      flex-shrink: 0;
     }
 
     .image-export-label {
@@ -321,34 +501,171 @@
       flex-shrink: 0;
     }
 
-    .split-btns {
+    .orientation-btns {
       display: flex;
       flex: 1;
       gap: 0.35rem;
       min-width: 8rem;
     }
 
-    .split-btns .btn {
+    .lines-slider-wrap {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 10rem;
+    }
+
+    .lines-slider-wrap input[type="range"] {
+      flex: 1;
+      width: 100%;
+      accent-color: var(--ink);
+    }
+
+    .lines-slider-value {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--ink);
+      min-width: 3.2rem;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .orientation-btns .btn {
       flex: 1;
       padding: 0.5rem 0.25rem;
       font-size: 0.75rem;
     }
 
-    .split-btns .btn.is-active {
+    .orientation-btns .btn.is-active {
       background: var(--ink);
       color: #fff;
     }
 
-    .image-export .btn-save {
+    .share-primary-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
       flex-shrink: 0;
-      padding: 0.5rem 0.85rem;
-      font-size: 0.75rem;
+    }
+
+    .share-primary-actions .btn {
+      width: 100%;
+      max-width: 18rem;
+      padding: 0.7rem 0.85rem;
+      font-size: 0.82rem;
+      justify-content: center;
+    }
+
+    .share-primary-actions .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .share-primary-actions .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .image-preview {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      padding: 0.85rem 0.75rem 0.9rem;
+    }
+
+    .image-preview-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
+      flex-shrink: 0;
+    }
+
+    .image-preview-summary {
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.6;
+      color: var(--ink);
+      margin-bottom: 0.75rem;
+      min-height: 3.2em;
+      flex-shrink: 0;
+    }
+
+    .image-preview-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 0.15rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .image-preview-item {
+      flex: 0 0 auto;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .image-preview-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.45rem 0.65rem;
+      border-bottom: 2px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .image-preview-item img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: none;
+      margin: 0;
+      background: #f6f4ef;
+      vertical-align: top;
+    }
+
+    .image-preview-item.is-vertical {
+      width: min(100%, 16rem);
+      margin-inline: auto;
+    }
+
+    .image-preview-item.is-vertical img {
+      width: 100%;
+      height: auto;
+    }
+
+    .image-preview-empty,
+    .image-preview-loading {
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--muted);
     }
 
     .modal-actions {
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 0.55rem;
+      flex-shrink: 0;
     }
 
     .btn-skip {
@@ -384,33 +701,41 @@
 <body>
   <div class="prompt-view" id="prompt-view">
     <header class="prompt-header">
-      <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Etude</div>
-      <p class="slot-range" id="slot-range"></p>
-      <p class="countdown" id="countdown" aria-live="polite"></p>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Etude</h1>
     </header>
     <div class="prompt-card">
-      <p class="prompt-label">お題</p>
+      <p class="slot-prompt-label" id="slot-prompt-label"></p>
       <p class="prompt-text" id="prompt-text"></p>
     </div>
     <div class="prompt-actions">
       <button type="button" class="btn btn-primary" id="start-btn">書き始める</button>
       <button type="button" class="btn btn-primary" id="resume-btn" hidden>続きを書く</button>
     </div>
-    <div class="completed-work" id="completed-work" hidden>
-      <div class="prompt-card">
-        <p class="prompt-label">作品</p>
-        <p class="completed-prompt" id="completed-prompt"></p>
-        <div class="completed-body" id="completed-body"></div>
-        <p class="completed-meta" id="completed-meta"></p>
-      </div>
+    <div class="tool-about">
+      <ul class="tool-about-list">
+        <li>「書き始める」を押してから60分以内に、即興小説を書き上げます。</li>
+        <li>1時間ごとにお題が決まります。同じ時間帯なら、誰もが同じお題で書きます。</li>
+        <li>原稿はブラウザに自動保存されます。途中で止めても、続きから再開できます。</li>
+        <li>書き終わったら Twitter でシェアできます（<code>#etudeワンライ</code>）。</li>
+      </ul>
     </div>
+    <section class="history-section" id="history-section" hidden>
+      <div class="history-section-header">
+        <div class="history-section-titles">
+          <h2 class="history-heading">書き終わった作品</h2>
+          <p class="history-notice">作品はブラウザ内に保存されており、外部サーバーには送信されていません。</p>
+        </div>
+        <button type="button" class="btn history-export-all-btn" id="history-export-all-btn">一括書き出し（.txt）</button>
+      </div>
+      <ul class="history-list" id="history-list"></ul>
+    </section>
   </div>
 
   <div class="editor-view" id="editor-view">
     <header class="editor-header">
       <div class="editor-header-stack">
         <div class="editor-header-top">
-          <div class="brand"><a class="brand-home" href="https://tools.tadeku.net/">tadeku-tools</a><span class="brand-sep"> / </span>Etude</div>
+          <div class="brand"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Etude</div>
           <div class="stats">
             <span>残り <strong id="editor-countdown">00:00</strong></span>
             <span>文字数 <strong id="char-count">0</strong></span>
@@ -429,6 +754,23 @@
     <div class="locked-banner" id="locked-banner">制限時間が終了しました</div>
   </div>
 
+  <div class="reader-backdrop" id="reader-backdrop">
+    <div class="reader-panel">
+      <div class="reader-header">
+        <div class="reader-header-main">
+          <p class="reader-prompt" id="reader-prompt"></p>
+          <p class="reader-meta" id="reader-meta"></p>
+        </div>
+        <div class="reader-actions">
+          <button type="button" class="btn" id="reader-export-btn">画像を保存</button>
+          <button type="button" class="btn btn-danger" id="reader-delete-btn">削除</button>
+          <button type="button" class="btn btn-skip" id="reader-close-btn">閉じる</button>
+        </div>
+      </div>
+      <div class="reader-body" id="reader-body"></div>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="confirm-modal" hidden>
     <div class="modal" role="dialog" aria-labelledby="confirm-modal-title">
       <h2 class="modal-title" id="confirm-modal-title">本当に終了しますか？</h2>
@@ -440,27 +782,41 @@
   </div>
 
   <div class="modal-backdrop" id="share-modal" hidden>
-    <div class="modal" role="dialog" aria-labelledby="share-modal-title">
+    <div class="modal has-image-preview" role="dialog" aria-labelledby="share-modal-title">
       <h2 class="modal-title" id="share-modal-title">書き終わる</h2>
       <div class="image-export">
-        <span class="image-export-label">画像の分割</span>
-        <div class="split-btns" id="split-btns">
-          <button type="button" class="btn is-active" data-splits="1">1枚</button>
-          <button type="button" class="btn" data-splits="2">2枚</button>
-          <button type="button" class="btn" data-splits="3">3枚</button>
-          <button type="button" class="btn" data-splits="4">4枚</button>
+        <span class="image-export-label">向き</span>
+        <div class="orientation-btns" id="orientation-btns">
+          <button type="button" class="btn is-active" data-orientation="horizontal">横書き</button>
+          <button type="button" class="btn" data-orientation="vertical">縦書き</button>
         </div>
-        <button type="button" class="btn btn-save" id="download-images-btn">画像を保存</button>
+      </div>
+      <div class="image-export">
+        <span class="image-export-label">1枚あたりの行数</span>
+        <div class="lines-slider-wrap" id="lines-slider-wrap">
+          <input type="range" id="lines-per-page-slider" min="15" max="48" value="27" step="1">
+          <span class="lines-slider-value" id="lines-per-page-value">27行</span>
+        </div>
+      </div>
+      <div class="image-preview" id="image-preview">
+        <p class="image-preview-heading">プレビュー</p>
+        <p class="image-preview-summary" id="image-preview-summary">プレビューを読み込み中…</p>
+        <div class="image-preview-grid" id="image-preview-grid"></div>
+      </div>
+      <div class="share-primary-actions">
+        <button type="button" class="btn" id="download-images-btn">画像を保存</button>
+        <button type="button" class="btn btn-primary" id="share-finish-btn">Twitterにシェア</button>
       </div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-primary" id="share-finish-btn">Twitterにシェア</button>
         <button type="button" class="btn btn-skip" id="close-share-btn">閉じる</button>
       </div>
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
-  <script src="../shared/etude-engine.js"></script>
+  <script src="../shared/genko-render.js?v=vert13"></script>
+  <script src="../shared/etude-engine.js?v=preview16"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -468,15 +824,13 @@
     const els = {
       promptView: document.getElementById('prompt-view'),
       editorView: document.getElementById('editor-view'),
-      slotRange: document.getElementById('slot-range'),
-      countdown: document.getElementById('countdown'),
+      slotPromptLabel: document.getElementById('slot-prompt-label'),
       promptText: document.getElementById('prompt-text'),
       startBtn: document.getElementById('start-btn'),
       resumeBtn: document.getElementById('resume-btn'),
-      completedWork: document.getElementById('completed-work'),
-      completedPrompt: document.getElementById('completed-prompt'),
-      completedBody: document.getElementById('completed-body'),
-      completedMeta: document.getElementById('completed-meta'),
+      historySection: document.getElementById('history-section'),
+      historyList: document.getElementById('history-list'),
+      historyExportAllBtn: document.getElementById('history-export-all-btn'),
       editorCountdown: document.getElementById('editor-countdown'),
       charCount: document.getElementById('char-count'),
       editorPrompt: document.getElementById('editor-prompt'),
@@ -487,16 +841,186 @@
       confirmFinishBtn: document.getElementById('confirm-finish-btn'),
       cancelFinishBtn: document.getElementById('cancel-finish-btn'),
       shareModal: document.getElementById('share-modal'),
-      splitBtns: document.getElementById('split-btns'),
+      orientationBtns: document.getElementById('orientation-btns'),
+      linesPerPageSlider: document.getElementById('lines-per-page-slider'),
+      linesPerPageValue: document.getElementById('lines-per-page-value'),
       downloadImagesBtn: document.getElementById('download-images-btn'),
+      imagePreviewSummary: document.getElementById('image-preview-summary'),
+      imagePreviewGrid: document.getElementById('image-preview-grid'),
       shareFinishBtn: document.getElementById('share-finish-btn'),
       closeShareBtn: document.getElementById('close-share-btn'),
+      readerBackdrop: document.getElementById('reader-backdrop'),
+      readerPrompt: document.getElementById('reader-prompt'),
+      readerMeta: document.getElementById('reader-meta'),
+      readerBody: document.getElementById('reader-body'),
+      readerExportBtn: document.getElementById('reader-export-btn'),
+      readerDeleteBtn: document.getElementById('reader-delete-btn'),
+      readerCloseBtn: document.getElementById('reader-close-btn'),
     };
 
     let session = null;
     let saveTimer = null;
     let tickTimer = null;
-    let imageSplits = 1;
+    let imageLinesPerPage = 27;
+    let imageOrientation = 'horizontal';
+    let imagePreviewToken = 0;
+    let imagePreviewTimer = null;
+    let exportWork = null;
+    let readerWork = null;
+
+    function openReader(work) {
+      readerWork = work;
+      els.readerPrompt.textContent = 'お題：' + work.prompt;
+      els.readerMeta.textContent = work.slotRange + ' · ' + work.charCount + '字';
+      els.readerBody.textContent = work.body;
+      els.readerBackdrop.classList.add('is-open');
+    }
+
+    function closeReader() {
+      els.readerBackdrop.classList.remove('is-open');
+      readerWork = null;
+    }
+
+    function orientationLabel() {
+      return imageOrientation === 'vertical' ? '縦書き' : '横書き';
+    }
+
+    function scheduleImagePreview(delayMs) {
+      clearTimeout(imagePreviewTimer);
+      imagePreviewTimer = setTimeout(() => {
+        imagePreviewTimer = null;
+        updateImagePreview();
+      }, delayMs == null ? 0 : delayMs);
+    }
+
+    function updateLinesPerPageLabel() {
+      els.linesPerPageValue.textContent = imageLinesPerPage + '行';
+    }
+
+    function configureLinesPerPageSlider() {
+      const range = typeof E.getLinesPerPageRange === 'function'
+        ? E.getLinesPerPageRange(imageOrientation)
+        : { min: 10, max: 32, step: 1 };
+      els.linesPerPageSlider.min = String(range.min);
+      els.linesPerPageSlider.max = String(range.max);
+      els.linesPerPageSlider.step = String(range.step || 1);
+    }
+
+    function setImageLinesPerPage(lines) {
+      const range = typeof E.getLinesPerPageRange === 'function'
+        ? E.getLinesPerPageRange(imageOrientation)
+        : { min: 10, max: 32 };
+      imageLinesPerPage = Math.min(range.max, Math.max(range.min, Number(lines) || range.min));
+      els.linesPerPageSlider.value = String(imageLinesPerPage);
+      updateLinesPerPageLabel();
+    }
+
+    function applyDefaultImageLinesPerPage() {
+      const work = getExportWork();
+      const charCount = work && work.body ? work.body.trim().length : 0;
+      if (typeof E.suggestLinesPerPage === 'function') {
+        setImageLinesPerPage(E.suggestLinesPerPage(charCount, imageOrientation));
+      } else {
+        setImageLinesPerPage(imageOrientation === 'vertical' ? 18 : 27);
+      }
+    }
+
+    function getExportWork() {
+      if (exportWork && exportWork.body && exportWork.body.trim()) {
+        return exportWork;
+      }
+      if (session && session.lastWork && session.lastWork.body && session.lastWork.body.trim()) {
+        return {
+          slotKey: session.slotKey,
+          prompt: session.lastWork.prompt,
+          body: session.lastWork.body,
+          charCount: session.lastWork.charCount,
+        };
+      }
+      return null;
+    }
+
+    function setExportWorkFromSession() {
+      if (session && session.lastWork && session.lastWork.body) {
+        exportWork = {
+          slotKey: session.slotKey,
+          prompt: session.lastWork.prompt,
+          body: session.lastWork.body,
+          charCount: session.lastWork.charCount,
+        };
+      } else {
+        exportWork = null;
+      }
+    }
+
+    function setImagePreviewMessage(message) {
+      els.imagePreviewSummary.textContent = message;
+      els.imagePreviewGrid.innerHTML = '';
+    }
+
+    async function updateImagePreview() {
+      const token = ++imagePreviewToken;
+
+      try {
+        if (typeof E.splitByLinesPerPage !== 'function' || typeof E.renderTextImages !== 'function') {
+          setImagePreviewMessage('プレビュー機能を読み込めませんでした。ページを再読み込みしてください。');
+          return;
+        }
+
+        const work = getExportWork();
+        if (!work || !work.body.trim()) {
+          setImagePreviewMessage('保存する本文がありません。');
+          return;
+        }
+
+        const parts = E.splitByLinesPerPage(work.body, imageLinesPerPage, imageOrientation);
+        els.imagePreviewSummary.textContent =
+          work.body.trim().length + '字を' + parts.length + '枚の' + orientationLabel() +
+          '画像に分割（1枚あたり' + imageLinesPerPage + '行）';
+        els.imagePreviewGrid.innerHTML = '';
+        const loading = document.createElement('p');
+        loading.className = 'image-preview-loading';
+        loading.textContent = 'プレビューを生成しています…';
+        els.imagePreviewGrid.appendChild(loading);
+
+        const canvases = await E.renderTextImages({
+          prompt: work.prompt,
+          body: work.body,
+          linesPerPage: imageLinesPerPage,
+          orientation: imageOrientation,
+        });
+
+        if (token !== imagePreviewToken) return;
+
+        els.imagePreviewGrid.innerHTML = '';
+        canvases.forEach((canvas, index) => {
+          const partText = parts[index] || '';
+          const item = document.createElement('div');
+          item.className = 'image-preview-item' + (imageOrientation === 'vertical' ? ' is-vertical' : '');
+
+          const label = document.createElement('div');
+          label.className = 'image-preview-label';
+          const labelIndex = document.createElement('span');
+          labelIndex.textContent = (index + 1) + ' / ' + canvases.length;
+          const labelCount = document.createElement('span');
+          labelCount.textContent = partText.length + '字';
+          label.appendChild(labelIndex);
+          label.appendChild(labelCount);
+
+          const img = document.createElement('img');
+          img.alt = (index + 1) + '枚目のプレビュー';
+          img.src = canvas.toDataURL('image/png');
+
+          item.appendChild(label);
+          item.appendChild(img);
+          els.imagePreviewGrid.appendChild(item);
+        });
+      } catch (err) {
+        if (token !== imagePreviewToken) return;
+        console.error(err);
+        setImagePreviewMessage('プレビューの生成に失敗しました。ページを再読み込みして再度お試しください。');
+      }
+    }
 
     function now() {
       return new Date();
@@ -537,19 +1061,80 @@
       setBtnShown(els.resumeBtn, timerActive);
     }
 
-    function renderCompletedWork() {
-      const work = session && session.lastWork;
-      if (!work || !work.body) {
-        els.completedWork.hidden = true;
+    function renderHistoryList() {
+      if (typeof E.listFinishedWorks !== 'function') {
+        els.historySection.hidden = true;
         return;
       }
-      els.completedWork.hidden = false;
-      els.completedPrompt.textContent = 'お題：' + work.prompt;
-      els.completedBody.textContent = work.body;
-      const remain = work.stoppedRemainingMs != null
-        ? E.formatCountdown(work.stoppedRemainingMs)
-        : '';
-      els.completedMeta.textContent = work.charCount + '字' + (remain ? ' · 残り ' + remain : '');
+      E.listFinishedWorks().then((works) => {
+        if (!works.length) {
+          els.historySection.hidden = true;
+          els.historyList.innerHTML = '';
+          return;
+        }
+        els.historySection.hidden = false;
+        els.historyExportAllBtn.disabled = false;
+        els.historyList.innerHTML = '';
+        works.forEach((work) => {
+          const li = document.createElement('li');
+          li.className = 'history-item';
+          li.addEventListener('click', () => openReader(work));
+
+          const main = document.createElement('div');
+          const prompt = document.createElement('p');
+          prompt.className = 'history-prompt';
+          prompt.textContent = 'お題：' + work.prompt;
+
+          const meta = document.createElement('p');
+          meta.className = 'history-meta';
+          meta.textContent = work.slotRange + ' · ' + work.charCount + '字';
+
+          main.append(prompt, meta);
+
+          const actions = document.createElement('div');
+          actions.className = 'history-actions';
+
+          const readBtn = document.createElement('button');
+          readBtn.type = 'button';
+          readBtn.className = 'btn';
+          readBtn.textContent = '読む';
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'btn btn-danger';
+          deleteBtn.textContent = '削除';
+          deleteBtn.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            if (!confirm('この作品を削除しますか？')) return;
+            try {
+              await E.deleteFinishedWork(work.slotKey);
+              if (readerWork && readerWork.slotKey === work.slotKey) closeReader();
+              if (exportWork && exportWork.slotKey === work.slotKey) {
+                exportWork = null;
+                closeShareModal();
+              }
+              if (session && session.slotKey === work.slotKey) {
+                session.lastWork = null;
+                session.finishedAt = null;
+                session.stoppedRemainingMs = null;
+                session.body = '';
+                session.startedAt = null;
+              }
+              renderHistoryList();
+            } catch (err) {
+              console.error(err);
+              alert('削除に失敗しました。');
+            }
+          });
+
+          actions.append(readBtn, deleteBtn);
+          li.append(main, actions);
+          els.historyList.appendChild(li);
+        });
+      }).catch((err) => {
+        console.error(err);
+        els.historySection.hidden = true;
+      });
     }
 
     function resumeWriting() {
@@ -559,11 +1144,8 @@
     function updateTimers() {
       const remaining = E.getRemainingMs(now(), session);
       const text = E.formatCountdown(remaining);
-      els.countdown.textContent = text;
       els.editorCountdown.textContent = text;
-      const ticking = E.isTimerActive(now(), session);
-      els.countdown.classList.toggle('is-low', ticking && remaining > 0 && remaining < 5 * 60 * 1000);
-      els.slotRange.textContent = E.formatSlotRange(now());
+      els.slotPromptLabel.textContent = E.formatSlotRange(now());
 
       if (!document.body.classList.contains('is-editor')) {
         updatePromptActions();
@@ -589,7 +1171,7 @@
     function showPrompt() {
       document.body.classList.remove('is-editor');
       els.promptText.textContent = session.prompt;
-      renderCompletedWork();
+      renderHistoryList();
       updatePromptActions();
       updateTimers();
     }
@@ -604,6 +1186,25 @@
       el.hidden = true;
     }
 
+    function bindBackdropDismiss(backdrop, onDismiss) {
+      let downOnBackdrop = false;
+
+      backdrop.addEventListener('pointerdown', (ev) => {
+        if (ev.button !== 0) return;
+        downOnBackdrop = ev.target === backdrop;
+      });
+
+      backdrop.addEventListener('pointerup', (ev) => {
+        if (ev.button !== 0) return;
+        if (downOnBackdrop && ev.target === backdrop) onDismiss();
+        downOnBackdrop = false;
+      });
+
+      backdrop.addEventListener('pointercancel', () => {
+        downOnBackdrop = false;
+      });
+    }
+
     function openConfirmModal() {
       openModal(els.confirmModal);
     }
@@ -613,12 +1214,41 @@
     }
 
     function openShareModal() {
+      if (!exportWork) setExportWorkFromSession();
+      configureLinesPerPageSlider();
+      applyDefaultImageLinesPerPage();
       openModal(els.shareModal);
+      scheduleImagePreview(0);
     }
 
     function closeShareModal() {
+      clearTimeout(imagePreviewTimer);
+      imagePreviewTimer = null;
+      imagePreviewToken += 1;
+      exportWork = null;
       closeModal(els.shareModal);
     }
+
+    function closeTopOverlay() {
+      if (els.readerBackdrop.classList.contains('is-open')) {
+        closeReader();
+        return true;
+      }
+      if (els.shareModal.classList.contains('is-open')) {
+        closeShareModal();
+        return true;
+      }
+      if (els.confirmModal.classList.contains('is-open')) {
+        closeConfirmModal();
+        return true;
+      }
+      return false;
+    }
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Escape') return;
+      if (closeTopOverlay()) ev.preventDefault();
+    });
 
     async function completeFinish() {
       const body = els.editor.value;
@@ -628,6 +1258,12 @@
       session.finishedAt = Date.now();
       session.lastWork = E.buildLastWork(session, body, session.finishedAt, stoppedRemainingMs);
       await E.putSession(session);
+      exportWork = {
+        slotKey: session.slotKey,
+        prompt: session.lastWork.prompt,
+        body: session.lastWork.body,
+        charCount: session.lastWork.charCount,
+      };
       closeConfirmModal();
       showPrompt();
       openShareModal();
@@ -662,6 +1298,21 @@
     els.startBtn.addEventListener('click', () => startWriting({ share: false }));
     els.resumeBtn.addEventListener('click', () => resumeWriting());
 
+    els.historyExportAllBtn.addEventListener('click', async () => {
+      if (typeof E.downloadFinishedWorksTxtZip !== 'function') return;
+      if (!confirm('書き終わった作品を一括で書き出しますか？')) return;
+      els.historyExportAllBtn.disabled = true;
+      try {
+        const count = await E.downloadFinishedWorksTxtZip();
+        if (!count) alert('書き終わった作品がありません。');
+      } catch (err) {
+        console.error(err);
+        alert('書き出しに失敗しました。');
+      } finally {
+        els.historyExportAllBtn.disabled = false;
+      }
+    });
+
     els.shareStartBtn.addEventListener('click', () => {
       E.openTwitterIntent(E.buildStartShareText(session.prompt));
     });
@@ -678,32 +1329,73 @@
     els.cancelFinishBtn.addEventListener('click', closeConfirmModal);
 
     els.shareFinishBtn.addEventListener('click', () => {
-      const work = session.lastWork;
+      const work = getExportWork();
       if (!work) return;
       E.openTwitterIntent(E.buildFinishShareText(work.prompt, work.charCount));
     });
 
     els.closeShareBtn.addEventListener('click', closeShareModal);
 
-    els.splitBtns.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('[data-splits]');
+    els.readerCloseBtn.addEventListener('click', closeReader);
+    bindBackdropDismiss(els.readerBackdrop, closeReader);
+    els.readerExportBtn.addEventListener('click', () => {
+      if (!readerWork) return;
+      exportWork = readerWork;
+      closeReader();
+      openShareModal();
+    });
+    els.readerDeleteBtn.addEventListener('click', async () => {
+      if (!readerWork) return;
+      if (!confirm('この作品を削除しますか？')) return;
+      try {
+        await E.deleteFinishedWork(readerWork.slotKey);
+        if (exportWork && exportWork.slotKey === readerWork.slotKey) {
+          exportWork = null;
+          closeShareModal();
+        }
+        if (session && session.slotKey === readerWork.slotKey) {
+          session.lastWork = null;
+          session.finishedAt = null;
+          session.stoppedRemainingMs = null;
+          session.body = '';
+          session.startedAt = null;
+        }
+        closeReader();
+        renderHistoryList();
+      } catch (err) {
+        console.error(err);
+        alert('削除に失敗しました。');
+      }
+    });
+
+    els.orientationBtns.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-orientation]');
       if (!btn) return;
-      imageSplits = Number(btn.dataset.splits) || 1;
-      els.splitBtns.querySelectorAll('.btn').forEach((b) => {
+      imageOrientation = btn.dataset.orientation === 'vertical' ? 'vertical' : 'horizontal';
+      els.orientationBtns.querySelectorAll('.btn').forEach((b) => {
         b.classList.toggle('is-active', b === btn);
       });
+      configureLinesPerPageSlider();
+      applyDefaultImageLinesPerPage();
+      scheduleImagePreview(0);
+    });
+
+    els.linesPerPageSlider.addEventListener('input', () => {
+      setImageLinesPerPage(els.linesPerPageSlider.value);
+      scheduleImagePreview(180);
     });
 
     els.downloadImagesBtn.addEventListener('click', async () => {
-      const work = session.lastWork;
+      const work = getExportWork();
       if (!work || !work.body.trim()) return;
       els.downloadImagesBtn.disabled = true;
       try {
         await E.downloadTextImages({
           prompt: work.prompt,
           body: work.body,
-          splits: imageSplits,
-          slotKey: session.slotKey,
+          linesPerPage: imageLinesPerPage,
+          slotKey: work.slotKey,
+          orientation: imageOrientation,
         });
       } finally {
         els.downloadImagesBtn.disabled = false;

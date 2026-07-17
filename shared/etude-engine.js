@@ -135,6 +135,44 @@
     });
   }
 
+  function slotKeyToDate(slotKey) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2})$/.exec(slotKey || '');
+    if (!m) return new Date(0);
+    return new Date(+m[1], +m[2] - 1, +m[3], +m[4], 0, 0, 0);
+  }
+
+  async function listAllSessions() {
+    const db = await openDb();
+    const tx = db.transaction(STORE, 'readonly');
+    return dbRequest(tx.objectStore(STORE).getAll());
+  }
+
+  async function listFinishedWorks() {
+    const all = await listAllSessions();
+    return all
+      .filter((s) => s.finishedAt && s.lastWork && String(s.lastWork.body || '').trim())
+      .map((s) => ({
+        slotKey: s.slotKey,
+        prompt: s.lastWork.prompt || s.prompt,
+        body: s.lastWork.body,
+        charCount: s.lastWork.charCount ?? String(s.lastWork.body).length,
+        finishedAt: s.lastWork.finishedAt ?? s.finishedAt,
+        slotRange: formatSlotRange(slotKeyToDate(s.slotKey)),
+      }))
+      .sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
+  }
+
+  async function deleteFinishedWork(slotKey) {
+    const session = await getSession(slotKey);
+    if (!session) return;
+    session.finishedAt = null;
+    session.stoppedRemainingMs = null;
+    session.lastWork = null;
+    session.body = '';
+    session.startedAt = null;
+    await putSession(session);
+  }
+
   async function findActiveSession(date) {
     const db = await openDb();
     const tx = db.transaction(STORE, 'readonly');
@@ -193,11 +231,11 @@
   }
 
   function buildStartShareText(prompt) {
-    return 'お題「' + prompt + '」で書き始めました ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net #TadekuTools';
+    return 'お題「' + prompt + '」で書き始めました！ ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net #TadekuTools';
   }
 
   function buildFinishShareText(prompt, charCount) {
-    return 'お題「' + prompt + '」\n' + charCount + '字 ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net #TadekuTools';
+    return 'お題「' + prompt + '」で書き終わりました！ ' + HASHTAG + '\n' + SITE_URL + ' @tadeku_net #TadekuTools';
   }
 
   function openTwitterIntent(text) {
@@ -205,36 +243,57 @@
     global.open(url, '_blank', 'noopener,noreferrer,width=550,height=520');
   }
 
-  function splitText(text, parts) {
-    const n = Math.max(1, Math.min(4, parts | 0));
-    const trimmed = text.trim();
+  function splitHorizontalByLines(text, linesPerPage) {
+    const trimmed = String(text || '').trim();
     if (!trimmed) return [''];
-    if (n === 1) return [trimmed];
 
-    const chars = [...trimmed];
-    const chunkSize = Math.ceil(chars.length / n);
-    const result = [];
+    const W = 1200;
+    const pad = 64;
+    const fs = 32;
+    const innerW = W - pad * 2;
+    const measure = document.createElement('canvas').getContext('2d');
+    measure.font = fs + 'px "Noto Sans JP", sans-serif';
+    const lines = wrapLines(measure, trimmed, innerW);
+    const perPage = Math.max(1, linesPerPage | 0);
+    const parts = [];
 
-    for (let i = 0; i < n; i++) {
-      const start = i * chunkSize;
-      if (start >= chars.length) break;
-      let end = Math.min(chars.length, (i + 1) * chunkSize);
-      if (i < n - 1 && end < chars.length) {
-        const slice = chars.slice(start, end).join('');
-        const breakAt = Math.max(
-          slice.lastIndexOf('\n'),
-          slice.lastIndexOf('。'),
-          slice.lastIndexOf('！'),
-          slice.lastIndexOf('？'),
-        );
-        if (breakAt > slice.length * 0.4) {
-          end = start + breakAt + 1;
-        }
-      }
-      result.push(chars.slice(start, end).join('').trim());
+    for (let i = 0; i < lines.length; i += perPage) {
+      parts.push(lines.slice(i, i + perPage).join('\n'));
     }
 
-    return result.filter(Boolean);
+    return parts.length ? parts : [''];
+  }
+
+  function splitByLinesPerPage(text, linesPerPage, orientation) {
+    const perPage = Math.max(1, linesPerPage | 0);
+    if (orientation === 'vertical') {
+      const G = global.TadekuGenkoRender;
+      const split = G && G.splitVerticalText;
+      // 縦書きの「行数」= 1枚の列数。字詰め（1列の文字数）は固定。
+      const rows = (G && G.ETUDE_ROWS) || 26;
+      if (split) return split(text, rows, perPage);
+      return [String(text || '').trim()];
+    }
+    return splitHorizontalByLines(text, perPage);
+  }
+
+  /** 1枚あたりの行数の初期値（縦書きは列数、横書きは折り返し行数） */
+  function suggestLinesPerPage(charCount, orientation) {
+    if (orientation === 'vertical') {
+      const cols = global.TadekuGenkoRender && global.TadekuGenkoRender.ETUDE_COLS;
+      return cols || 18;
+    }
+    const n = Math.max(0, Number(charCount) || 0);
+    if (n <= 400) return 21;
+    if (n <= 900) return 27;
+    return 33;
+  }
+
+  function getLinesPerPageRange(orientation) {
+    if (orientation === 'vertical') {
+      return { min: 12, max: 24, step: 1 };
+    }
+    return { min: 15, max: 48, step: 1 };
   }
 
   async function ensureFont(fontSpec) {
@@ -245,30 +304,57 @@
     } catch (_) { /* ignore */ }
   }
 
+  const LINE_START_FORBIDDEN = new Set([
+    ...'、。，．,.！？!?…‥・:;；',
+    ...')）]］｝}〕〉》」』】〙〗｠»',
+    ...'ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶー々',
+  ]);
+  const LINE_END_FORBIDDEN = new Set([...'(（[［｛{〔〈《「『【〘〖｟«']);
+
+  function isLineStartForbidden(ch) {
+    return ch !== undefined && LINE_START_FORBIDDEN.has(ch);
+  }
+
+  function isLineEndForbidden(ch) {
+    return ch !== undefined && LINE_END_FORBIDDEN.has(ch);
+  }
+
   function wrapLines(ctx, text, maxWidth) {
     const paragraphs = text.split('\n');
     const lines = [];
+
     for (const para of paragraphs) {
       if (!para) {
         lines.push('');
         continue;
       }
+
       let line = '';
       for (const ch of para) {
         const test = line + ch;
         if (line && ctx.measureText(test).width > maxWidth) {
-          lines.push(line);
-          line = ch;
+          if (isLineStartForbidden(ch)) {
+            line = test;
+          } else if (isLineEndForbidden(line[line.length - 1])) {
+            const last = line[line.length - 1];
+            lines.push(line.slice(0, -1));
+            line = last + ch;
+          } else {
+            lines.push(line);
+            line = ch;
+          }
         } else {
           line = test;
         }
       }
+
       if (line) lines.push(line);
     }
+
     return lines;
   }
 
-  async function renderTextImage({ prompt, body, partLabel, width, padding, fontSize, lineHeight }) {
+  async function renderHorizontalTextImage({ prompt, body, partLabel, width, padding, fontSize, lineHeight }) {
     await ensureFont(fontSize + 'px "Noto Sans JP"');
 
     const W = width || 1200;
@@ -306,9 +392,6 @@
     ctx.fillStyle = '#f6f4ef';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#e8913a';
-    ctx.fillRect(pad, pad * 0.55, 48, 4);
-
     let y = pad;
     ctx.fillStyle = '#1a1a1a';
     ctx.font = '700 ' + headerFs + 'px "Noto Sans JP", sans-serif';
@@ -336,8 +419,28 @@
     return canvas;
   }
 
-  async function renderTextImages({ prompt, body, splits }) {
-    const parts = splitText(body, splits);
+  async function renderVerticalTextImage(options) {
+    const render = global.TadekuGenkoRender && global.TadekuGenkoRender.renderEtudeVerticalImage;
+    if (!render) {
+      throw new Error('TadekuGenkoRender is unavailable');
+    }
+    return render(options);
+  }
+
+  async function renderTextImage(options) {
+    if (options && options.orientation === 'vertical') {
+      const G = global.TadekuGenkoRender;
+      return renderVerticalTextImage({
+        ...options,
+        rowsPerPage: (G && G.ETUDE_ROWS) || 26,
+        colsPerPage: options.linesPerPage,
+      });
+    }
+    return renderHorizontalTextImage(options);
+  }
+
+  async function renderTextImages({ prompt, body, linesPerPage, orientation }) {
+    const parts = splitByLinesPerPage(body, linesPerPage, orientation);
     const images = [];
     for (let i = 0; i < parts.length; i++) {
       const label = parts.length > 1 ? (i + 1) + ' / ' + parts.length : '';
@@ -345,6 +448,8 @@
         prompt,
         body: parts[i],
         partLabel: label,
+        orientation,
+        linesPerPage,
       });
       images.push(canvas);
     }
@@ -369,8 +474,51 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  async function downloadTextImages({ prompt, body, splits, slotKey }) {
-    const canvases = await renderTextImages({ prompt, body, splits });
+  function buildWorkTxtContent(work) {
+    return [
+      'お題：' + work.prompt,
+      work.slotRange,
+      work.charCount + '字',
+      '',
+      work.body || '',
+    ].join('\n');
+  }
+
+  function workTxtEntryName(work, used) {
+    const base = 'etude-' + work.slotKey;
+    let name = base + '.txt';
+    if (!used.has(name)) {
+      used.add(name);
+      return name;
+    }
+    let n = 2;
+    while (used.has(`${base} (${n}).txt`)) n += 1;
+    name = `${base} (${n}).txt`;
+    used.add(name);
+    return name;
+  }
+
+  function finishedWorksZipFilename() {
+    const d = new Date();
+    return `etude-works-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}.zip`;
+  }
+
+  async function downloadFinishedWorksTxtZip() {
+    if (!global.JSZip) throw new Error('JSZip missing');
+    const works = await listFinishedWorks();
+    if (!works.length) return 0;
+    const zip = new global.JSZip();
+    const used = new Set();
+    for (const work of works) {
+      zip.file(workTxtEntryName(work, used), buildWorkTxtContent(work));
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(blob, finishedWorksZipFilename());
+    return works.length;
+  }
+
+  async function downloadTextImages({ prompt, body, linesPerPage, slotKey, orientation }) {
+    const canvases = await renderTextImages({ prompt, body, linesPerPage, orientation });
     for (let i = 0; i < canvases.length; i++) {
       const blob = await canvasToBlob(canvases[i]);
       const suffix = canvases.length > 1 ? '-' + (i + 1) : '';
@@ -407,6 +555,9 @@
     getRemainingMs,
     formatCountdown,
     getPromptForSlot,
+    slotKeyToDate,
+    listFinishedWorks,
+    deleteFinishedWork,
     loadOrCreateSession,
     putSession,
     getSession,
@@ -418,6 +569,11 @@
     buildFinishShareText,
     buildLastWork,
     openTwitterIntent,
+    splitByLinesPerPage,
+    suggestLinesPerPage,
+    getLinesPerPageRange,
+    renderTextImages,
     downloadTextImages,
+    downloadFinishedWorksTxtZip,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
