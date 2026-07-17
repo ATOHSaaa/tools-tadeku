@@ -816,7 +816,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
   <script src="../shared/genko-render.js?v=vert13"></script>
-  <script src="../shared/etude-engine.js?v=preview16"></script>
+  <script src="../shared/etude-engine.js?v=preview17"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -868,10 +868,17 @@
     let exportWork = null;
     let readerWork = null;
 
+    function formatWorkMeta(work) {
+      const parts = [work.slotRange];
+      if (work.finishedLabel) parts.push(work.finishedLabel);
+      parts.push(work.charCount + '字');
+      return parts.join(' · ');
+    }
+
     function openReader(work) {
       readerWork = work;
       els.readerPrompt.textContent = 'お題：' + work.prompt;
-      els.readerMeta.textContent = work.slotRange + ' · ' + work.charCount + '字';
+      els.readerMeta.textContent = formatWorkMeta(work);
       els.readerBody.textContent = work.body;
       els.readerBackdrop.classList.add('is-open');
     }
@@ -931,6 +938,7 @@
       }
       if (session && session.lastWork && session.lastWork.body && session.lastWork.body.trim()) {
         return {
+          workId: session.lastWork.workId,
           slotKey: session.slotKey,
           prompt: session.lastWork.prompt,
           body: session.lastWork.body,
@@ -943,6 +951,7 @@
     function setExportWorkFromSession() {
       if (session && session.lastWork && session.lastWork.body) {
         exportWork = {
+          workId: session.lastWork.workId,
           slotKey: session.slotKey,
           prompt: session.lastWork.prompt,
           body: session.lastWork.body,
@@ -1087,7 +1096,7 @@
 
           const meta = document.createElement('p');
           meta.className = 'history-meta';
-          meta.textContent = work.slotRange + ' · ' + work.charCount + '字';
+          meta.textContent = formatWorkMeta(work);
 
           main.append(prompt, meta);
 
@@ -1107,18 +1116,15 @@
             ev.stopPropagation();
             if (!confirm('この作品を削除しますか？')) return;
             try {
-              await E.deleteFinishedWork(work.slotKey);
-              if (readerWork && readerWork.slotKey === work.slotKey) closeReader();
-              if (exportWork && exportWork.slotKey === work.slotKey) {
+              await E.deleteFinishedWork(work.workId);
+              if (readerWork && readerWork.workId === work.workId) closeReader();
+              if (exportWork && exportWork.workId === work.workId) {
                 exportWork = null;
                 closeShareModal();
               }
               if (session && session.slotKey === work.slotKey) {
-                session.lastWork = null;
-                session.finishedAt = null;
-                session.stoppedRemainingMs = null;
-                session.body = '';
-                session.startedAt = null;
+                const updated = await E.getSession(work.slotKey);
+                if (updated) Object.assign(session, updated);
               }
               renderHistoryList();
             } catch (err) {
@@ -1253,16 +1259,14 @@
     async function completeFinish() {
       const body = els.editor.value;
       const stoppedRemainingMs = E.getRemainingMs(now(), session);
-      session.body = body;
-      session.stoppedRemainingMs = stoppedRemainingMs;
-      session.finishedAt = Date.now();
-      session.lastWork = E.buildLastWork(session, body, session.finishedAt, stoppedRemainingMs);
-      await E.putSession(session);
+      const finishedAt = Date.now();
+      const work = await E.finishWriting(session, body, finishedAt, stoppedRemainingMs);
       exportWork = {
+        workId: work.workId,
         slotKey: session.slotKey,
-        prompt: session.lastWork.prompt,
-        body: session.lastWork.body,
-        charCount: session.lastWork.charCount,
+        prompt: work.prompt,
+        body: work.body,
+        charCount: work.charCount,
       };
       closeConfirmModal();
       showPrompt();
@@ -1348,17 +1352,14 @@
       if (!readerWork) return;
       if (!confirm('この作品を削除しますか？')) return;
       try {
-        await E.deleteFinishedWork(readerWork.slotKey);
-        if (exportWork && exportWork.slotKey === readerWork.slotKey) {
+        await E.deleteFinishedWork(readerWork.workId);
+        if (exportWork && exportWork.workId === readerWork.workId) {
           exportWork = null;
           closeShareModal();
         }
         if (session && session.slotKey === readerWork.slotKey) {
-          session.lastWork = null;
-          session.finishedAt = null;
-          session.stoppedRemainingMs = null;
-          session.body = '';
-          session.startedAt = null;
+          const updated = await E.getSession(readerWork.slotKey);
+          if (updated) Object.assign(session, updated);
         }
         closeReader();
         renderHistoryList();

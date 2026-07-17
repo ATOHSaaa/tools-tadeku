@@ -62,6 +62,72 @@
     return formatSlotRange(date) + ' のお題';
   }
 
+  function formatFinishedAt(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return (
+      d.getFullYear() + '.' + pad2(d.getMonth() + 1) + '.' + pad2(d.getDate()) + ' ' +
+      pad2(d.getHours()) + ':' + pad2(d.getMinutes())
+    );
+  }
+
+  function makeWorkId(slotKey, finishedAt, seq) {
+    return slotKey + '-' + finishedAt + (seq ? '-' + seq : '');
+  }
+
+  function buildLastWork(session, body, finishedAt, stoppedRemainingMs) {
+    return {
+      prompt: session.prompt,
+      body: body || '',
+      finishedAt,
+      stoppedRemainingMs,
+      charCount: (body || '').length,
+    };
+  }
+
+  function normalizeSessionWorks(session) {
+    if (!session) return session;
+    if (!Array.isArray(session.finishedWorks)) {
+      session.finishedWorks = [];
+    }
+    if (session.lastWork && String(session.lastWork.body || '').trim()) {
+      const finishedAt = session.lastWork.finishedAt ?? session.finishedAt ?? Date.now();
+      const workId = session.lastWork.workId || makeWorkId(session.slotKey, finishedAt, 0);
+      const exists = session.finishedWorks.some((w) => w.workId === workId);
+      if (!exists) {
+        session.finishedWorks.push({
+          ...session.lastWork,
+          slotKey: session.slotKey,
+          finishedAt,
+          workId,
+          charCount: session.lastWork.charCount ?? String(session.lastWork.body).length,
+        });
+      }
+    }
+    session.finishedWorks = session.finishedWorks.filter((w) => String(w.body || '').trim());
+    for (const work of session.finishedWorks) {
+      if (!work.workId) {
+        work.workId = makeWorkId(work.slotKey || session.slotKey, work.finishedAt || Date.now(), 0);
+      }
+      if (!work.slotKey) work.slotKey = session.slotKey;
+    }
+    return session;
+  }
+
+  function mapFinishedWork(work, session) {
+    const slotKey = work.slotKey || session.slotKey;
+    return {
+      workId: work.workId,
+      slotKey,
+      prompt: work.prompt || session.prompt,
+      body: work.body,
+      charCount: work.charCount ?? String(work.body).length,
+      finishedAt: work.finishedAt,
+      slotRange: formatSlotRange(slotKeyToDate(slotKey)),
+      finishedLabel: formatFinishedAt(work.finishedAt),
+    };
+  }
+
   function getWritingEnd(session) {
     if (!session || !session.startedAt) return null;
     return session.startedAt + WRITING_DURATION_MS;
@@ -149,28 +215,62 @@
 
   async function listFinishedWorks() {
     const all = await listAllSessions();
-    return all
-      .filter((s) => s.finishedAt && s.lastWork && String(s.lastWork.body || '').trim())
-      .map((s) => ({
-        slotKey: s.slotKey,
-        prompt: s.lastWork.prompt || s.prompt,
-        body: s.lastWork.body,
-        charCount: s.lastWork.charCount ?? String(s.lastWork.body).length,
-        finishedAt: s.lastWork.finishedAt ?? s.finishedAt,
-        slotRange: formatSlotRange(slotKeyToDate(s.slotKey)),
-      }))
-      .sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
+    const works = [];
+    for (const session of all) {
+      normalizeSessionWorks(session);
+      for (const work of session.finishedWorks) {
+        if (String(work.body || '').trim()) {
+          works.push(mapFinishedWork(work, session));
+        }
+      }
+    }
+    return works.sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
   }
 
-  async function deleteFinishedWork(slotKey) {
-    const session = await getSession(slotKey);
-    if (!session) return;
-    session.finishedAt = null;
-    session.stoppedRemainingMs = null;
-    session.lastWork = null;
-    session.body = '';
-    session.startedAt = null;
+  async function deleteFinishedWork(workId) {
+    const all = await listAllSessions();
+    for (const session of all) {
+      normalizeSessionWorks(session);
+      const index = session.finishedWorks.findIndex((w) => w.workId === workId);
+      if (index === -1) continue;
+      session.finishedWorks.splice(index, 1);
+      if (session.lastWork && session.lastWork.workId === workId) {
+        session.lastWork = session.finishedWorks.length
+          ? session.finishedWorks.reduce((best, w) => (
+            (w.finishedAt || 0) > (best.finishedAt || 0) ? w : best
+          ))
+          : null;
+      }
+      if (!session.finishedWorks.length && session.finishedAt) {
+        session.finishedAt = null;
+        session.stoppedRemainingMs = null;
+      }
+      await putSession(session);
+      return;
+    }
+  }
+
+  async function finishWriting(session, body, finishedAt, stoppedRemainingMs) {
+    normalizeSessionWorks(session);
+    const base = buildLastWork(session, body, finishedAt, stoppedRemainingMs);
+    let seq = session.finishedWorks.length;
+    let workId = makeWorkId(session.slotKey, finishedAt, seq);
+    while (session.finishedWorks.some((w) => w.workId === workId)) {
+      seq += 1;
+      workId = makeWorkId(session.slotKey, finishedAt, seq);
+    }
+    const work = {
+      ...base,
+      workId,
+      slotKey: session.slotKey,
+    };
+    session.finishedWorks.push(work);
+    session.lastWork = work;
+    session.body = body || '';
+    session.finishedAt = finishedAt;
+    session.stoppedRemainingMs = stoppedRemainingMs;
     await putSession(session);
+    return work;
   }
 
   async function findActiveSession(date) {
@@ -192,14 +292,14 @@
   async function loadOrCreateSession(date, prompts) {
     const active = await findActiveSession(date);
     if (active) {
-      return { ...active, prompt: active.prompt || getPromptForSlot(active.slotKey, prompts) };
+      return normalizeSessionWorks({ ...active, prompt: active.prompt || getPromptForSlot(active.slotKey, prompts) });
     }
 
     const slotKey = getSlotKey(date);
     const prompt = getPromptForSlot(slotKey, prompts);
     const existing = await getSession(slotKey);
     if (existing) {
-      return { ...existing, prompt: existing.prompt || prompt };
+      return normalizeSessionWorks({ ...existing, prompt: existing.prompt || prompt });
     }
     return {
       slotKey,
@@ -475,17 +575,21 @@
   }
 
   function buildWorkTxtContent(work) {
+    const meta = [
+      work.finishedLabel || formatFinishedAt(work.finishedAt),
+      work.charCount + '字',
+    ].filter(Boolean).join(' · ');
     return [
       'お題：' + work.prompt,
       work.slotRange,
-      work.charCount + '字',
+      meta,
       '',
       work.body || '',
     ].join('\n');
   }
 
   function workTxtEntryName(work, used) {
-    const base = 'etude-' + work.slotKey;
+    const base = 'etude-' + String(work.workId || work.slotKey).replace(/[^a-zA-Z0-9._-]/g, '-');
     let name = base + '.txt';
     if (!used.has(name)) {
       used.add(name);
@@ -530,16 +634,6 @@
     return canvases.length;
   }
 
-  function buildLastWork(session, body, finishedAt, stoppedRemainingMs) {
-    return {
-      prompt: session.prompt,
-      body: body || '',
-      finishedAt,
-      stoppedRemainingMs,
-      charCount: (body || '').length,
-    };
-  }
-
   global.TadekuEtude = {
     DB_NAME,
     HASHTAG,
@@ -552,12 +646,14 @@
     formatDate,
     formatSlotRange,
     formatSlotPromptLabel,
+    formatFinishedAt,
     getRemainingMs,
     formatCountdown,
     getPromptForSlot,
     slotKeyToDate,
     listFinishedWorks,
     deleteFinishedWork,
+    finishWriting,
     loadOrCreateSession,
     putSession,
     getSession,
