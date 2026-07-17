@@ -816,7 +816,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
   <script src="../shared/genko-render.js?v=vert13"></script>
-  <script src="../shared/etude-engine.js?v=preview17"></script>
+  <script src="../shared/etude-engine.js?v=preview18"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -872,6 +872,7 @@
       const parts = [work.slotRange];
       if (work.finishedLabel) parts.push(work.finishedLabel);
       parts.push(work.charCount + '字');
+      if (work.timedOut) parts.push('時間切れ');
       return parts.join(' · ');
     }
 
@@ -1423,11 +1424,16 @@
       }
 
       updateTimers();
-      tickTimer = setInterval(() => {
+      tickTimer = setInterval(async () => {
         const key = E.getSlotKey(now());
         const stillWriting = E.isTimerActive(now(), session);
         if (!stillWriting && key !== session.slotKey) {
           clearInterval(tickTimer);
+          if (typeof E.salvageAbandonedDrafts === 'function') {
+            try {
+              await E.salvageAbandonedDrafts(now());
+            } catch (_) { /* silent */ }
+          }
           location.reload();
           return;
         }

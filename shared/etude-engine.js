@@ -213,14 +213,51 @@
     return dbRequest(tx.objectStore(STORE).getAll());
   }
 
-  async function listFinishedWorks() {
+  function isAbandonedDraft(session, date) {
+    if (!session || !session.startedAt || session.finishedAt) return false;
+    if (!String(session.body || '').trim()) return false;
+    if (isTimerActive(date, session)) return false;
+    // 同じ時間帯ならロック画面から「書き終わる」できるので、まだ履歴化しない
+    if (getSlotKey(date) === session.slotKey) return false;
+    return true;
+  }
+
+  async function salvageAbandonedDraft(session, date) {
+    if (!isAbandonedDraft(session, date)) return null;
+    const end = getWritingEnd(session) || Date.now();
+    const finishedAt = Math.min(end, date instanceof Date ? date.getTime() : new Date(date).getTime());
+    const work = await finishWriting(session, session.body, finishedAt, 0);
+    work.timedOut = true;
+    if (session.lastWork) session.lastWork.timedOut = true;
+    await putSession(session);
+    return work;
+  }
+
+  async function salvageAbandonedDrafts(date) {
+    const all = await listAllSessions();
+    const salvaged = [];
+    for (const session of all) {
+      normalizeSessionWorks(session);
+      if (!isAbandonedDraft(session, date)) continue;
+      const work = await salvageAbandonedDraft(session, date);
+      if (work) salvaged.push(work);
+    }
+    return salvaged;
+  }
+
+  async function listFinishedWorks(date) {
+    const when = date || new Date();
+    await salvageAbandonedDrafts(when);
     const all = await listAllSessions();
     const works = [];
     for (const session of all) {
       normalizeSessionWorks(session);
       for (const work of session.finishedWorks) {
         if (String(work.body || '').trim()) {
-          works.push(mapFinishedWork(work, session));
+          works.push({
+            ...mapFinishedWork(work, session),
+            timedOut: !!work.timedOut,
+          });
         }
       }
     }
@@ -290,6 +327,8 @@
   }
 
   async function loadOrCreateSession(date, prompts) {
+    await salvageAbandonedDrafts(date);
+
     const active = await findActiveSession(date);
     if (active) {
       return normalizeSessionWorks({ ...active, prompt: active.prompt || getPromptForSlot(active.slotKey, prompts) });
@@ -654,6 +693,7 @@
     listFinishedWorks,
     deleteFinishedWork,
     finishWriting,
+    salvageAbandonedDrafts,
     loadOrCreateSession,
     putSession,
     getSession,
