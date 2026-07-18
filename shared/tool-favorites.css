@@ -1,0 +1,93 @@
+.item-wrap {
+  position: relative;
+}
+
+.item-wrap > .item {
+  height: 100%;
+  padding-right: 2.75rem;
+}
+
+.tool-favorite-btn {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.tool-favorite-btn:hover {
+  color: var(--accent-line, #e8913a);
+  transform: scale(1.08);
+}
+
+.tool-favorite-btn svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.tool-favorite-btn .heart-path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.tool-favorite-btn.is-favorite {
+  color: var(--accent-line, #e8913a);
+}
+
+.tool-favorite-btn.is-favorite .heart-path {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.favorites-item-wrap {
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.favorites-item-wrap:active {
+  cursor: grabbing;
+}
+
+.favorites-item-wrap > .item {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+.tool-favorites-grid.is-sorting {
+  user-select: none;
+}
+
+.favorites-item-wrap.is-dragging > .item {
+  border-color: var(--accent-line, #e8913a);
+}
+
+.favorites-drop-placeholder {
+  min-height: 5.5rem;
+  border: 2px dashed var(--accent-line, #e8913a);
+  background: rgba(232, 145, 58, 0.07);
+  animation: favorites-placeholder-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes favorites-placeholder-pulse {
+  0%, 100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
