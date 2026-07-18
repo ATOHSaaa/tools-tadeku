@@ -20,8 +20,20 @@
     '〈': '︿', '〉': '﹀', '《': '︽', '》': '︾',
   };
 
-  const ROTATE_SIDEWAYS = new Set('…‥⋯');
-  const CANVAS_VERTICAL_ROTATE = new Set('ーｰ〜～―─‐‑–—－−');
+  // もともと縦形／正立のままにする記号
+  const UPRIGHT_SPECIAL = new Set('々〻〱・ゝゞヽヾ|｜');
+  // 長音・ダッシュ類は SVG 縦組み（回転だとフォント依存で反転しやすい）
+  const CANVAS_VERTICAL_ROTATE = new Set('ーｰ―─‐‑–—－−');
+  // リーダー・波ダッシュ・半角括弧・引用符・演算子など横組み約物
+  const ROTATE_SIDEWAYS = new Set(
+    '…‥⋯'
+    + '=＝+＋*＊/／\\＼~～〜`｀@＠#＃$＄%％&＆^＾<>＜＞«»‹›:：;；_'
+    + '-﹣'
+    + '!?'
+    + '()[]{}'
+    + '"\'“”‘’'
+  );
+  const ETUDE_FONT_SCALES = [0.92, 0.90, 0.82, 0.78, 0.72, 0.68, 0.60, 0.58, 0.52, 0.48];
   const EXPORT_FONT_FAMILY = 'Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, YuMincho, serif';
   const vGlyphCache = new Map();
 
@@ -46,18 +58,49 @@
     if (ch === '.' || ch === '．') return '。';
     return ch;
   }
-  function needsSidewaysRotate(ch) { return ch !== undefined && ROTATE_SIDEWAYS.has(ch); }
+  function isCjkScriptChar(ch) {
+    if (!ch) return false;
+    const c = ch.codePointAt(0);
+    return (c >= 0x3040 && c <= 0x309F)
+      || (c >= 0x30A0 && c <= 0x30FF)
+      || (c >= 0x4E00 && c <= 0x9FFF)
+      || (c >= 0x3400 && c <= 0x4DBF)
+      || (c >= 0xF900 && c <= 0xFAFF);
+  }
+  function isUprightYakumono(ch) {
+    // 句読点・全角！？は正立。半角 !? は回転
+    return isKutouten(ch) || ch === '！' || ch === '？';
+  }
   function needsCanvasVerticalRotate(ch) { return ch !== undefined && CANVAS_VERTICAL_ROTATE.has(ch); }
+  function needsSidewaysDraw(ch) {
+    if (ch === undefined) return false;
+    const c = normalizeDrawChar(ch);
+    if (!c || /\s/.test(c)) return false;
+    if (UPRIGHT_SPECIAL.has(c)) return false;
+    if (isUprightYakumono(c)) return false;
+    if (needsCanvasVerticalRotate(c)) return false;
+    // 全角括弧は縦組み字形を優先（半角は下で回転）
+    if (Object.prototype.hasOwnProperty.call(VERT_FORMS, c) && !/[()\[\]{}]/.test(c)) return false;
+    if (ROTATE_SIDEWAYS.has(c)) return true;
+    if (/[A-Za-z0-9]/.test(c)) return true;
+    // CJK 以外の記号は原則 90° 回転（漏れ防止）
+    if (!isCjkScriptChar(c)) return true;
+    return false;
+  }
   function needsSvgVerticalGlyph(ch) {
     if (ch === undefined) return false;
     const c = normalizeDrawChar(ch);
-    return isKutouten(c)
-      || isClose(c)
-      || isEndForbidden(c)
-      || isExclamationOrQuestion(c)
-      || needsSidewaysRotate(c)
-      || needsCanvasVerticalRotate(c)
-      || Object.prototype.hasOwnProperty.call(VERT_FORMS, c);
+    // 長音・ダッシュ類のみ SVG。括弧・句読点は vForm / sideways
+    return needsCanvasVerticalRotate(c);
+  }
+  function drawSidewaysGlyph(ctx, x, y, ch) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
   }
   function escapeXml(text) {
     return String(text)
@@ -219,7 +262,7 @@
     return cellView.marks.filter((m) => m.role === role).map((m) => m.char).join('');
   }
 
-  function vGlyphKey(px, ch) { return px + '|' + ch; }
+  function vGlyphKey(px, ch, mode) { return (mode || 'vert') + '|' + px + '|' + ch; }
 
   function buildVerticalGlyphImage(px, ch, fontFamily) {
     const size = px * 2;
@@ -235,13 +278,32 @@
     return { img, size, ready };
   }
 
-  async function preloadVerticalGlyphs(pxList, chars, fontFamily) {
+  /** 横組み字形を 90° 時計回りにした画像（約物・ラテン向け） */
+  function buildSidewaysGlyphImage(px, ch, fontFamily) {
+    const size = px * 2;
+    const family = fontFamily || EXPORT_FONT_FAMILY;
+    const cx = size / 2;
+    const cy = size / 2;
+    const svg =
+      `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'>` +
+      `<g transform='translate(${cx} ${cy}) rotate(90)'>` +
+      `<text x='0' y='0' font-family='${family}' font-size='${px}' fill='black' ` +
+      `text-anchor='middle' dominant-baseline='central'>${escapeXml(ch)}</text>` +
+      `</g></svg>`;
+    const img = new Image();
+    const ready = new Promise((res) => { img.onload = () => res(); img.onerror = () => res(); });
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    return { img, size, ready };
+  }
+
+  async function preloadGlyphs(pxList, chars, fontFamily, mode) {
+    const build = mode === 'side' ? buildSidewaysGlyphImage : buildVerticalGlyphImage;
     const ps = [];
     for (const px of pxList) {
       for (const ch of chars) {
-        const key = vGlyphKey(px, ch);
+        const key = vGlyphKey(px, ch, mode);
         if (!vGlyphCache.has(key)) {
-          const g = buildVerticalGlyphImage(px, ch, fontFamily);
+          const g = build(px, ch, fontFamily);
           vGlyphCache.set(key, g);
           ps.push(g.ready);
         }
@@ -250,18 +312,50 @@
     await Promise.all(ps);
   }
 
-  function fontPxFromCtx(ctx) {
-    const m = /(\d+(?:\.\d+)?)px/.exec(ctx.font || '');
-    return m ? Math.round(parseFloat(m[1])) : 0;
+  async function preloadVerticalGlyphs(pxList, chars, fontFamily) {
+    return preloadGlyphs(pxList, chars, fontFamily, 'vert');
   }
 
-  function drawSvgVerticalGlyph(ctx, x, y, ch, px) {
-    const g = vGlyphCache.get(vGlyphKey(px, ch));
+  function findCachedGlyph(px, ch, mode) {
+    let g = vGlyphCache.get(vGlyphKey(px, ch, mode));
+    if (g) return g;
+    let best = null;
+    let bestDiff = Infinity;
+    const prefix = (mode || 'vert') + '|';
+    for (const [key, val] of vGlyphCache) {
+      if (!key.startsWith(prefix)) continue;
+      const rest = key.slice(prefix.length);
+      const sep = rest.indexOf('|');
+      if (sep === -1 || rest.slice(sep + 1) !== ch) continue;
+      const diff = Math.abs(parseInt(rest.slice(0, sep), 10) - px);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = val;
+      }
+    }
+    return best;
+  }
+
+  function drawCachedGlyph(ctx, x, y, ch, px, mode) {
+    const g = findCachedGlyph(px, ch, mode);
     if (g && g.img.complete && g.img.naturalWidth) {
       ctx.drawImage(g.img, x - g.size / 2, y - g.size / 2, g.size, g.size);
       return true;
     }
     return false;
+  }
+
+  function drawSvgVerticalGlyph(ctx, x, y, ch, px) {
+    return drawCachedGlyph(ctx, x, y, ch, px, 'vert');
+  }
+
+  function drawSvgSidewaysGlyph(ctx, x, y, ch, px) {
+    return drawCachedGlyph(ctx, x, y, ch, px, 'side');
+  }
+
+  function fontPxFromCtx(ctx) {
+    const m = /(\d+(?:\.\d+)?)px/.exec(ctx.font || '');
+    return m ? Math.round(parseFloat(m[1])) : 0;
   }
 
   function fillVerticalCellText(ctx, x, y, text, cellSize, anchor) {
@@ -278,14 +372,10 @@
       const px = fontPxFromCtx(ctx) || Math.round(cellSize * 0.9);
       if (drawSvgVerticalGlyph(ctx, x, y, ch, px)) return;
     }
-    if (chars.length === 1 && needsSidewaysRotate(ch)) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(Math.PI / 2);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(ch, 0, 0);
-      ctx.restore();
+    if (chars.length === 1 && needsSidewaysDraw(ch)) {
+      const px = fontPxFromCtx(ctx) || Math.round(cellSize * 0.9);
+      if (drawSvgSidewaysGlyph(ctx, x, y, ch, px)) return;
+      drawSidewaysGlyph(ctx, x, y, ch);
       return;
     }
     ctx.fillText(chars.map((c) => vForm(c)).join(''), x, y);
@@ -345,7 +435,7 @@
     }
 
     // SVG 縦書き字形は em 内で正しい位置に来るので、マス中央に置く
-    if (isKutouten(ch) || isClose(ch) || isEndForbidden(ch) || isExclamationOrQuestion(ch) || needsSidewaysRotate(ch)) {
+    if (isKutouten(ch) || isClose(ch) || isEndForbidden(ch) || isExclamationOrQuestion(ch) || needsSidewaysDraw(ch)) {
       return { x: cell.x + s * 0.5, y: cell.y + s * 0.5, align: 'center', baseline: 'middle', fontScale: 0.92 };
     }
     if (/[ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ]/.test(ch)) {
@@ -364,6 +454,17 @@
 
     ctx.save();
     ctx.fillStyle = '#1a1a1a';
+
+    if (needsSidewaysDraw(ch)) {
+      if (drawSvgSidewaysGlyph(ctx, layout.x, layout.y, ch, px)) {
+        ctx.restore();
+        return;
+      }
+      ctx.font = `${px}px ${fontFamily}`;
+      drawSidewaysGlyph(ctx, layout.x, layout.y, ch);
+      ctx.restore();
+      return;
+    }
 
     if (needsSvgVerticalGlyph(ch) && drawSvgVerticalGlyph(ctx, layout.x, layout.y, ch, px)) {
       ctx.restore();
@@ -520,13 +621,15 @@
     const bodyTop = headerBlock;
 
     const vChars = new Set();
+    const sideChars = new Set();
     for (const ch of docArr) {
-      if (needsSvgVerticalGlyph(ch)) vChars.add(normalizeDrawChar(ch));
+      const c = normalizeDrawChar(ch);
+      if (needsSvgVerticalGlyph(c)) vChars.add(c);
+      else if (needsSidewaysDraw(c)) sideChars.add(c);
     }
-    if (vChars.size) {
-      const pxList = [0.92, 0.82, 0.78, 0.72, 0.68, 0.52].map((s) => Math.max(12, Math.round(cellSize * s)));
-      await preloadVerticalGlyphs([...new Set(pxList)], [...vChars], fontStack);
-    }
+    const pxList = [...new Set(ETUDE_FONT_SCALES.map((s) => Math.max(12, Math.round(cellSize * s))))];
+    if (vChars.size) await preloadGlyphs(pxList, [...vChars], fontStack, 'vert');
+    if (sideChars.size) await preloadGlyphs(pxList, [...sideChars], fontStack, 'side');
 
     const canvas = document.createElement('canvas');
     canvas.width = W * scale;
@@ -612,7 +715,7 @@
     if (cellView.kind === 'normal') {
       cell.classList.add('cell-normal');
       const ch = vForm(cellView.mainChar);
-      if (needsSidewaysRotate(ch)) cell.classList.add('cell-sideways');
+      if (needsSidewaysDraw(ch)) cell.classList.add('cell-sideways');
       cell.textContent = ch;
       return;
     }
