@@ -90,8 +90,17 @@
   function needsSvgVerticalGlyph(ch) {
     if (ch === undefined) return false;
     const c = normalizeDrawChar(ch);
-    // 長音・ダッシュ類のみ SVG。括弧・句読点は vForm / sideways
-    return needsCanvasVerticalRotate(c);
+    // 長音・句読点・括弧・！？は SVG 縦組みで字枠内の正しい位置に置く
+    return needsCanvasVerticalRotate(c)
+      || isKutouten(c)
+      || isExclamationOrQuestion(c)
+      || isClose(c)
+      || isEndForbidden(c);
+  }
+  function verticalSvgChar(ch) {
+    const c = normalizeDrawChar(ch);
+    if (isClose(c) || isEndForbidden(c)) return vForm(c);
+    return c;
   }
   function drawSidewaysGlyph(ctx, x, y, ch) {
     ctx.save();
@@ -222,13 +231,14 @@
   }
 
   function splitVerticalText(text, rowsPerPage, colsPerPage) {
-    const docArr = [...String(text || '').replace(/\r\n/g, '\n').trim()];
-    if (!docArr.length) return [''];
+    const normalized = String(text || '').replace(/\r\n/g, '\n');
+    if (!normalized.trim()) return [''];
+    const docArr = [...normalized];
     const columns = computeColumns(docArr, rowsPerPage);
     const maxCols = colsPerPage || COLS;
     const parts = [];
     for (let i = 0; i < columns.length; i += maxCols) {
-      const part = columnsToText(columns.slice(i, i + maxCols), docArr).trim();
+      const part = columnsToText(columns.slice(i, i + maxCols), docArr);
       if (part) parts.push(part);
     }
     return parts.length ? parts : [''];
@@ -370,7 +380,7 @@
 
     if (chars.length === 1 && needsSvgVerticalGlyph(ch)) {
       const px = fontPxFromCtx(ctx) || Math.round(cellSize * 0.9);
-      if (drawSvgVerticalGlyph(ctx, x, y, ch, px)) return;
+      if (drawSvgVerticalGlyph(ctx, x, y, verticalSvgChar(ch), px)) return;
     }
     if (chars.length === 1 && needsSidewaysDraw(ch)) {
       const px = fontPxFromCtx(ctx) || Math.round(cellSize * 0.9);
@@ -435,7 +445,7 @@
     }
 
     // SVG 縦書き字形は em 内で正しい位置に来るので、マス中央に置く
-    if (isKutouten(ch) || isClose(ch) || isEndForbidden(ch) || isExclamationOrQuestion(ch) || needsSidewaysDraw(ch)) {
+    if (needsSidewaysDraw(ch)) {
       return { x: cell.x + s * 0.5, y: cell.y + s * 0.5, align: 'center', baseline: 'middle', fontScale: 0.92 };
     }
     if (/[ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ]/.test(ch)) {
@@ -466,7 +476,7 @@
       return;
     }
 
-    if (needsSvgVerticalGlyph(ch) && drawSvgVerticalGlyph(ctx, layout.x, layout.y, ch, px)) {
+    if (needsSvgVerticalGlyph(ch) && drawSvgVerticalGlyph(ctx, layout.x, layout.y, verticalSvgChar(ch), px)) {
       ctx.restore();
       return;
     }
@@ -624,7 +634,7 @@
     const sideChars = new Set();
     for (const ch of docArr) {
       const c = normalizeDrawChar(ch);
-      if (needsSvgVerticalGlyph(c)) vChars.add(c);
+      if (needsSvgVerticalGlyph(c)) vChars.add(verticalSvgChar(c));
       else if (needsSidewaysDraw(c)) sideChars.add(c);
     }
     const pxList = [...new Set(ETUDE_FONT_SCALES.map((s) => Math.max(12, Math.round(cellSize * s))))];

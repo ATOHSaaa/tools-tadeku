@@ -383,8 +383,8 @@
   }
 
   function splitHorizontalByLines(text, linesPerPage) {
-    const trimmed = String(text || '').trim();
-    if (!trimmed) return [''];
+    const normalized = String(text || '');
+    if (!normalized.trim()) return [''];
 
     const W = 1200;
     const pad = 64;
@@ -392,7 +392,7 @@
     const innerW = W - pad * 2;
     const measure = document.createElement('canvas').getContext('2d');
     measure.font = fs + 'px "Noto Sans JP", sans-serif';
-    const lines = wrapLines(measure, trimmed, innerW);
+    const lines = wrapLines(measure, normalized, innerW);
     const perPage = Math.max(1, linesPerPage | 0);
     const parts = [];
 
@@ -411,7 +411,8 @@
       // 縦書きの「行数」= 1枚の列数。字詰め（1列の文字数）は固定。
       const rows = (G && G.ETUDE_ROWS) || 26;
       if (split) return split(text, rows, perPage);
-      return [String(text || '').trim()];
+      const normalized = String(text || '');
+      return normalized.trim() ? [normalized] : [''];
     }
     return splitHorizontalByLines(text, perPage);
   }
