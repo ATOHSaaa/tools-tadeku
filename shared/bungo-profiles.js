@@ -1686,7 +1686,8 @@ window.BUNGO_PROFILES = [
           "言何か": 1,
           "何かい": 1,
           "かいっ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000148/files/773_14560.html"
       },
       {
         "title": "坊っちゃん",
@@ -3360,7 +3361,8 @@ window.BUNGO_PROFILES = [
           "し使っ": 1,
           "使って": 1,
           "いる清": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000148/files/752_14964.html"
       },
       {
         "title": "三四郎",
@@ -5011,7 +5013,8 @@ window.BUNGO_PROFILES = [
           "更紗の": 1,
           "紗の手": 1,
           "の手帛": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000148/files/58842_76759.html"
       }
     ]
   },
@@ -6622,7 +6625,8 @@ window.BUNGO_PROFILES = [
           "ぬらし": 1,
           "らして": 1,
           "る。短": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000879/files/128_15261.html"
       },
       {
         "title": "鼻",
@@ -8217,7 +8221,8 @@ window.BUNGO_PROFILES = [
           "の供僧": 1,
           "供僧に": 1,
           "僧にな": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000879/files/42_15228.html"
       },
       {
         "title": "地獄変",
@@ -9724,7 +9729,8 @@ window.BUNGO_PROFILES = [
           "毎に、": 1,
           "に、良": 1,
           "良秀々": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000879/files/61_15130.html"
       }
     ]
   },
@@ -11263,7 +11269,8 @@ window.BUNGO_PROFILES = [
           "、降り": 1,
           "降りて": 1,
           "りて、": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000035/files/301_14912.html"
       },
       {
         "title": "走れメロス",
@@ -12899,7 +12906,8 @@ window.BUNGO_PROFILES = [
           "二の友": 1,
           "の友人": 1,
           "友人だ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000035/files/1567_14913.html"
       },
       {
         "title": "斜陽",
@@ -14470,7 +14478,8 @@ window.BUNGO_PROFILES = [
           "月のい": 1,
           "のいい": 1,
           "いい夜": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000035/files/1565_8559.html"
       }
     ]
   },
@@ -16169,7 +16178,8 @@ window.BUNGO_PROFILES = [
           "せ配り": 1,
           "配り物": 1,
           "り物に": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/001383/files/56866_58169.html"
       },
       {
         "title": "卍",
@@ -17716,7 +17726,8 @@ window.BUNGO_PROFILES = [
           "。前に": 1,
           "前には": 1,
           "には暇": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/001383/files/56873_62035.html"
       },
       {
         "title": "痴人の愛",
@@ -19371,7 +19382,8 @@ window.BUNGO_PROFILES = [
           "私は大": 1,
           "は大方": 1,
           "大方そ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/001383/files/58093_62049.html"
       }
     ]
   },
@@ -21255,7 +21267,8 @@ window.BUNGO_PROFILES = [
           "、取調": 1,
           "取調も": 1,
           "調も次": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000129/files/682_15414.html"
       },
       {
         "title": "うたかたの記",
@@ -23069,7 +23082,8 @@ window.BUNGO_PROFILES = [
           "、君ら": 1,
           "君らが": 1,
           "らがま": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000129/files/694_23250.html"
       },
       {
         "title": "高瀬舟",
@@ -24706,7 +24720,8 @@ window.BUNGO_PROFILES = [
           "暫くし": 1,
           "くして": 1,
           "て、庄": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000129/files/691_15352.html"
       }
     ]
   },
@@ -26608,7 +26623,8 @@ window.BUNGO_PROFILES = [
           "は私立": 1,
           "私立の": 1,
           "立の学": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000064/files/56041_54765.html"
       },
       {
         "title": "にごりえ",
@@ -28447,7 +28463,8 @@ window.BUNGO_PROFILES = [
           "らいけ": 1,
           "いけな": 1,
           "けない": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000064/files/56042_54978.html"
       },
       {
         "title": "十三夜",
@@ -30262,7 +30279,8 @@ window.BUNGO_PROFILES = [
           "喰べて": 1,
           "べて見": 1,
           "て見せ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000064/files/386_15291.html"
       }
     ]
   },
@@ -32124,7 +32142,8 @@ window.BUNGO_PROFILES = [
           "手拭を": 1,
           "拭をわ": 1,
           "をわが": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000050/files/3586_12103.html"
       },
       {
         "title": "悪獣篇",
@@ -33947,7 +33966,8 @@ window.BUNGO_PROFILES = [
           "、甥を": 1,
           "甥を見": 1,
           "を見た": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000050/files/4563_24909.html"
       },
       {
         "title": "愛と婚姻",
@@ -35506,7 +35526,8 @@ window.BUNGO_PROFILES = [
           "もしそ": 1,
           "しそれ": 1,
           "それ愛": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000050/files/1040_20511.html"
       }
     ]
   },
@@ -36968,7 +36989,8 @@ window.BUNGO_PROFILES = [
           "ちんと": 1,
           "んと立": 1,
           "と立つ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000081/files/46322_24347.html"
       },
       {
         "title": "注文の多い料理店",
@@ -38501,7 +38523,8 @@ window.BUNGO_PROFILES = [
           "らはき": 1,
           "はきも": 1,
           "きもの": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000081/files/1927_17906.html"
       },
       {
         "title": "風の又三郎",
@@ -39972,7 +39995,8 @@ window.BUNGO_PROFILES = [
           "するな": 1,
           "るなっ": 1,
           "なった": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000081/files/462_15405.html"
       }
     ]
   },
@@ -41586,7 +41610,8 @@ window.BUNGO_PROFILES = [
           "一君の": 1,
           "君の最": 1,
           "の最近": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/001779/files/57228_58735.html"
       },
       {
         "title": "人間椅子",
@@ -43194,7 +43219,8 @@ window.BUNGO_PROFILES = [
           "仕事も": 1,
           "事も、": 1,
           "も、上": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/001779/files/56648_58207.html"
       },
       {
         "title": "二銭銅貨",
@@ -44863,7 +44889,8 @@ window.BUNGO_PROFILES = [
           "と申出": 1,
           "申出た": 1,
           "出た所": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/001779/files/56647_58167.html"
       }
     ]
   },
@@ -46598,7 +46625,8 @@ window.BUNGO_PROFILES = [
           "十二月": 1,
           "二月二": 1,
           "月二日": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000038/files/329_15886.html"
       },
       {
         "title": "春の鳥",
@@ -48219,7 +48247,8 @@ window.BUNGO_PROFILES = [
           "この二": 1,
           "二階を": 1,
           "階を貸": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000038/files/1057_15980.html"
       },
       {
         "title": "あの時分",
@@ -49851,7 +49880,8 @@ window.BUNGO_PROFILES = [
           "じょう": 1,
           "ょうを": 1,
           "うを鉤": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000038/files/1044_15933.html"
       }
     ]
   },
@@ -51612,7 +51642,8 @@ window.BUNGO_PROFILES = [
           "うにし": 1,
           "して迎": 1,
           "て迎え": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000158/files/1504_14585.html"
       },
       {
         "title": "家",
@@ -53321,7 +53352,8 @@ window.BUNGO_PROFILES = [
           "し振で": 1,
           "振で弟": 1,
           "で弟と": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000158/files/1509_40739.html"
       }
     ]
   },
@@ -54998,7 +55030,8 @@ window.BUNGO_PROFILES = [
           "ゆけば": 1,
           "けばゆ": 1,
           "ばゆく": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000074/files/46349_23843.html"
       },
       {
         "title": "愛撫",
@@ -56529,7 +56562,8 @@ window.BUNGO_PROFILES = [
           "粧道具": 1,
           "道具で": 1,
           "具で、": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000074/files/411_19633.html"
       }
     ]
   },
@@ -58227,7 +58261,8 @@ window.BUNGO_PROFILES = [
           "の友達": 1,
           "友達だ": 1,
           "達だっ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000168/files/50899_42798.html"
       },
       {
         "title": "美しい家",
@@ -59815,7 +59850,8 @@ window.BUNGO_PROFILES = [
           "ざめた": 1,
           "めた顔": 1,
           "た顔色": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000168/files/60007_72829.html"
       },
       {
         "title": "機械",
@@ -61412,7 +61448,8 @@ window.BUNGO_PROFILES = [
           "ぬとも": 1,
           "とも限": 1,
           "も限ら": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000168/files/907_54297.html"
       }
     ]
   },
@@ -63268,7 +63305,8 @@ window.BUNGO_PROFILES = [
           "春隣す": 1,
           "隣すむ": 1,
           "すむ画": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000885/files/51307_47033.html"
       }
     ]
   },
@@ -64958,7 +64996,8 @@ window.BUNGO_PROFILES = [
           "此の真": 1,
           "の真言": 1,
           "真言の": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000067/files/859_21656.html"
       }
     ]
   },
@@ -66849,7 +66888,8 @@ window.BUNGO_PROFILES = [
           "膳を其": 1,
           "を其方": 1,
           "其方へ": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000051/files/50351_36759.html"
       },
       {
         "title": "運命",
@@ -68627,7 +68667,8 @@ window.BUNGO_PROFILES = [
           "、簒奪": 1,
           "簒奪の": 1,
           "奪の事": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000051/files/1452_16991.html"
       }
     ]
   },
@@ -70544,7 +70585,8 @@ window.BUNGO_PROFILES = [
           "チョッ": 1,
           "ョッキ": 1,
           "ッキ」": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000006/files/1869_33656.html"
       },
       {
         "title": "小説総論",
@@ -72190,7 +72232,8 @@ window.BUNGO_PROFILES = [
           "に唱歌": 1,
           "える形": 1,
           "る形を": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000006/files/1868_22437.html"
       },
       {
         "title": "旅日記",
@@ -74041,7 +74084,8 @@ window.BUNGO_PROFILES = [
           "所を掴": 1,
           "掴む。": 1,
           "む。今": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000006/files/4627_17128.html"
       }
     ]
   },
@@ -75831,7 +75875,8 @@ window.BUNGO_PROFILES = [
           "にも知": 1,
           "も知ら": 1,
           "知らな": 1
-        }
+        },
+        "htmlUrl": "https://www.aozora.gr.jp/cards/000214/files/1669_8259.html"
       }
     ]
   }

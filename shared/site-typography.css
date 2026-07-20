@@ -1,0 +1,74 @@
+/* 全体で薄い文字をやめる */
+
+body {
+  font-weight: 500;
+}
+
+.brand-home,
+.page-title .brand-home {
+  opacity: 0.9;
+}
+
+.brand-sep,
+.page-title .brand-sep {
+  opacity: 0.82;
+  font-weight: 700;
+}
+
+.lead,
+.intro,
+.panel-title,
+.status,
+.cross-banner-desc,
+.works-used,
+.style-map-lead,
+.style-map-summary,
+.style-map-pick-label,
+.style-map-pick-note,
+.style-map-empty,
+.style-map-tick,
+.style-map-legend,
+.match-item-label,
+.match-item-text,
+.rank-num,
+.library-note,
+.item p,
+.tool-pick-desc,
+.result-era,
+.result-label,
+.char-count,
+.input-meta,
+.hint,
+.note,
+.sub,
+.desc,
+.meta,
+.empty,
+.explain-text,
+.grade-desc,
+.path-hint,
+.share-hint,
+.num,
+.date {
+  font-weight: 500;
+}
+
+.lead,
+.panel-title,
+.status,
+.cross-banner-desc,
+.works-used,
+.style-map-lead,
+.style-map-summary,
+.style-map-pick-note,
+.item p,
+.library-note,
+.match-item-text,
+.rank-num {
+  color: var(--ink);
+}
+
+footer {
+  color: #555;
+  font-weight: 600;
+}

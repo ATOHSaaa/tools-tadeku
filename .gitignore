@@ -2,3 +2,4 @@ node_modules/
 .cursor/
 package-lock.json
 scripts/.cache/
+shared/kuromoji-dict/*.gz

@@ -13,7 +13,9 @@
   const CI_SS_UNIT = 40;
   const CI_QUAD_WEIGHT = 2;
   const DISPLAY_MATCH_SCALE = 2.4;
-  const KUROMOJI_DIC = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/';
+  const KUROMOJI_DIC_LOCAL = '../shared/kuromoji-dict/';
+  const KUROMOJI_DIC_CDN = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/';
+  const KUROMOJI_LOAD_TIMEOUT_MS = 90000;
   let tokenizerPromise = null;
 
   const HIRA_RE = /^[\u3040-\u309fー]+$/;
@@ -203,17 +205,44 @@
     return triPct * 0.4 + ci * 0.6;
   }
 
-  function loadTokenizer() {
-    if (tokenizerPromise) return tokenizerPromise;
-    tokenizerPromise = new Promise((resolve, reject) => {
+  function buildTokenizer(dicPath) {
+    return new Promise((resolve, reject) => {
       if (typeof kuromoji === 'undefined') {
         reject(new Error('kuromoji'));
         return;
       }
-      kuromoji.builder({ dicPath: KUROMOJI_DIC }).build((err, tokenizer) => {
+      kuromoji.builder({ dicPath }).build((err, tokenizer) => {
         if (err) reject(err);
         else resolve(tokenizer);
       });
+    });
+  }
+
+  function withTimeout(promise, ms, message) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(message)), ms);
+      promise.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(err);
+        }
+      );
+    });
+  }
+
+  function loadTokenizer() {
+    if (tokenizerPromise) return tokenizerPromise;
+    tokenizerPromise = withTimeout(
+      buildTokenizer(KUROMOJI_DIC_LOCAL).catch(() => buildTokenizer(KUROMOJI_DIC_CDN)),
+      KUROMOJI_LOAD_TIMEOUT_MS,
+      'timeout'
+    ).catch((err) => {
+      tokenizerPromise = null;
+      throw err;
     });
     return tokenizerPromise;
   }
@@ -304,6 +333,8 @@
     'ひらがな',
     '語彙の幅',
   ];
+
+  const DEFAULT_STYLE_MAP_AXES = [0, 1];
 
   function tendencyText(index, ss) {
     const avg = ss[index];
@@ -430,6 +461,10 @@
   }
 
   function resolveAxisSelection(axisIndices, active, similar, plotPoints) {
+    if (Array.isArray(axisIndices) && axisIndices.length === 0) {
+      return { mode: 'none', indices: [], auto: false };
+    }
+
     const picked = [...new Set(
       (axisIndices || [])
         .filter((index) => typeof index === 'number' && active.includes(index))
@@ -441,7 +476,9 @@
     if (picked.length === 1) {
       return { mode: '1d', indices: picked, auto: false };
     }
-    const [xIndex, yIndex] = pickQuadrantAxes(similar, active, plotPoints);
+    const defaults = DEFAULT_STYLE_MAP_AXES.filter((index) => active.includes(index));
+    const xIndex = defaults[0] ?? active[0];
+    const yIndex = defaults[1] ?? active[1] ?? active[0];
     return { mode: '2d', indices: [xIndex, yIndex], auto: true };
   }
 
@@ -509,6 +546,17 @@
 
     const plotPoints = [...authorEntries, { id: 'user', name: 'あなた', ss: userSS }];
     const selection = resolveAxisSelection(axisIndices, active, similar, plotPoints);
+
+    if (selection.mode === 'none') {
+      return {
+        mode: 'none',
+        activeIndices: active,
+        selectedIndices: [],
+        autoSelected: false,
+        points: [],
+      };
+    }
+
     const [xIndex, yIndex] = selection.indices;
     const xT = FEATURE_TENDENCY[xIndex];
 

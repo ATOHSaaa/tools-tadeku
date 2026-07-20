@@ -20,6 +20,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Bundle kuromoji dictionary
+        run: |
+          npm install
+          mkdir -p shared/kuromoji-dict
+          cp node_modules/kuromoji/dict/* shared/kuromoji-dict/
       - name: Setup Pages
         uses: actions/configure-pages@v6
       - name: Build with Jekyll

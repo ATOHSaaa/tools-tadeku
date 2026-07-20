@@ -110,8 +110,10 @@ function findWorks(catalog, author) {
   const found = [];
   for (const title of author.titles) {
     const hit = matches.find((row) => row['作品名'] === title && row['テキストファイルURL'].endsWith('.zip'));
-    if (hit) found.push({ title, url: hit['テキストファイルURL'] });
-    else console.warn(`  ? ${author.name} — 「${title}」が見つかりません`);
+    if (hit) {
+      const htmlUrl = hit['XHTML/HTMLファイルURL'] || hit['図書カードURL'] || '';
+      found.push({ title, url: hit['テキストファイルURL'], htmlUrl });
+    } else console.warn(`  ? ${author.name} — 「${title}」が見つかりません`);
   }
   return found;
 }
@@ -152,6 +154,7 @@ async function buildAuthor(author, catalog, tokenizer) {
       if (features) {
         workProfiles.push({
           title: work.title,
+          htmlUrl: work.htmlUrl || '',
           scores: scoresToArray(features).map((v) => Math.round(v * 10000) / 10000),
           trigrams: extractTrigrams(excerpt),
         });
@@ -173,7 +176,42 @@ async function buildAuthor(author, catalog, tokenizer) {
   };
 }
 
+async function patchWorkUrls() {
+  const profilesPath = join(ROOT, 'shared', 'bungo-profiles.js');
+  const code = readFileSync(profilesPath, 'utf8');
+  const statsMatch = code.match(/window\.BUNGO_STATS = (\{[\s\S]*?\});/);
+  const profilesMatch = code.match(/window\.BUNGO_PROFILES = (\[[\s\S]*\]);/);
+  if (!statsMatch || !profilesMatch) throw new Error('bungo-profiles.js の形式が想定外です');
+
+  const stats = JSON.parse(statsMatch[1]);
+  const profiles = JSON.parse(profilesMatch[1]);
+  const csv = await ensureCatalog();
+  const catalog = loadCatalog(csv);
+
+  for (const profile of profiles) {
+    const author = AUTHORS.find((item) => item.id === profile.id);
+    if (!author) continue;
+    const catalogWorks = findWorks(catalog, author);
+    for (const work of profile.works) {
+      const hit = catalogWorks.find((item) => item.title === work.title);
+      if (hit?.htmlUrl) work.htmlUrl = hit.htmlUrl;
+    }
+  }
+
+  const js = [
+    `window.BUNGO_STATS = ${JSON.stringify(stats, null, 2)};`,
+    `window.BUNGO_PROFILES = ${JSON.stringify(profiles, null, 2)};`,
+    '',
+  ].join('\n');
+  writeFileSync(profilesPath, js, 'utf8');
+  console.log(`参照作品 URL を ${profilesPath} に反映しました。`);
+}
+
 async function main() {
+  if (process.argv.includes('--patch-urls')) {
+    await patchWorkUrls();
+    return;
+  }
   console.log('形態素解析辞書を読み込み中…');
   const tokenizer = await loadTokenizer();
   console.log('青空文庫から文豪プロファイルを生成中…\n');

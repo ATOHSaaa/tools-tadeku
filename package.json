@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "prepare:kuromoji": "mkdir -p shared/kuromoji-dict && cp node_modules/kuromoji/dict/* shared/kuromoji-dict/"
+  },
   "devDependencies": {
     "kuromoji": "^0.1.2",
     "playwright": "^1.61.1"

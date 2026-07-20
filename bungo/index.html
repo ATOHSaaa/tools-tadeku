@@ -14,13 +14,13 @@
   <title>Bungo — 文豪タイプ診断 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/site-link.css">
   <style>
     :root {
       --bg: #faf8f2;
       --ink: #1a1814;
-      --muted: #5c564c;
+      --muted: #403a34;
       --border: #1a1814;
       --surface: #fff;
       --accent: #6b4c2a;
@@ -292,13 +292,6 @@
       text-align: left;
     }
 
-    .style-map-tip {
-      font-size: 0.72rem;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 0.55rem;
-    }
-
     .style-map-pick {
       margin-bottom: 0.85rem;
       text-align: left;
@@ -317,6 +310,15 @@
       color: var(--muted);
       margin-bottom: 0.5rem;
       line-height: 1.55;
+    }
+
+    .style-map-empty {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 2.5rem 1rem;
+      border: 1px dashed var(--border);
+      background: #fff;
     }
 
     .style-map-chips {
@@ -352,15 +354,16 @@
       cursor: not-allowed;
     }
 
-    .style-map-svg.is-1d {
-      max-width: 22rem;
+    .style-map-svg.is-1d,
+    .style-map-svg.is-2d {
+      max-width: none;
+      width: 100%;
       height: auto;
     }
 
     .style-map-svg {
       display: block;
       width: 100%;
-      max-width: 22rem;
       margin: 0 auto;
     }
 
@@ -377,20 +380,20 @@
 
     .style-map-tick {
       font-family: "Noto Sans JP", sans-serif;
-      font-size: 9px;
-      fill: var(--muted);
+      font-size: 11px;
+      fill: var(--ink);
     }
 
     .style-map-axis-label {
       font-family: "Noto Sans JP", sans-serif;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
       fill: var(--ink);
     }
 
     .style-map-dot {
       stroke: var(--surface);
-      stroke-width: 1.25;
+      stroke-width: 1.5;
     }
 
     .style-map-dot.is-author { fill: #8a7f72; }
@@ -399,13 +402,25 @@
 
     .style-map-label {
       font-family: "Noto Sans JP", sans-serif;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
       fill: var(--ink);
       pointer-events: none;
+      paint-order: stroke;
+      stroke: var(--surface);
+      stroke-width: 3px;
+      stroke-linejoin: round;
     }
 
-    .style-map-label.is-user { fill: var(--accent); }
+    .style-map-label.is-author { font-size: 9.5px; font-weight: 600; }
+    .style-map-label.is-top { font-size: 11px; fill: var(--gold); }
+    .style-map-label.is-user { font-size: 11px; fill: var(--accent); }
+
+    .style-map-leader {
+      stroke: #b8aea0;
+      stroke-width: 0.75;
+      opacity: 0.7;
+    }
 
     .style-map-legend {
       list-style: none;
@@ -440,6 +455,12 @@
       color: var(--muted);
       margin-top: 0.85rem;
       line-height: 1.7;
+    }
+
+    .works-used a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     .result-share {
@@ -516,6 +537,57 @@
       text-align: right;
     }
 
+    .cross-banner {
+      display: block;
+      padding: 1rem 1.1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .cross-banner-list {
+      margin-top: 1.5rem;
+    }
+
+    .cross-banner-list-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #c62828;
+      text-align: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .cross-banner-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 560px) {
+      .cross-banner-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .cross-banner-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .cross-banner-desc {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
     @media (max-width: 520px) {
       .match-item {
         grid-template-columns: 1fr;
@@ -529,6 +601,7 @@
       .actions .btn { flex: 1; }
     }
   </style>
+  <link rel="stylesheet" href="../shared/site-typography.css">
   <link rel="stylesheet" href="../shared/share-button.css">
 </head>
 <body>
@@ -565,6 +638,32 @@
         </button>
       </div>
       <ol class="rank-list" id="rank-list"></ol>
+      <div class="cross-banner-list" aria-label="診断でも遊ぶ">
+        <span class="cross-banner-list-label">診断でも遊ぶ</span>
+        <div class="cross-banner-grid">
+          <a class="cross-banner" href="../bungo-analysis/">
+            <span class="cross-banner-title">文豪診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、あなたに近い文豪タイプを診断</span>
+          </a>
+          <a class="cross-banner" href="../philosopher-analysis/">
+            <span class="cross-banner-title">哲学者診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、あなたに近い哲学者タイプを診断</span>
+          </a>
+          <a class="cross-banner" href="../bungaku-ha/">
+            <span class="cross-banner-title">文学流派診断 →</span>
+            <span class="cross-banner-desc">8つの質問で、自分に近い文学流派を診断</span>
+          </a>
+        </div>
+      </div>
+      <div class="cross-banner-list" aria-label="クイズでも遊ぶ">
+        <span class="cross-banner-list-label">クイズでも遊ぶ</span>
+        <div class="cross-banner-grid">
+          <a class="cross-banner" href="../kindai-author-quiz/">
+            <span class="cross-banner-title">近代文学クイズ →</span>
+            <span class="cross-banner-desc">作品名から作者を当てる4択クイズ。全100問から10問ランダム出題</span>
+          </a>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -595,6 +694,8 @@
     let lastShareTop = null;
     let lastMapContext = null;
     let styleMapSelection = null;
+    let diagnosing = false;
+    let dictReady = false;
 
     function esc(s) {
       return String(s)
@@ -602,6 +703,14 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+    }
+
+    function renderWorkLink(work, title) {
+      const name = title || work.title;
+      if (work && work.htmlUrl) {
+        return '<a href="' + esc(work.htmlUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(name) + '</a>';
+      }
+      return esc(name);
     }
 
     function countChars(text) {
@@ -667,34 +776,156 @@
       '</ul>';
     }
 
+    function estimateLabelWidth(text) {
+      return Math.max([...text].length * 7.2 + 4, 24);
+    }
+
+    function layoutStyleMap1DLabels(points, px, py, midY) {
+      const priority = (pt) => (pt.kind === 'user' ? 0 : pt.kind === 'top' ? 1 : 2);
+      const items = points.map((pt, index) => ({
+        pt,
+        index,
+        cx: px(pt.plotX),
+        cy: py(pt.plotY),
+        width: estimateLabelWidth(pt.name),
+      })).sort((a, b) => priority(a.pt) - priority(b.pt) || a.cx - b.cx || a.cy - b.cy);
+
+      const occupied = [];
+      const result = new Array(points.length);
+
+      function collides(left, right, top, bottom) {
+        const pad = 3;
+        return occupied.some((box) => !(
+          right + pad < box.left || left - pad > box.right ||
+          bottom + pad < box.top || top - pad > box.bottom
+        ));
+      }
+
+      function mark(box, layout) {
+        occupied.push(box);
+        result[layout.index] = layout;
+      }
+
+      items.forEach((item) => {
+        const { pt, index, cx, cy, width } = item;
+        const height = 12;
+        const lanes = [
+          { y: midY - 20 },
+          { y: midY + 14 },
+          { y: midY - 36 },
+          { y: midY + 30 },
+          { y: midY - 52 },
+          { y: midY + 46 },
+          { y: midY - 68 },
+          { y: midY + 62 },
+        ];
+        const anchors = ['middle', 'start', 'end'];
+        const shifts = [0, 12, -12, 24, -24, 36, -36, 48, -48];
+
+        for (const lane of lanes) {
+          for (const anchor of anchors) {
+            for (const shift of shifts) {
+              const x = cx + shift;
+              const left = anchor === 'middle' ? x - width / 2 : anchor === 'start' ? x : x - width;
+              const right = left + width;
+              const top = lane.y - height + 2;
+              const bottom = lane.y + 2;
+              if (collides(left, right, top, bottom)) continue;
+              mark({ left, right, top, bottom }, {
+                index,
+                x,
+                y: lane.y,
+                anchor,
+                leader: Math.hypot(x - cx, lane.y - cy) > 8,
+                cx,
+                cy,
+              });
+              return;
+            }
+          }
+        }
+
+        mark(
+          { left: cx - width / 2, right: cx + width / 2, top: midY - 72, bottom: midY - 60 },
+          { index, x: cx, y: midY - 66, anchor: 'middle', leader: true, cx, cy }
+        );
+      });
+
+      return result;
+    }
+
+    function renderStyleMap1DDots(map, px, py, midY, tooltip) {
+      const layouts = layoutStyleMap1DLabels(map.points, px, py, midY);
+      let svg = '';
+
+      map.points.forEach((pt, index) => {
+        const layout = layouts[index];
+        const cls = pt.kind === 'user' ? 'is-user' : (pt.kind === 'top' ? 'is-top' : 'is-author');
+        const r = pt.kind === 'user' ? 7 : (pt.kind === 'top' ? 6.5 : 4.5);
+        const cx = layout.cx.toFixed(1);
+        const cy = layout.cy.toFixed(1);
+
+        if (layout.leader) {
+          const ly = layout.y > layout.cy ? layout.y - 3 : layout.y + 3;
+          svg += '<line class="style-map-leader" x1="' + cx + '" y1="' + cy + '" x2="' +
+            layout.x.toFixed(1) + '" y2="' + ly.toFixed(1) + '" />';
+        }
+
+        svg += '<circle class="style-map-dot ' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '">' +
+          '<title>' + tooltip(pt) + '</title></circle>';
+        svg += '<text class="style-map-label ' + cls + '" x="' +
+          layout.x.toFixed(1) + '" y="' + layout.y.toFixed(1) + '" text-anchor="' + layout.anchor + '">' +
+          esc(pt.name) + '</text>';
+      });
+
+      return svg;
+    }
+
+    function styleMapLabelPos(pt, map, px, py, index) {
+      const x = px(pt.plotX);
+      const y = py(pt.plotY);
+      const dx = pt.plotX - 50;
+      const dy = pt.plotY - 50;
+      const len = Math.hypot(dx, dy);
+      const angle = len < 2
+        ? -Math.PI / 2 + (index * 0.72)
+        : Math.atan2(dy, dx);
+      const dist = pt.kind === 'user' || pt.kind === 'top' ? 16 : 13;
+      let anchor = 'middle';
+      if (Math.cos(angle) > 0.25) anchor = 'start';
+      else if (Math.cos(angle) < -0.25) anchor = 'end';
+      return {
+        x: x + Math.cos(angle) * dist,
+        y: y + Math.sin(angle) * dist,
+        anchor,
+      };
+    }
+
     function renderStyleMapDots(map, px, py, tooltip) {
       let dots = '';
-      map.points.forEach((pt) => {
+      map.points.forEach((pt, index) => {
         const cls = pt.kind === 'user' ? 'is-user' : (pt.kind === 'top' ? 'is-top' : 'is-author');
-        const r = pt.kind === 'user' ? 5.5 : (pt.kind === 'top' ? 5 : 3.5);
+        const r = pt.kind === 'user' ? 7 : (pt.kind === 'top' ? 6.5 : 4.5);
         const cx = px(pt.plotX).toFixed(1);
         const cy = py(pt.plotY).toFixed(1);
         dots += '<circle class="style-map-dot ' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '">' +
           '<title>' + tooltip(pt) + '</title></circle>';
-        if (pt.kind === 'user' || pt.kind === 'top') {
-          const anchor = pt.plotX > 68 ? 'end' : 'start';
-          const lx = pt.plotX > 68 ? px(pt.plotX) - 7 : px(pt.plotX) + 7;
-          const ly = map.mode === '1d' ? py(pt.plotY) - 10 : py(pt.plotY) - 8;
-          dots += '<text class="style-map-label' + (pt.kind === 'user' ? ' is-user' : '') + '" x="' +
-            lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' +
-            esc(pt.name) + '</text>';
-        }
+
+        const label = styleMapLabelPos(pt, map, px, py, index);
+        dots += '<text class="style-map-label ' + cls + '" x="' +
+          label.x.toFixed(1) + '" y="' + label.y.toFixed(1) + '" text-anchor="' + label.anchor + '">' +
+          esc(pt.name) + '</text>';
       });
       return dots;
     }
 
     function renderStyleMap2D(map) {
-      const W = 340;
-      const P = 34;
+      const W = 640;
+      const P = 56;
       const plot = W - P * 2;
       const mid = P + plot / 2;
-      const px = (v) => P + (v / 100) * plot;
-      const py = (v) => P + plot - (v / 100) * plot;
+      const px = (v) => P + ((v - 12) / 76) * plot;
+      const py = (v) => P + plot - ((v - 12) / 76) * plot;
       const dots = renderStyleMapDots(map, px, py, (pt) =>
         esc(pt.name) + '：' + esc(pt.xText) + ' × ' + esc(pt.yText)
       );
@@ -702,32 +933,32 @@
       return '<p class="style-map-lead">「' + esc(map.xAxis) + '」と「' + esc(map.yAxis) +
         '」の2つで並べた地図です。左右・上下は相対的な順位で、点が近いほど似ています。</p>' +
         (map.summary ? '<p class="style-map-summary">' + esc(map.summary) + '</p>' : '') +
-        '<svg viewBox="0 0 ' + W + ' ' + W + '" class="style-map-svg" role="img" aria-label="文体マップ">' +
+        '<svg viewBox="0 0 ' + W + ' ' + W + '" class="style-map-svg is-2d" role="img" aria-label="文体マップ">' +
           '<rect x="' + mid + '" y="' + P + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-tr" />' +
           '<rect x="' + P + '" y="' + P + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-tl" />' +
           '<rect x="' + P + '" y="' + mid + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-bl" />' +
           '<rect x="' + mid + '" y="' + mid + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-br" />' +
           '<line x1="' + P + '" y1="' + mid + '" x2="' + (P + plot) + '" y2="' + mid + '" class="style-map-axis" />' +
           '<line x1="' + mid + '" y1="' + P + '" x2="' + mid + '" y2="' + (P + plot) + '" class="style-map-axis" />' +
-          '<text x="' + P + '" y="' + (P + plot + 16) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.xLow) + '</text>' +
-          '<text x="' + (P + plot) + '" y="' + (P + plot + 16) + '" class="style-map-tick" text-anchor="end">' + esc(map.xHigh) + ' →</text>' +
-          '<text x="' + (P - 5) + '" y="' + (P + 4) + '" class="style-map-tick" text-anchor="end">' + esc(map.yHigh) + ' ↑</text>' +
-          '<text x="' + (P - 5) + '" y="' + (P + plot) + '" class="style-map-tick" text-anchor="end">' + esc(map.yLow) + ' ↓</text>' +
-          '<text x="' + mid + '" y="' + (W - 6) + '" class="style-map-axis-label" text-anchor="middle">' + esc(map.xAxis) + '</text>' +
-          '<text x="12" y="' + mid + '" class="style-map-axis-label" text-anchor="middle" transform="rotate(-90 12 ' + mid + ')">' + esc(map.yAxis) + '</text>' +
+          '<text x="' + P + '" y="' + (P + plot + 20) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.xLow) + '</text>' +
+          '<text x="' + (P + plot) + '" y="' + (P + plot + 20) + '" class="style-map-tick" text-anchor="end">' + esc(map.xHigh) + ' →</text>' +
+          '<text x="' + (P - 8) + '" y="' + (P + 6) + '" class="style-map-tick" text-anchor="end">' + esc(map.yHigh) + ' ↑</text>' +
+          '<text x="' + (P - 8) + '" y="' + (P + plot) + '" class="style-map-tick" text-anchor="end">' + esc(map.yLow) + ' ↓</text>' +
+          '<text x="' + mid + '" y="' + (W - 10) + '" class="style-map-axis-label" text-anchor="middle">' + esc(map.xAxis) + '</text>' +
+          '<text x="20" y="' + mid + '" class="style-map-axis-label" text-anchor="middle" transform="rotate(-90 20 ' + mid + ')">' + esc(map.yAxis) + '</text>' +
           dots +
         '</svg>';
     }
 
     function renderStyleMap1D(map) {
-      const W = 340;
-      const H = 130;
-      const P = 34;
+      const W = 640;
+      const H = 200;
+      const P = 16;
       const plot = W - P * 2;
-      const midY = 58;
-      const px = (v) => P + (v / 100) * plot;
-      const py = (v) => midY - ((v - 50) / 50) * 22;
-      const dots = renderStyleMapDots(map, px, py, (pt) =>
+      const midY = 96;
+      const px = (v) => P + ((v - 12) / 76) * plot;
+      const py = (v) => midY - ((v - 50) / 50) * 16;
+      const dots = renderStyleMap1DDots(map, px, py, midY, (pt) =>
         esc(pt.name) + '：' + esc(pt.vText)
       );
 
@@ -736,28 +967,35 @@
         (map.summary ? '<p class="style-map-summary">' + esc(map.summary) + '</p>' : '') +
         '<svg viewBox="0 0 ' + W + ' ' + H + '" class="style-map-svg is-1d" role="img" aria-label="文体分布">' +
           '<line x1="' + P + '" y1="' + midY + '" x2="' + (P + plot) + '" y2="' + midY + '" class="style-map-axis" />' +
-          '<text x="' + P + '" y="' + (H - 10) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.axisLow) + '</text>' +
-          '<text x="' + (P + plot) + '" y="' + (H - 10) + '" class="style-map-tick" text-anchor="end">' + esc(map.axisHigh) + ' →</text>' +
+          '<text x="' + P + '" y="' + (H - 8) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.axisLow) + '</text>' +
+          '<text x="' + (P + plot) + '" y="' + (H - 8) + '" class="style-map-tick" text-anchor="end">' + esc(map.axisHigh) + ' →</text>' +
           '<text x="' + (W / 2) + '" y="16" class="style-map-axis-label" text-anchor="middle">' + esc(map.axis) + '</text>' +
           dots +
         '</svg>';
     }
 
+    function styleMapSelectedIndices(map) {
+      if (styleMapSelection !== null) return styleMapSelection;
+      return map.autoSelected ? (map.selectedIndices || []) : [];
+    }
+
     function renderStyleMapChart(map) {
+      if (map.mode === 'none') {
+        return '<p class="style-map-empty">特徴を1〜2つ選ぶとマップが表示されます。</p>' +
+          renderStyleMapLegend();
+      }
       const chart = map.mode === '1d' ? renderStyleMap1D(map) : renderStyleMap2D(map);
-      return chart +
-        '<p class="style-map-tip">灰色の点にカーソルを合わせると、文豪名と文体の傾向が出ます。</p>' +
-        renderStyleMapLegend();
+      return chart + renderStyleMapLegend();
     }
 
     function renderStyleMapControls(map) {
       const active = map.activeIndices || [];
-      const selected = styleMapSelection || map.selectedIndices || [];
-      let note = '2つまで選択できます。';
-      if (selected.length === 0 && map.autoSelected) {
-        note = '未選択のときは自動で2つ選びます。';
-      } else if (selected.length === 1) {
-        note = '1つ選択中 → 1次元の分布図';
+      const selected = styleMapSelectedIndices(map);
+      let note = '0〜2つ選択できます。';
+      if (styleMapSelection === null && map.autoSelected) {
+        note = '文の長さ・句読点を表示中です。';
+      } else if (selected.length === 0) {
+        note = '未選択です。';
       }
 
       let chips = '';
@@ -775,12 +1013,12 @@
       '</div>';
     }
 
-    function bindStyleMapControls() {
+    function bindStyleMapControls(map) {
       els.styleMapWrap.querySelectorAll('.style-map-chip').forEach((chip) => {
         chip.addEventListener('click', () => {
           const index = Number(chip.dataset.axis);
           if (!lastMapContext || Number.isNaN(index)) return;
-          let next = styleMapSelection ? [...styleMapSelection] : [];
+          let next = [...styleMapSelectedIndices(map)];
           const pos = next.indexOf(index);
           if (pos >= 0) {
             next.splice(pos, 1);
@@ -789,7 +1027,7 @@
           } else {
             next = [next[1], index];
           }
-          styleMapSelection = next.length ? next : null;
+          styleMapSelection = next;
           refreshStyleMap();
         });
       });
@@ -812,7 +1050,7 @@
           renderStyleMapControls(map) +
           '<div id="style-map-chart">' + renderStyleMapChart(map) + '</div>' +
         '</div>';
-      bindStyleMapControls();
+      bindStyleMapControls(map);
     }
 
     function renderResult(data) {
@@ -835,7 +1073,7 @@
         '<p class="result-era">' + esc(top.era) + '</p>' +
         '<p class="result-score">' + ci + '<small>一致指数</small></p>' +
         renderMatchDetails(matchDetail) +
-        '<p class="works-used">参照作品：' + esc(top.matchedWork) + '</p>';
+        '<p class="works-used">参照作品：' + renderWorkLink(matchedWork, top.matchedWork) + '</p>';
 
       const styleMap = BungoEngine.buildStyleMap(
         data.userScores,
@@ -853,7 +1091,7 @@
           renderStyleMapControls(styleMap) +
           '<div id="style-map-chart">' + renderStyleMapChart(styleMap) + '</div>' +
         '</div>';
-      bindStyleMapControls();
+      bindStyleMapControls(styleMap);
 
       const maxScore = data.ranked[0].score || 1;
       els.rankList.innerHTML = data.ranked.map((item, i) => {
@@ -885,8 +1123,9 @@
       const text = els.input.value;
       if (countChars(text) < MIN_CHARS) return;
 
+      diagnosing = true;
       els.diagnoseBtn.disabled = true;
-      setStatus('形態素解析中…');
+      setStatus(dictReady ? '形態素解析中…' : '辞書を読み込み中…');
 
       BungoEngine.rankAuthors(text, window.BUNGO_PROFILES, window.BUNGO_STATS)
         .then((result) => {
@@ -897,13 +1136,30 @@
           setStatus('');
           renderResult(result);
         })
-        .catch(() => {
-          setStatus('解析に失敗しました。', true);
+        .catch((err) => {
+          if (err && err.message === 'timeout') {
+            setStatus('辞書の読み込みがタイムアウトしました。通信環境を確認して再試行してください。', true);
+            return;
+          }
+          setStatus('解析に失敗しました。ページを再読み込みして再試行してください。', true);
         })
         .finally(() => {
+          diagnosing = false;
           updateMeta();
         });
     }
+
+    setStatus('辞書を読み込み中…');
+    BungoEngine.loadTokenizer()
+      .then(() => {
+        dictReady = true;
+        if (!diagnosing) setStatus('');
+      })
+      .catch(() => {
+        if (!diagnosing) {
+          setStatus('辞書の読み込みに失敗しました。ページを再読み込みしてください。', true);
+        }
+      });
 
     els.input.addEventListener('input', updateMeta);
     els.diagnoseBtn.addEventListener('click', runDiagnosis);

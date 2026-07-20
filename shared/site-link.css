@@ -5,7 +5,7 @@
 .brand-home {
   color: inherit;
   text-decoration: none;
-  opacity: 0.55;
+  opacity: 0.9;
   transition: opacity 0.15s;
 }
 
@@ -14,8 +14,8 @@
 }
 
 .brand-sep {
-  opacity: 0.45;
-  font-weight: 500;
+  opacity: 0.82;
+  font-weight: 700;
 }
 
 .page-title {
@@ -37,7 +37,7 @@
 
 .page-title .brand-home {
   color: inherit;
-  opacity: 0.55;
+  opacity: 0.9;
 }
 
 .page-title .brand-home:hover {
@@ -45,6 +45,6 @@
 }
 
 .page-title .brand-sep {
-  opacity: 0.45;
-  font-weight: 500;
+  opacity: 0.82;
+  font-weight: 700;
 }
