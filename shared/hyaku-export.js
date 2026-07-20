@@ -7,7 +7,7 @@
   const PAD = 36;
   const INK = '#1a1814';
   const MUTED = '#5c564c';
-  const BG = '#f4f0e6';
+  const BG = '#faf8f2';
   const SURFACE = '#ffffff';
   const ACCENT = '#6b4c2a';
   const LINE = '#ccc4b8';

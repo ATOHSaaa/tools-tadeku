@@ -646,7 +646,7 @@
     canvas.height = H * scale;
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
-    ctx.fillStyle = '#faf8f4';
+    ctx.fillStyle = '#fdfcfa';
     ctx.fillRect(0, 0, W, H);
 
     // header
