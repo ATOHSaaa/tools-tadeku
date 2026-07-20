@@ -93,6 +93,9 @@
     if (session.lastWork && String(session.lastWork.body || '').trim()) {
       const finishedAt = session.lastWork.finishedAt ?? session.finishedAt ?? Date.now();
       const workId = session.lastWork.workId || makeWorkId(session.slotKey, finishedAt, 0);
+      session.lastWork.workId = workId;
+      session.lastWork.finishedAt = finishedAt;
+      if (!session.lastWork.slotKey) session.lastWork.slotKey = session.slotKey;
       const exists = session.finishedWorks.some((w) => w.workId === workId);
       if (!exists) {
         session.finishedWorks.push({
@@ -107,7 +110,7 @@
     session.finishedWorks = session.finishedWorks.filter((w) => String(w.body || '').trim());
     for (const work of session.finishedWorks) {
       if (!work.workId) {
-        work.workId = makeWorkId(work.slotKey || session.slotKey, work.finishedAt || Date.now(), 0);
+        work.workId = makeWorkId(work.slotKey || session.slotKey, work.finishedAt || 0, 0);
       }
       if (!work.slotKey) work.slotKey = session.slotKey;
     }
@@ -264,27 +267,40 @@
     return works.sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
   }
 
+  function isSameFinishedWork(a, b, slotKey) {
+    if (!a || !b) return false;
+    if (a.workId && b.workId && a.workId === b.workId) return true;
+    const aId = a.workId || makeWorkId(a.slotKey || slotKey, a.finishedAt || 0, 0);
+    const bId = b.workId || makeWorkId(b.slotKey || slotKey, b.finishedAt || 0, 0);
+    if (aId && bId && aId === bId) return true;
+    return a.body === b.body && (a.finishedAt || 0) === (b.finishedAt || 0);
+  }
+
   async function deleteFinishedWork(workId) {
     const all = await listAllSessions();
     for (const session of all) {
       normalizeSessionWorks(session);
       const index = session.finishedWorks.findIndex((w) => w.workId === workId);
       if (index === -1) continue;
+      const deleted = session.finishedWorks[index];
       session.finishedWorks.splice(index, 1);
-      if (session.lastWork && session.lastWork.workId === workId) {
-        session.lastWork = session.finishedWorks.length
-          ? session.finishedWorks.reduce((best, w) => (
-            (w.finishedAt || 0) > (best.finishedAt || 0) ? w : best
-          ))
-          : null;
-      }
-      if (!session.finishedWorks.length && session.finishedAt) {
+      // lastWork が残ると normalizeSessionWorks が一覧再表示時に作品を復活させる
+      if (!session.finishedWorks.length) {
+        session.lastWork = null;
         session.finishedAt = null;
         session.stoppedRemainingMs = null;
+      } else if (isSameFinishedWork(session.lastWork, deleted, session.slotKey)) {
+        session.lastWork = session.finishedWorks.reduce((best, w) => (
+          (w.finishedAt || 0) > (best.finishedAt || 0) ? w : best
+        ));
+      }
+      if (session.body === deleted.body) {
+        session.body = session.lastWork ? (session.lastWork.body || '') : '';
       }
       await putSession(session);
       return;
     }
+    throw new Error('work not found: ' + workId);
   }
 
   async function finishWriting(session, body, finishedAt, stoppedRemainingMs) {

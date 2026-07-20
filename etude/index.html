@@ -841,7 +841,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
   <script src="../shared/genko-render.js?v=vert21"></script>
-  <script src="../shared/etude-engine.js?v=preview18"></script>
+  <script src="../shared/etude-engine.js?v=preview19"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -1146,6 +1146,7 @@
             ev.stopPropagation();
             if (!confirm('この作品を削除しますか？')) return;
             try {
+              clearTimeout(saveTimer);
               await E.deleteFinishedWork(work.workId);
               if (readerWork && readerWork.workId === work.workId) closeReader();
               if (exportWork && exportWork.workId === work.workId) {
@@ -1154,7 +1155,13 @@
               }
               if (session && session.slotKey === work.slotKey) {
                 const updated = await E.getSession(work.slotKey);
-                if (updated) Object.assign(session, updated);
+                if (updated) {
+                  session = updated;
+                  if (els.editor.value === work.body) {
+                    els.editor.value = session.body || '';
+                    updateCharCount();
+                  }
+                }
               }
               renderHistoryList();
             } catch (err) {
@@ -1384,14 +1391,22 @@
       if (!readerWork) return;
       if (!confirm('この作品を削除しますか？')) return;
       try {
-        await E.deleteFinishedWork(readerWork.workId);
-        if (exportWork && exportWork.workId === readerWork.workId) {
+        const deleted = readerWork;
+        clearTimeout(saveTimer);
+        await E.deleteFinishedWork(deleted.workId);
+        if (exportWork && exportWork.workId === deleted.workId) {
           exportWork = null;
           closeShareModal();
         }
-        if (session && session.slotKey === readerWork.slotKey) {
-          const updated = await E.getSession(readerWork.slotKey);
-          if (updated) Object.assign(session, updated);
+        if (session && session.slotKey === deleted.slotKey) {
+          const updated = await E.getSession(deleted.slotKey);
+          if (updated) {
+            session = updated;
+            if (els.editor.value === deleted.body) {
+              els.editor.value = session.body || '';
+              updateCharCount();
+            }
+          }
         }
         closeReader();
         renderHistoryList();
