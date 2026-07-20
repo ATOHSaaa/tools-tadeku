@@ -15,7 +15,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
   <link rel="stylesheet" href="../shared/site-link.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
   <style>
     :root {
       --bg: #fdfcfa;
@@ -407,5 +409,6 @@
       document.querySelector('.right-tab[data-panel="cast"]')?.click();
     });
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.app' });</script>
 </body>
 </html>

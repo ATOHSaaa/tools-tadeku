@@ -18,6 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
   <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
@@ -410,37 +411,6 @@
       layout: document.querySelector('.layout'),
     };
 
-    const mobileMq = window.matchMedia('(max-width: 640px)');
-
-    function resetMobileViewportLayout() {
-      if (!els.layout) return;
-      els.layout.style.height = '';
-      els.layout.style.transform = '';
-    }
-
-    function syncMobileViewportLayout() {
-      if (!mobileMq.matches || !els.layout) {
-        resetMobileViewportLayout();
-        return;
-      }
-
-      const vv = window.visualViewport;
-      if (!vv) return;
-
-      els.layout.style.height = `${vv.height}px`;
-      els.layout.style.transform = `translateY(${vv.offsetTop}px)`;
-    }
-
-    function bindMobileViewportSync() {
-      if (!window.visualViewport) return;
-      const onChange = () => syncMobileViewportLayout();
-      window.visualViewport.addEventListener('resize', onChange);
-      window.visualViewport.addEventListener('scroll', onChange);
-      window.addEventListener('orientationchange', onChange);
-      mobileMq.addEventListener('change', onChange);
-      onChange();
-    }
-
     TadekuEditorPrefs.trackEditor('cue');
 
     const library = TadekuEditorLibrary.createLibrarySession(
@@ -553,13 +523,13 @@
 
     refreshWords();
     injectWords();
-    bindMobileViewportSync();
     (async () => {
       await library.initFromUrl();
       els.editor.focus();
       els.editor.setSelectionRange(0, 0);
     })();
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.layout' });</script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>

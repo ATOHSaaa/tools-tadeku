@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="アイデアをストックしながら執筆するWebエディタ。短いメモや創作ネタを蓄積し、小説や文章の題材整理・発想記録に使えます。">
   <title>Stock — アイデアストック執筆 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -386,7 +386,9 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
   <link rel="stylesheet" href="../shared/site-link.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
 </head>
 <body>
   <div class="app">
@@ -887,6 +889,7 @@
       window.alert('データベースの初期化に失敗しました。');
     });
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.app' });</script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>

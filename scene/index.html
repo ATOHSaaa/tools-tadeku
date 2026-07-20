@@ -10,7 +10,7 @@
     gtag('js', new Date());
     gtag('config', 'G-HN5C12BJ0W');
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="シーン単位で物語の構成を組み立てるプロットエディタ。1シーン300字以内、ドラッグ並べ替えで、小説の設計を楽しみながら進められます。">
   <title>Scene — 物語の構成エディタ | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="../shared/export.css">
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
   <style>
     :root {
       --bg: #ffffff;
@@ -1115,6 +1116,7 @@
       await library.initFromUrl();
     })();
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.app' });</script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>

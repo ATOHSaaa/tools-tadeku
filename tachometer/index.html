@@ -10,7 +10,7 @@
     gtag('js', new Date());
     gtag('config', 'G-HN5C12BJ0W');
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="執筆速度をリアルタイムで見える化する小説執筆エディタ。文字/分・進捗・到達予測時刻をダッシュボードで確認し、書くリズムを整えられます。">
   <title>Tachometer — 執筆ペースを可視化 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -217,6 +217,7 @@
   <link rel="stylesheet" href="../shared/site-link.css">
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
 </head>
 <body id="body">
   <div class="layout">
@@ -383,6 +384,7 @@
       editor.setSelectionRange(0, 0);
     })();
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.layout' });</script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>

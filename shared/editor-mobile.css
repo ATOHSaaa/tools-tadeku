@@ -1,5 +1,9 @@
 /* iOS Safari は font-size が 16px 未満の入力欄をフォーカス時に自動拡大する */
 @media (max-width: 640px) {
+  html {
+    overscroll-behavior: none;
+  }
+
   #editor,
   .work-title,
   .scene-text,
@@ -13,5 +17,96 @@
   textarea,
   select {
     font-size: max(16px, 1em) !important;
+  }
+
+  header.header,
+  .editor-header {
+    position: relative;
+    z-index: 10;
+    background: var(--bg, var(--surface, #fdfcfa));
+  }
+}
+
+body:has(> .layout) {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body:has(> .layout) > .layout {
+  height: 100vh;
+  height: 100dvh;
+  overscroll-behavior: none;
+}
+
+body.is-editor,
+body.is-editing {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.is-editor .editor-view,
+body.is-editing .editor-layout,
+body.is-editing #editor-view {
+  height: 100vh;
+  height: 100dvh;
+  overscroll-behavior: none;
+}
+
+@media (max-width: 640px) {
+  body:has(> .app > .scene-list) {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body:has(> .app > .scene-list) > .app {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body:has(> .app > .scene-list) .header {
+    flex-shrink: 0;
+    padding: 1rem 1rem 0.85rem;
+    margin-bottom: 0;
+    border-bottom: 2px solid var(--border);
+  }
+
+  body:has(> .app > .scene-list) .scene-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  body:has(> .app > .scene-list) .add-scene,
+  body:has(> .app > .scene-list) .footer {
+    flex-shrink: 0;
+  }
+
+  .editor-wrap,
+  #editor,
+  textarea {
+    overscroll-behavior: contain;
+  }
+
+  body:has(> .app) {
+    overscroll-behavior: none;
+  }
+
+  body:has(> .app) > .app {
+    overscroll-behavior: none;
   }
 }

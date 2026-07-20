@@ -10,7 +10,7 @@
     gtag('js', new Date());
     gtag('config', 'G-HN5C12BJ0W');
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="小説原稿から登場人物名を自動抽出し、表記ゆれを見つける推敲エディタ。固有名詞を色分けして一覧表示します。">
   <title>Cast — 登場人物を見つける | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
   <style>
     :root {
       --bg: #ffffff;
@@ -787,6 +788,7 @@
       editor.focus();
     })();
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.layout' });</script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>

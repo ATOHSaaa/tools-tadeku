@@ -9,13 +9,15 @@
     gtag('js', new Date());
     gtag('config', 'G-HN5C12BJ0W');
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="短編を初稿から第六稿まで書き直す執筆ツール。前の版を横に見ながら、1稿ずつ進めます。原稿はブラウザに自動保存されます。">
   <title>Suiko — 初稿から第六稿まで | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../shared/site-link.css">
+  <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
   <link rel="stylesheet" href="../shared/editor-title.css">
   <style>
     :root {
@@ -43,7 +45,13 @@
 
     body.is-editing {
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
+    }
+
+    body.is-editing #editor-view {
+      height: 100vh;
+      height: 100dvh;
     }
 
     .view[hidden] { display: none !important; }
@@ -152,6 +160,7 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
+      height: 100dvh;
     }
 
     .editor-header {
@@ -625,6 +634,11 @@
     const newBtn = document.getElementById('new-btn');
     const completeHomeBtn = document.getElementById('complete-home-btn');
 
+    const editorViewport = TadekuEditorMobileViewport.bind({
+      root: '#editor-view',
+      isActive: () => document.body.classList.contains('is-editing'),
+    });
+
     let currentProject = null;
     let saveTimer = null;
     let refViewStep = null;
@@ -670,6 +684,7 @@
       editorView.hidden = name !== 'editor';
       completeView.hidden = name !== 'complete';
       document.body.classList.toggle('is-editing', name === 'editor');
+      editorViewport.sync();
     }
 
     function displayTitle(project) {

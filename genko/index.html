@@ -10,7 +10,7 @@
     gtag('js', new Date());
     gtag('config', 'G-HN5C12BJ0W');
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="description" content="原稿用紙エディタ Genko。400字詰めの縦書き原稿用紙をブラウザで無料執筆。枚数換算・進捗表示・txt/md/jpg書き出し対応。登録不要で小説や文学の原稿作成に。">
   <title>原稿用紙エディタ Genko｜400字詰め縦書き無料 | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +21,7 @@
   <script src="../shared/export.js"></script>
   <link rel="stylesheet" href="../shared/editor-title.css">
   <link rel="stylesheet" href="../shared/editor-mobile.css">
+  <script src="../shared/editor-mobile-viewport.js"></script>
   <link rel="stylesheet" href="../shared/editor-save-indicator.css">
   <style>
     :root {
@@ -1714,6 +1715,7 @@
       capture.focus();
     })();
   </script>
+  <script>TadekuEditorMobileViewport.bind({ root: '.layout' });</script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>
