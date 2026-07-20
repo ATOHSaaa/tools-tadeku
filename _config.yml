@@ -1,0 +1,8 @@
+exclude:
+  - etude/prompts.md
+  - README.md
+  - iwe/DESIGN.md
+  - hyaku/ASSET-GENERATION.md
+  - aozora-style/extension/README.md
+  - note-style/extension/README.md
+  - stoic/README.md
