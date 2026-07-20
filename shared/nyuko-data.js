@@ -119,6 +119,12 @@
     { id: 'center', label: '下中央' },
   ];
 
+  const NONBULE_START_ANCHORS = [
+    { id: 'body', label: '本文1頁目' },
+    { id: 'first', label: '物理1頁目' },
+    { id: 'custom', label: '指定頁' },
+  ];
+
   const COLUMN_COUNTS = [
     { id: 1, label: '1段' },
     { id: 2, label: '2段' },
@@ -163,6 +169,17 @@
   function nonbulePositionLabel(id) {
     const item = NONBULE_POSITIONS.find((p) => p.id === id);
     return item ? item.label : NONBULE_POSITIONS[0].label;
+  }
+
+  function clampNonbuleStartPage(n, pageCount) {
+    const v = Number(n);
+    const max = Math.max(1, pageCount || 1);
+    if (!Number.isFinite(v) || v < 1) return 1;
+    return Math.min(max, Math.floor(v));
+  }
+
+  function normalizeNonbuleStartAnchor(id) {
+    return NONBULE_START_ANCHORS.some((item) => item.id === id) ? id : 'body';
   }
 
   const H_MM = 0.25;
@@ -328,7 +345,10 @@
     BLEED_OPTIONS,
     DEFAULT_BLEED_MM,
     NONBULE_POSITIONS,
+    NONBULE_START_ANCHORS,
     nonbulePositionLabel,
+    clampNonbuleStartPage,
+    normalizeNonbuleStartAnchor,
     COLUMN_COUNTS,
     WRITING_DIRECTIONS,
     CHAPTER_MODES,

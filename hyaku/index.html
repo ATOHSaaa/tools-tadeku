@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="100の質問を5段階で答えて、S/N・C/W・P/T・R/Fの4特性から物書きタイプ（16種・4文字）を診断。回答と結果を画像でダウンロードできます。">
+  <title>物書きへの100の質問 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f4f0e6;
+      --ink: #1a1814;
+      --muted: #5c564c;
+      --border: #1a1814;
+      --surface: #fff;
+      --accent: #6b4c2a;
+      --accent-soft: #e8ddd0;
+      --gold: #9a7340;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-top: 0.5rem;
+    }
+
+    .panel {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .btn-block {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 0.35rem;
+      background: var(--accent-soft);
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.25s ease;
+    }
+
+    .question-text {
+      font-size: clamp(1.05rem, 3.5vw, 1.2rem);
+      font-weight: 700;
+      line-height: 1.75;
+      margin-bottom: 2rem;
+    }
+
+    .likert {
+      margin-top: 0.5rem;
+    }
+
+    .likert-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(0.65rem, 3vw, 1.25rem);
+      flex-wrap: wrap;
+    }
+
+    .likert-end {
+      flex: 0 0 auto;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+      max-width: 4.5rem;
+      color: var(--muted);
+    }
+
+    .likert-end-agree {
+      text-align: right;
+    }
+
+    .likert-end-disagree {
+      text-align: left;
+    }
+
+    .likert-options {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      flex: 1 1 auto;
+      min-width: min(100%, 280px);
+    }
+
+    .likert-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      display: block;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .likert-btn.is-agree {
+      border-color: var(--accent);
+    }
+
+    .likert-btn.is-agree:hover {
+      background: var(--accent-soft);
+    }
+
+    .likert-btn.is-neutral {
+      border-color: var(--muted);
+    }
+
+    .likert-btn.is-neutral:hover {
+      background: var(--accent-soft);
+    }
+
+    .likert-btn.is-disagree {
+      border-color: #8a7f72;
+    }
+
+    .likert-btn.is-disagree:hover {
+      background: var(--bg);
+    }
+
+    .likert-btn.is-selected.is-agree,
+    .likert-btn.is-selected.is-neutral {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .likert-btn.is-selected.is-disagree {
+      background: #8a7f72;
+      border-color: #8a7f72;
+    }
+
+    .quiz-nav {
+      margin-top: 1.25rem;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .quiz-nav .btn:disabled {
+      visibility: hidden;
+    }
+
+    @media (max-width: 480px) {
+      .likert-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .likert-end {
+        max-width: none;
+        text-align: center;
+      }
+      .likert-end-agree,
+      .likert-end-disagree {
+        text-align: center;
+      }
+    }
+
+    .result-top {
+      text-align: center;
+      padding: 0.5rem 0 1.25rem;
+      border-bottom: 1px dashed #ccc4b8;
+      margin-bottom: 1.25rem;
+    }
+
+    .result-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-code {
+      font-size: clamp(2.5rem, 10vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      margin: 0.5rem 0 0.75rem;
+      padding-right: 0.28em;
+      color: var(--ink);
+    }
+
+    .result-name {
+      font-size: clamp(1.15rem, 4vw, 1.45rem);
+      font-weight: 900;
+      line-height: 1.45;
+      color: var(--accent);
+    }
+
+    .type-legend {
+      list-style: none;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      text-align: left;
+    }
+
+    .type-legend-item {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.55rem;
+      align-items: baseline;
+      font-size: 0.78rem;
+    }
+
+    .type-legend-letter {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .type-legend-body {
+      line-height: 1.55;
+    }
+
+    .type-legend-en {
+      font-weight: 700;
+    }
+
+    .type-legend-ja {
+      color: var(--muted);
+    }
+
+    .type-legend-pct {
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .result-blurb {
+      font-size: 0.9rem;
+      line-height: 1.85;
+      text-align: left;
+      margin-top: 1rem;
+    }
+
+    .axis-results {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .axis-row-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .axis-row-label .axis-side {
+      min-width: 0;
+    }
+
+    .axis-row-label .axis-side.is-dominant {
+      color: var(--accent);
+    }
+
+    .axis-row-label .axis-letter {
+      font-size: 0.95rem;
+      font-weight: 900;
+      margin-right: 0.2rem;
+    }
+
+    .axis-bar {
+      height: 0.75rem;
+      display: flex;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .axis-bar-left,
+    .axis-bar-right {
+      height: 100%;
+      transition: width 0.4s ease;
+    }
+
+    .axis-bar-left {
+      background: var(--accent);
+    }
+
+    .axis-bar-right {
+      background: #8a7f72;
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem;
+      margin: 1.25rem 0;
+    }
+
+    .download-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.65;
+      margin-top: 0.5rem;
+    }
+
+    .view[hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>物書きへの100の質問</h1>
+      <p class="lead">100の質問文に、5段階（そう思う ↔ そう思わない）で答えると、4つの特性から16タイプが判定されます。</p>
+    </header>
+
+    <section class="panel view" id="view-start">
+      <button type="button" class="btn btn-primary btn-block" id="start-btn">はじめる</button>
+    </section>
+
+    <section class="panel view" id="view-quiz" hidden>
+      <div class="progress">
+        <span id="progress-label">1 / 100</span>
+        <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progress-fill" style="width:1%"></div></div>
+      </div>
+      <h2 class="question-text" id="question-text"></h2>
+      <div class="likert" id="likert"></div>
+      <div class="quiz-nav">
+        <button type="button" class="btn" id="back-btn">← 前の質問</button>
+      </div>
+    </section>
+
+    <div class="view" id="view-result-wrap" hidden aria-live="polite">
+      <section class="panel" id="view-result">
+        <h2 class="panel-title">診断結果</h2>
+        <div class="result-top" id="result-top"></div>
+        <h3 class="panel-title">4つの特性</h3>
+        <div class="axis-results" id="axis-results"></div>
+        <div class="result-actions">
+          <button type="button" class="btn btn-primary" id="download-btn">結果を画像で保存</button>
+          <button type="button" class="btn" id="retry-btn">もう一度</button>
+        </div>
+        <p class="download-note">100問の回答と診断結果を1枚のPNG画像にまとめてダウンロードします。</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="../shared/hyaku-data.js"></script>
+  <script src="../shared/hyaku-engine.js"></script>
+  <script src="../shared/hyaku-export.js"></script>
+  <script src="../shared/export.js"></script>
+  <script>
+    const QUESTIONS = window.HyakuEngine.QUESTIONS;
+    const SCALE_LEVELS = window.HyakuEngine.SCALE_LEVELS;
+    const LIKERT_UI = [
+      { level: 1, side: 'agree' },
+      { level: 2, side: 'agree' },
+      { level: 3, side: 'neutral' },
+      { level: 4, side: 'disagree' },
+      { level: 5, side: 'disagree' },
+    ];
+    const STORAGE_KEY = 'tadeku-hyaku-progress-v4';
+
+    const els = {
+      viewStart: document.getElementById('view-start'),
+      viewQuiz: document.getElementById('view-quiz'),
+      viewResult: document.getElementById('view-result-wrap'),
+      startBtn: document.getElementById('start-btn'),
+      progressLabel: document.getElementById('progress-label'),
+      progressFill: document.getElementById('progress-fill'),
+      questionText: document.getElementById('question-text'),
+      likert: document.getElementById('likert'),
+      backBtn: document.getElementById('back-btn'),
+      resultTop: document.getElementById('result-top'),
+      axisResults: document.getElementById('axis-results'),
+      downloadBtn: document.getElementById('download-btn'),
+      retryBtn: document.getElementById('retry-btn'),
+    };
+
+    let step = 0;
+    let answers = [];
+    let lastDiagnosis = null;
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function saveProgress() {
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, answers }));
+      } catch (_) {}
+    }
+
+    function loadProgress() {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function clearProgress() {
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    }
+
+    function showView(name) {
+      els.viewStart.hidden = name !== 'start';
+      els.viewQuiz.hidden = name !== 'quiz';
+      els.viewResult.hidden = name !== 'result';
+    }
+
+    function resetQuiz() {
+      step = 0;
+      answers = [];
+      lastDiagnosis = null;
+      clearProgress();
+      els.startBtn.textContent = 'はじめる';
+      showView('start');
+    }
+
+    function startQuiz(resume) {
+      if (resume && resume.step > 0 && resume.step < QUESTIONS.length) {
+        step = resume.step;
+        answers = resume.answers || [];
+      } else {
+        step = 0;
+        answers = [];
+      }
+      showView('quiz');
+      renderQuestion();
+    }
+
+    function formatStatement(text) {
+      const t = String(text).trim();
+      if (/[。．!?？]$/.test(t)) return t;
+      return t + '。';
+    }
+
+    function renderQuestion() {
+      const q = QUESTIONS[step];
+      const total = QUESTIONS.length;
+      const currentAnswer = answers[step];
+      els.progressLabel.textContent = (step + 1) + ' / ' + total;
+      els.progressFill.style.width = ((step + 1) / total * 100) + '%';
+      els.questionText.textContent = formatStatement(q.text);
+      els.backBtn.disabled = step <= 0;
+
+      const buttons = LIKERT_UI.map((item) => {
+        const scale = SCALE_LEVELS.find((s) => s.level === item.level);
+        const selected = currentAnswer && currentAnswer.level === item.level;
+        return '<button type="button" class="likert-btn is-' + item.side +
+          (selected ? ' is-selected' : '') + '" data-level="' + item.level +
+          '" aria-label="' + esc(scale.label) + '"></button>';
+      }).join('');
+
+      els.likert.innerHTML =
+        '<div class="likert-row">' +
+          '<span class="likert-end likert-end-agree">そう思う</span>' +
+          '<div class="likert-options" role="radiogroup" aria-label="回答">' + buttons + '</div>' +
+          '<span class="likert-end likert-end-disagree">そう思わない</span>' +
+        '</div>';
+
+      els.likert.querySelectorAll('.likert-btn').forEach((btn) => {
+        btn.addEventListener('click', () => submitAnswer(Number(btn.dataset.level)));
+      });
+    }
+
+    function submitAnswer(level) {
+      const q = QUESTIONS[step];
+      const scale = SCALE_LEVELS.find((item) => item.level === level);
+      answers[step] = {
+        num: q.num,
+        text: q.text,
+        leftText: q.leftText,
+        rightText: q.rightText,
+        level: level,
+        choiceText: scale.label,
+        axis: q.axis,
+      };
+      step += 1;
+      saveProgress();
+      if (step >= QUESTIONS.length) {
+        renderResult();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function goBack() {
+      if (step <= 0) return;
+      step -= 1;
+      saveProgress();
+      renderQuestion();
+    }
+
+    function renderTypeLegend(axisResults) {
+      return '<ul class="type-legend">' +
+        axisResults.map((axis) =>
+          '<li class="type-legend-item">' +
+            '<span class="type-legend-letter">' + esc(axis.letter) + '</span>' +
+            '<span class="type-legend-body">' +
+              '<span class="type-legend-en">' + esc(axis.letterEn) + '</span>' +
+              ' <span class="type-legend-ja">（' + esc(axis.isLeft ? axis.leftLabel : axis.rightLabel) + '）</span>' +
+            '</span>' +
+            '<span class="type-legend-pct">' + axis.dominantPct + '%</span>' +
+          '</li>'
+        ).join('') +
+      '</ul>';
+    }
+
+    function renderAxisResults(axisResults) {
+      els.axisResults.innerHTML = axisResults.map((axis) =>
+        '<div class="axis-row">' +
+          '<div class="axis-row-label">' +
+            '<span class="axis-side' + (axis.isLeft ? ' is-dominant' : '') + '">' +
+              '<span class="axis-letter">' + esc(axis.leftLetter) + '</span>' +
+              esc(axis.leftEn) + '（' + esc(axis.leftLabel) + '） ' + axis.leftPct + '%' +
+            '</span>' +
+            '<span class="axis-side' + (!axis.isLeft ? ' is-dominant' : '') + '">' +
+              '<span class="axis-letter">' + esc(axis.rightLetter) + '</span>' +
+              esc(axis.rightEn) + '（' + esc(axis.rightLabel) + '） ' + axis.rightPct + '%' +
+            '</span>' +
+          '</div>' +
+          '<div class="axis-bar">' +
+            '<div class="axis-bar-left" style="width:' + axis.leftPct + '%"></div>' +
+            '<div class="axis-bar-right" style="width:' + axis.rightPct + '%"></div>' +
+          '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderResult() {
+      const diagnosis = window.HyakuEngine.diagnose(answers.slice(0, QUESTIONS.length));
+      lastDiagnosis = diagnosis;
+      clearProgress();
+
+      els.resultTop.innerHTML =
+        '<p class="result-label">あなたのタイプ</p>' +
+        '<p class="result-code">' + esc(diagnosis.code) + '</p>' +
+        '<p class="result-name">' + esc(diagnosis.type.name) + '</p>' +
+        renderTypeLegend(diagnosis.axisResults) +
+        '<p class="result-blurb">' + esc(diagnosis.type.blurb) + '</p>';
+
+      renderAxisResults(diagnosis.axisResults);
+      showView('result');
+      els.viewResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function downloadImage() {
+      if (!lastDiagnosis) return;
+      els.downloadBtn.disabled = true;
+      els.downloadBtn.textContent = '生成中…';
+      try {
+        await window.HyakuExport.downloadResultImage({
+          code: lastDiagnosis.code,
+          type: lastDiagnosis.type,
+          axisResults: lastDiagnosis.axisResults,
+          answers: answers.slice(0, QUESTIONS.length),
+        });
+      } catch (err) {
+        alert('画像の生成に失敗しました。');
+        console.error(err);
+      } finally {
+        els.downloadBtn.disabled = false;
+        els.downloadBtn.textContent = '結果を画像で保存';
+      }
+    }
+
+    els.retryBtn.addEventListener('click', resetQuiz);
+    els.downloadBtn.addEventListener('click', downloadImage);
+    els.backBtn.addEventListener('click', goBack);
+
+    const saved = loadProgress();
+    if (saved && saved.step > 0 && saved.step < QUESTIONS.length) {
+      els.startBtn.textContent = '続きから（' + saved.step + ' / ' + QUESTIONS.length + '）';
+    }
+    els.startBtn.addEventListener('click', () => {
+      const resume = loadProgress();
+      if (resume && resume.step > 0 && resume.step < QUESTIONS.length) {
+        startQuiz(resume);
+      } else {
+        startQuiz(null);
+      }
+    });
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

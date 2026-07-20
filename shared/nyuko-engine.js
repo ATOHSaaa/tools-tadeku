@@ -656,9 +656,33 @@
     ].join('|');
   }
 
+  function getMeasureHost() {
+    let host = document.getElementById('nyuko-measure-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'nyuko-measure-host';
+      host.setAttribute('aria-hidden', 'true');
+      host.style.cssText =
+        'position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;' +
+        'visibility:hidden;pointer-events:none;z-index:-1;';
+      document.body.appendChild(host);
+    }
+    return host;
+  }
+
+  function detachMeasureBodyFrom(host) {
+    if (measureBodyEl && host && host.contains(measureBodyEl)) {
+      getMeasureHost().appendChild(measureBodyEl);
+    }
+  }
+
   function createMeasureBody(font, bodyWidthPx, bodyHeightPx, lineHeight, letterSpacing, columnCount, danGapMm, writingDirection) {
     const horizontal = isHorizontal(writingDirection);
-    const host = document.getElementById('nyuko-export-host') || document.body;
+    const host = getMeasureHost();
+    if (measureBodyEl && !measureBodyEl.isConnected) {
+      measureBodyEl = null;
+      measureBodyCacheKey = '';
+    }
     const cacheKey = measureBodyCacheKeyFrom(
       font, bodyWidthPx, bodyHeightPx, lineHeight, letterSpacing, columnCount, danGapMm, writingDirection
     );
@@ -668,6 +692,8 @@
       measureBodyEl.style.cssText =
         'position:absolute;top:0;left:0;visibility:hidden;pointer-events:none;' +
         'line-break:strict;white-space:normal;box-sizing:border-box;';
+      host.appendChild(measureBodyEl);
+    } else if (measureBodyEl.parentElement !== host) {
       host.appendChild(measureBodyEl);
     }
 
@@ -977,6 +1003,42 @@
     };
   }
 
+  function firstBodyPageIndex(layoutPages) {
+    if (!layoutPages || !layoutPages.length) return 1;
+    for (let i = 0; i < layoutPages.length; i++) {
+      if (layoutPages[i] && layoutPages[i].type === 'body') return i + 1;
+    }
+    return 1;
+  }
+
+  function resolveNonbuleStartPage(opts) {
+    const options = opts || {};
+    const pages = options.layoutPages || [];
+    const pageCount = pages.length || 1;
+    const anchor = (window.NyukoData && window.NyukoData.normalizeNonbuleStartAnchor)
+      ? window.NyukoData.normalizeNonbuleStartAnchor(options.nonbuleStartAnchor)
+      : (options.nonbuleStartAnchor || 'body');
+    if (anchor === 'first') return 1;
+    if (anchor === 'custom') {
+      const clamp = window.NyukoData && window.NyukoData.clampNonbuleStartPage;
+      return clamp
+        ? clamp(options.nonbuleStartPage, pageCount)
+        : Math.max(1, Math.min(pageCount, Math.floor(Number(options.nonbuleStartPage) || 1)));
+    }
+    return firstBodyPageIndex(pages);
+  }
+
+  function resolveNonbuleDisplayNumber(physicalPageIndex, pageType, opts) {
+    if (pageType !== 'body') return null;
+    const startPage = resolveNonbuleStartPage(opts);
+    const startNumRaw = Number(opts && opts.nonbuleStartNumber);
+    const startNum = Number.isFinite(startNumRaw) && startNumRaw >= 1
+      ? Math.floor(startNumRaw)
+      : 1;
+    if (physicalPageIndex < startPage) return null;
+    return startNum + (physicalPageIndex - startPage);
+  }
+
   function resolvePageInsets(format, pageNumber, writingDirection, scale) {
     const s = scale || 1;
     const top = mmToPx(format.marginTop) * s;
@@ -1041,7 +1103,8 @@
     if (pageNumber > 0 && !opts.hidePageNumber) {
       const label = document.createElement('div');
       label.className = 'nyuko-page-label';
-      label.textContent = String(pageNumber);
+      const labelNum = opts.nonbuleDisplay != null ? opts.nonbuleDisplay : pageNumber;
+      label.textContent = String(labelNum);
       label.style.fontSize = (8 * scale) + 'pt';
       const gapPx = mmToPx(
         (window.NyukoData && window.NyukoData.nonbuleBodyGapMm)
@@ -1126,17 +1189,25 @@
 
   function createLayoutPage(page, format, font, bleedMm, scale, pageNumber, options) {
     const opts = options || {};
-    if (page && page.type === 'body') {
-      return createPageElement(page.atoms, format, font, bleedMm, scale, pageNumber, opts);
+    const pageType = page && page.type ? page.type : 'static';
+    if (pageType === 'body') {
+      const displayNum = resolveNonbuleDisplayNumber(pageNumber, pageType, opts);
+      const bodyOpts = displayNum != null
+        ? Object.assign({}, opts, { nonbuleDisplay: displayNum })
+        : Object.assign({}, opts, { hidePageNumber: true });
+      return createPageElement(page.atoms, format, font, bleedMm, scale, pageNumber, bodyOpts);
     }
-    // 目次・奥付・白ページにはノンブルを載せない
     const staticOpts = Object.assign({}, opts, { hidePageNumber: true });
-    return createStaticPageElement(page.html, page.type || 'static', format, font, bleedMm, scale, pageNumber, staticOpts);
+    return createStaticPageElement(page.html, pageType, format, font, bleedMm, scale, pageNumber, staticOpts);
   }
 
   function buildExportRenderOptions(opts) {
     return {
       nonbulePosition: opts.nonbulePosition || 'spread',
+      nonbuleStartAnchor: opts.nonbuleStartAnchor,
+      nonbuleStartPage: opts.nonbuleStartPage,
+      nonbuleStartNumber: opts.nonbuleStartNumber,
+      layoutPages: opts.layoutPages,
       lineHeightH: opts.lineHeightH,
       letterSpacing: opts.letterSpacing || 0,
       columnCount: opts.columnCount,
@@ -1156,6 +1227,7 @@
   }
 
   function prepareExportHost(host, dims) {
+    detachMeasureBodyFrom(host);
     host.innerHTML = '';
     host.classList.add('is-exporting');
     host.removeAttribute('style');
@@ -1167,6 +1239,7 @@
 
   function clearExportHost(host) {
     if (!host) return;
+    detachMeasureBodyFrom(host);
     host.innerHTML = '';
     host.classList.remove('is-exporting');
     host.removeAttribute('style');
@@ -1548,6 +1621,7 @@
     const cleanup = () => {
       document.title = prevTitle;
       window.removeEventListener('afterprint', cleanup);
+      window.dispatchEvent(new CustomEvent('nyuko-after-print'));
     };
     window.addEventListener('afterprint', cleanup);
 
@@ -1569,6 +1643,9 @@
     detectChapters,
     createPageElement,
     createLayoutPage,
+    firstBodyPageIndex,
+    resolveNonbuleStartPage,
+    resolveNonbuleDisplayNumber,
     exportPdf,
     exportImages,
     exportPrint,

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="読書好きにおすすめのツール・サイト集。Kindleセール、新刊情報、読書管理、青空文庫、国会図書館デジタルコレクションなど。">
+  <title>読書好きにおすすめのツール・サイト | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --accent-line: #e8913a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 4.5rem;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 2rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .back-link:hover {
+      color: var(--ink);
+    }
+    h1 {
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .intro {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.75;
+      color: var(--ink);
+      margin-bottom: 2.75rem;
+    }
+    .category + .category {
+      margin-top: 3.5rem;
+    }
+    .category-title {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      line-height: 1.2;
+      margin-bottom: 1.75rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+      }
+    }
+    .item {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem 1.35rem;
+      transition: border-color 0.15s ease;
+    }
+    .item:hover {
+      border-color: var(--ink);
+    }
+    .item h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1.3;
+      margin-bottom: 0.45rem;
+    }
+    .accent-line {
+      width: 2.5rem;
+      height: 3px;
+      background: var(--accent-line);
+      margin-bottom: 0.65rem;
+    }
+    .item p {
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 0;
+    }
+    .item-url {
+      display: block;
+      margin-top: 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #999;
+      word-break: break-all;
+    }
+    footer {
+      margin-top: 4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back-link" href="../">← tadeku-tools</a>
+    <h1>読書好きにおすすめのツール・サイト</h1>
+    <p class="intro">読書の記録、新刊チェック、Kindleセール、古典文学の閲覧など、本好き向けの外部サイトをまとめています。リンク先はすべて別サイトです。</p>
+    <nav aria-label="読書向け外部サイト一覧">
+      <section class="category">
+        <h2 class="category-title">Kindle・セール</h2>
+        <div class="grid">
+          <a class="item" href="https://kindou.info/" target="_blank" rel="noopener noreferrer">
+            <h3>きんどう</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>Kindleセール・新刊ニュースを配信する非公式Amazonニュースメディア。日替わりセールや出版社フェアをいち早くチェック。</p>
+            <span class="item-url">https://kindou.info/</span>
+          </a>
+          <a class="item" href="https://yapi.ta2o.net/kndlsl/sales/" target="_blank" rel="noopener noreferrer">
+            <h3>キンセリ セール特設ページ一覧</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>Kindleセール情報サイト「キンセリ」の、開催中セール対象作品一覧ページのインデックス。表紙表示・ソート・フィルタに対応。</p>
+            <span class="item-url">https://yapi.ta2o.net/kndlsl/sales/</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">新刊情報</h2>
+        <div class="grid">
+          <a class="item" href="https://booklog.jp/release" target="_blank" rel="noopener noreferrer">
+            <h3>ブクログ 新刊ニュース</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>本・文庫・新書・マンガの新刊情報を日付別に一覧。著者やシリーズを登録すると新刊通知も受け取れる。</p>
+            <span class="item-url">https://booklog.jp/release</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">読書管理・SNS</h2>
+        <div class="grid">
+          <a class="item" href="https://booklog.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>ブクログ</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>読んだ本を本棚に登録し、感想・レビューを書いて共有できる読書SNS。読書管理・ランキング・新刊情報も。</p>
+            <span class="item-url">https://booklog.jp/</span>
+          </a>
+          <a class="item" href="https://bookmeter.com/home" target="_blank" rel="noopener noreferrer">
+            <h3>読書メーター</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>読んだ本の記録とレビュー投稿ができる読書管理サービス。本・作家ランキングや読書の記録機能を備える。</p>
+            <span class="item-url">https://bookmeter.com/home</span>
+          </a>
+          <a class="item" href="https://www.reads.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>Reads</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>読了以外の記録やタグ付け、写真・場所のメモも残せる読書SNS。本の話に特化した穏やかなタイムライン。</p>
+            <span class="item-url">https://www.reads.jp/</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">読める本・資料</h2>
+        <div class="grid">
+          <a class="item" href="https://www.aozora.gr.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>青空文庫</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>著作権保護期間が満了した日本語の文学作品を無料公開する電子図書館。作家名・作品名から古典文学を読める。</p>
+            <span class="item-url">https://www.aozora.gr.jp/</span>
+          </a>
+          <a class="item" href="https://dl.ndl.go.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>国立国会図書館デジタルコレクション</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>国会図書館が所蔵する資料のデジタル版を検索・閲覧できるサービス。貴重書・古典籍・近代資料など。</p>
+            <span class="item-url">https://dl.ndl.go.jp/</span>
+          </a>
+        </div>
+      </section>
+    </nav>
+    <footer>tools.tadeku.net</footer>
+  </div>
+</body>
+</html>

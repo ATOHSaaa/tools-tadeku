@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Aozora Style",
   "description": "青空文庫の読み心地をスライダーで調整。縦書き・ゴシック・余白などを自由に変更できます。",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

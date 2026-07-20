@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="短編を初稿から第六稿まで書き直す執筆ツール。前の版を横に見ながら、1稿ずつ進めます。原稿はブラウザに自動保存されます。">
+  <title>Suiko — 初稿から第六稿まで | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <link rel="stylesheet" href="../shared/editor-title.css">
+  <style>
+    :root {
+      --bg: #f8f4ed;
+      --ink: #1a1814;
+      --muted: #5c564c;
+      --border: #1a1814;
+      --surface: #fff;
+      --accent: #4a5d4a;
+      --accent-soft: #e2e8df;
+      --ref-bg: #ebe6dc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.is-editing {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .view[hidden] { display: none !important; }
+
+    /* --- home --- */
+    .home {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 5rem;
+    }
+
+    .lead {
+      font-size: 0.9rem;
+      color: var(--ink);
+      line-height: 1.85;
+      margin-top: 0.5rem;
+    }
+
+    .home-actions {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .tool-about {
+      margin-top: 2.25rem;
+      padding: 1.15rem 1.25rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .tool-about-list {
+      font-size: 0.85rem;
+      color: var(--ink);
+      line-height: 1.85;
+      padding-left: 1.1rem;
+    }
+
+    .tool-about-list li + li { margin-top: 0.35rem; }
+
+    .history-section {
+      margin-top: 2.5rem;
+    }
+
+    .history-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .history-item-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .history-item-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item-meta {
+      font-size: 0.72rem;
+      margin-top: 0.2rem;
+    }
+
+    .history-item-step {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .history-item-date {
+      color: var(--muted);
+    }
+
+    .history-item-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    /* --- editor --- */
+    .editor-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .editor-header {
+      flex-shrink: 0;
+      border-bottom: 2px solid var(--border);
+      background: var(--bg);
+    }
+
+    .editor-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem 0.65rem;
+    }
+
+    .brand {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .editor-stats {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .step-badge {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.55rem;
+      border: 2px solid var(--border);
+      background: var(--accent-soft);
+    }
+
+    .char-delta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .char-delta.is-plus { color: #3a6b3a; }
+    .char-delta.is-minus { color: #8a4a3a; }
+
+    .save-indicator {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .save-indicator.saved { color: var(--accent); }
+
+    .progress-track {
+      display: flex;
+      gap: 0.35rem;
+      padding: 0 1.25rem 0.75rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .progress-track::-webkit-scrollbar { display: none; }
+
+    .progress-step {
+      flex: 1;
+      min-width: 2.5rem;
+      text-align: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      padding-bottom: 0.35rem;
+      border-bottom: 3px solid #ccc5b8;
+      white-space: nowrap;
+    }
+
+    .progress-step.is-done {
+      color: var(--ink);
+      border-bottom-color: var(--accent);
+    }
+
+    .progress-step.is-current {
+      color: var(--ink);
+      border-bottom-color: var(--border);
+      font-weight: 900;
+    }
+
+    .editor-title-row {
+      padding: 0 1.25rem 0.65rem;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 2px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .editor-body {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .ref-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-right: 2px solid var(--border);
+      background: #f8f5ef;
+    }
+
+    .ref-panel[hidden] { display: none !important; }
+
+    .ref-tabs {
+      flex-shrink: 0;
+      display: flex;
+      gap: 0.35rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid #ccc5b8;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .ref-tabs::-webkit-scrollbar { display: none; }
+
+    .ref-tab {
+      appearance: none;
+      font: inherit;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.3rem 0.55rem;
+      border: 1.5px solid #bbb3a4;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+
+    .ref-tab:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .ref-tab.is-active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .ref-meta {
+      flex-shrink: 0;
+      padding: 0.35rem 1rem 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #3f3a33;
+    }
+
+    .ref-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 1rem 1.15rem;
+      font-size: 0.98rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--ink);
+    }
+
+    .write-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--surface);
+    }
+
+    .write-panel.is-full {
+      grid-column: 1 / -1;
+    }
+
+    body.ref-collapsed .ref-panel {
+      display: none;
+    }
+
+    body.ref-collapsed .write-panel {
+      grid-column: 1 / -1;
+    }
+
+    #editor {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 1.05rem;
+      line-height: 2;
+      color: var(--ink);
+      padding: 1.25rem 1.5rem;
+      resize: none;
+      outline: none;
+      caret-color: var(--ink);
+    }
+
+    @media (max-width: 720px) {
+      .editor-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1.2fr);
+      }
+
+      .ref-panel {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+        max-height: 35vh;
+      }
+
+      .write-panel.is-full {
+        grid-column: auto;
+        grid-row: 1;
+      }
+
+      body.ref-collapsed .ref-panel { display: none; }
+      body.ref-collapsed .editor-body { grid-template-rows: minmax(0, 1fr); }
+      body.ref-collapsed .write-panel { grid-row: 1; }
+    }
+
+    /* --- complete --- */
+    .complete {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 5rem;
+    }
+
+    .complete-header {
+      margin-bottom: 1.75rem;
+    }
+
+    .complete-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      margin-top: 0.35rem;
+    }
+
+    .complete-meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+
+    .version-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .version-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #ddd6c8;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .version-card-body {
+      padding: 1rem 1.15rem;
+      font-size: 0.92rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 12rem;
+      overflow-y: auto;
+    }
+
+    .complete-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 1.5rem;
+    }
+
+    /* --- shared --- */
+    .btn {
+      appearance: none;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.55rem 0.95rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .btn-ghost {
+      background: transparent;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #8a3030;
+      border-color: #8a3030;
+    }
+
+    .btn-small {
+      font-size: 0.72rem;
+      padding: 0.35rem 0.65rem;
+    }
+
+    .link-btn {
+      appearance: none;
+      font: inherit;
+      font-size: 0.78rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="view" id="home-view">
+    <div class="home">
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</h1>
+      <p class="lead">短編を初稿から第六稿まで、書き直す。前の版を横に見ながら、1稿ずつ進めます。</p>
+      <div class="home-actions">
+        <button type="button" class="btn btn-primary" id="start-btn">書き始める</button>
+      </div>
+      <div class="tool-about">
+        <ul class="tool-about-list">
+          <li>初稿を書き終えたら、第二稿から第六稿まで書き直します。</li>
+          <li>書き直しのたびに、これまでの稿を読み取り専用で横に参照できます。</li>
+          <li>原稿はブラウザに自動保存されます。外部サーバーには送信されません。</li>
+        </ul>
+      </div>
+      <section class="history-section" id="history-section" hidden>
+        <h2 class="history-heading">作品一覧</h2>
+        <ul class="history-list" id="history-list"></ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="view" id="editor-view" hidden>
+    <div class="editor-layout">
+      <header class="editor-header">
+        <div class="editor-header-top">
+          <div class="brand"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</div>
+          <div class="editor-stats">
+            <span class="step-badge" id="step-badge">初稿</span>
+            <span class="save-indicator" id="save-indicator"></span>
+            <span>文字数 <strong id="char-count">0</strong></span>
+            <span class="char-delta" id="char-delta" hidden></span>
+          </div>
+        </div>
+        <div class="progress-track" id="progress-track" aria-hidden="true"></div>
+        <div class="editor-title-row">
+          <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
+        </div>
+        <div class="editor-toolbar">
+          <button type="button" class="link-btn" id="back-home-btn">一覧に戻る</button>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button type="button" class="btn btn-small btn-ghost" id="toggle-ref-btn" hidden>参照を隠す</button>
+            <button type="button" class="btn btn-primary" id="finish-step-btn" disabled>この回を終える</button>
+          </div>
+        </div>
+      </header>
+      <div class="editor-body" id="editor-body">
+        <aside class="ref-panel" id="ref-panel" hidden>
+          <div class="ref-tabs" id="ref-tabs" role="tablist" aria-label="参照する稿"></div>
+          <div class="ref-meta" id="ref-meta"></div>
+          <div class="ref-body" id="ref-body"></div>
+        </aside>
+        <div class="write-panel is-full" id="write-panel">
+          <textarea id="editor" spellcheck="false" placeholder="ここに書く"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="complete-view" hidden>
+    <div class="complete">
+      <div class="complete-header">
+        <div class="brand"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</div>
+        <h2 class="complete-title" id="complete-title">（無題）</h2>
+        <p class="complete-meta" id="complete-meta"></p>
+      </div>
+      <div id="version-list"></div>
+      <div class="complete-actions">
+        <button type="button" class="btn btn-primary" id="export-btn">全文を書き出し（.txt）</button>
+        <button type="button" class="btn" id="new-btn">新しい短編</button>
+        <button type="button" class="btn btn-ghost" id="complete-home-btn">一覧に戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/suiko-engine.js"></script>
+  <script>
+    'use strict';
+
+    const S = window.TadekuSuiko;
+    const SESSION_KEY = 'tadeku-suiko-active';
+
+    const homeView = document.getElementById('home-view');
+    const editorView = document.getElementById('editor-view');
+    const completeView = document.getElementById('complete-view');
+    const startBtn = document.getElementById('start-btn');
+    const historySection = document.getElementById('history-section');
+    const historyList = document.getElementById('history-list');
+
+    const stepBadge = document.getElementById('step-badge');
+    const saveIndicator = document.getElementById('save-indicator');
+    const charCount = document.getElementById('char-count');
+    const charDelta = document.getElementById('char-delta');
+    const progressTrack = document.getElementById('progress-track');
+    const workTitle = document.getElementById('work-title');
+    const editor = document.getElementById('editor');
+    const refPanel = document.getElementById('ref-panel');
+    const refTabs = document.getElementById('ref-tabs');
+    const refMeta = document.getElementById('ref-meta');
+    const refBody = document.getElementById('ref-body');
+    const writePanel = document.getElementById('write-panel');
+    const finishStepBtn = document.getElementById('finish-step-btn');
+    const backHomeBtn = document.getElementById('back-home-btn');
+    const toggleRefBtn = document.getElementById('toggle-ref-btn');
+
+    const completeTitle = document.getElementById('complete-title');
+    const completeMeta = document.getElementById('complete-meta');
+    const versionList = document.getElementById('version-list');
+    const exportBtn = document.getElementById('export-btn');
+    const newBtn = document.getElementById('new-btn');
+    const completeHomeBtn = document.getElementById('complete-home-btn');
+
+    let currentProject = null;
+    let saveTimer = null;
+    let refViewStep = null;
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function rememberActive(id) {
+      try {
+        if (id) sessionStorage.setItem(SESSION_KEY, id);
+        else sessionStorage.removeItem(SESSION_KEY);
+      } catch (_) {}
+    }
+
+    function getActiveId() {
+      try { return sessionStorage.getItem(SESSION_KEY); } catch (_) { return null; }
+    }
+
+    function getProjectIdFromUrl() {
+      return new URLSearchParams(location.search).get('id');
+    }
+
+    function projectHref(id) {
+      return location.pathname + '?id=' + encodeURIComponent(id);
+    }
+
+    function syncProjectUrl(id) {
+      const url = new URL(location.href);
+      if (id) url.searchParams.set('id', id);
+      else url.searchParams.delete('id');
+      const next = url.pathname + url.search + url.hash;
+      const current = location.pathname + location.search + location.hash;
+      if (next !== current) history.replaceState(null, '', next);
+    }
+
+    function showView(name) {
+      homeView.hidden = name !== 'home';
+      editorView.hidden = name !== 'editor';
+      completeView.hidden = name !== 'complete';
+      document.body.classList.toggle('is-editing', name === 'editor');
+    }
+
+    function displayTitle(project) {
+      const t = (project && project.title || '').trim();
+      return t || '（無題）';
+    }
+
+    function scheduleSave() {
+      if (!currentProject) return;
+      saveIndicator.textContent = '保存中…';
+      saveIndicator.classList.remove('saved');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        try {
+          currentProject = await S.saveDraft(currentProject.id, {
+            title: workTitle.value,
+            body: editor.value,
+          });
+          saveIndicator.textContent = '保存済み';
+          saveIndicator.classList.add('saved');
+        } catch (err) {
+          console.error(err);
+          saveIndicator.textContent = '保存エラー';
+          saveIndicator.classList.remove('saved');
+        }
+      }, 400);
+    }
+
+    function updateCharStats() {
+      const len = editor.value.length;
+      charCount.textContent = len;
+      finishStepBtn.disabled = !editor.value.trim();
+
+      const prev = S.getPreviousVersion(currentProject);
+      if (!prev) {
+        charDelta.hidden = true;
+        return;
+      }
+      const diff = len - prev.charCount;
+      charDelta.hidden = false;
+      if (diff === 0) {
+        charDelta.textContent = '±0';
+        charDelta.className = 'char-delta';
+      } else if (diff > 0) {
+        charDelta.textContent = '+' + diff;
+        charDelta.className = 'char-delta is-plus';
+      } else {
+        charDelta.textContent = String(diff);
+        charDelta.className = 'char-delta is-minus';
+      }
+    }
+
+    function renderProgress(project) {
+      progressTrack.innerHTML = S.STEP_LABELS.map((label, i) => {
+        let cls = 'progress-step';
+        if (project.status === 'complete' || i < project.step) cls += ' is-done';
+        if (project.status !== 'complete' && i === project.step) cls += ' is-current';
+        return '<div class="' + cls + '">' + esc(label) + '</div>';
+      }).join('');
+    }
+
+    function renderReference(project) {
+      const viewable = S.getViewableVersions(project);
+      if (!viewable.length) {
+        refPanel.hidden = true;
+        writePanel.classList.add('is-full');
+        toggleRefBtn.hidden = true;
+        document.body.classList.remove('ref-collapsed');
+        refViewStep = null;
+        return;
+      }
+
+      const steps = viewable.map((v) => v.step);
+      if (refViewStep == null || !steps.includes(refViewStep)) {
+        refViewStep = S.defaultRefStep(project);
+      }
+
+      const selected = S.getVersionByStep(project, refViewStep) || viewable[viewable.length - 1];
+      refViewStep = selected.step;
+
+      refPanel.hidden = false;
+      writePanel.classList.remove('is-full');
+      toggleRefBtn.hidden = false;
+
+      refTabs.innerHTML = viewable.map((v) => (
+        '<button type="button" class="ref-tab' + (v.step === refViewStep ? ' is-active' : '') + '" ' +
+          'role="tab" aria-selected="' + (v.step === refViewStep) + '" data-step="' + v.step + '">' +
+          esc(S.stepLabel(v.step)) +
+        '</button>'
+      )).join('');
+
+      refTabs.querySelectorAll('[data-step]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          refViewStep = Number(btn.dataset.step);
+          renderReference(currentProject);
+        });
+      });
+
+      refMeta.textContent = selected.charCount + '字';
+      refBody.textContent = selected.body || '';
+
+      const collapsed = document.body.classList.contains('ref-collapsed');
+      toggleRefBtn.textContent = collapsed ? '参照を見る' : '参照を隠す';
+    }
+
+    function renderEditor(project) {
+      currentProject = project;
+      refViewStep = null;
+      rememberActive(project.id);
+      syncProjectUrl(project.id);
+      stepBadge.textContent = project.status === 'complete'
+        ? '完了'
+        : S.stepLabel(project.step);
+      workTitle.value = project.title || '';
+      editor.value = project.draftBody || '';
+      editor.placeholder = project.step === 0
+        ? '初稿をここに書く'
+        : S.stepLabel(project.step) + 'をここに書く';
+      renderProgress(project);
+      renderReference(project);
+      updateCharStats();
+      saveIndicator.textContent = '';
+      saveIndicator.classList.remove('saved');
+      showView('editor');
+      editor.focus();
+    }
+
+    function renderComplete(project) {
+      currentProject = project;
+      rememberActive(project.id);
+      syncProjectUrl(project.id);
+      completeTitle.textContent = displayTitle(project);
+      const totalChars = project.versions.reduce((n, v) => n + v.charCount, 0);
+      completeMeta.textContent =
+        '6版 · ' + S.formatDateTime(project.updatedAt) + ' · 合計 ' + totalChars + '字';
+      const sorted = [...project.versions].sort((a, b) => a.step - b.step);
+      versionList.innerHTML = sorted.map((v) => (
+        '<article class="version-card">' +
+          '<div class="version-card-header">' +
+            '<span>' + esc(S.stepLabel(v.step)) + '</span>' +
+            '<span>' + v.charCount + '字 · ' + esc(S.formatDateTime(v.finishedAt)) + '</span>' +
+          '</div>' +
+          '<div class="version-card-body">' + esc(v.body || '') + '</div>' +
+        '</article>'
+      )).join('');
+      showView('complete');
+    }
+
+    async function openProject(id) {
+      const project = await S.getProject(id);
+      if (!project) {
+        if (getActiveId() === id) rememberActive(null);
+        syncProjectUrl(null);
+        return refreshHome();
+      }
+      if (project.status === 'complete') renderComplete(project);
+      else renderEditor(project);
+    }
+
+    async function refreshHome() {
+      syncProjectUrl(null);
+      const projects = await S.listProjects();
+
+      if (projects.length) {
+        historySection.hidden = false;
+        historyList.innerHTML = projects.map((p) => {
+          const stepLabel = p.status === 'complete' ? '完了' : S.progressLabel(p);
+          const dateLabel = S.formatDateTime(p.updatedAt);
+          return (
+            '<li class="history-item">' +
+              '<div class="history-item-main">' +
+                '<div class="history-item-title">' + esc(displayTitle(p)) + '</div>' +
+                '<div class="history-item-meta">' +
+                  '<span class="history-item-step">' + esc(stepLabel) + '</span>' +
+                  ' · ' +
+                  '<span class="history-item-date">' + esc(dateLabel) + '</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="history-item-actions">' +
+                '<a class="btn btn-small" href="' + esc(projectHref(p.id)) + '">開く</a>' +
+                '<button type="button" class="btn btn-small btn-danger" data-delete="' + esc(p.id) + '">削除</button>' +
+              '</div>' +
+            '</li>'
+          );
+        }).join('');
+
+        historyList.querySelectorAll('[data-delete]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.delete;
+            const p = await S.getProject(id);
+            if (!p) return refreshHome();
+            if (!confirm('「' + displayTitle(p) + '」を削除しますか？')) return;
+            await S.deleteProject(id);
+            if (getActiveId() === id) rememberActive(null);
+            await refreshHome();
+          });
+        });
+      } else {
+        historySection.hidden = true;
+        historyList.innerHTML = '';
+      }
+
+      showView('home');
+      currentProject = null;
+    }
+
+    startBtn.addEventListener('click', async () => {
+      const project = await S.createProject();
+      renderEditor(project);
+    });
+
+    workTitle.addEventListener('input', scheduleSave);
+
+    editor.addEventListener('input', () => {
+      updateCharStats();
+      scheduleSave();
+    });
+
+    editor.addEventListener('paste', () => {
+      setTimeout(() => {
+        updateCharStats();
+        scheduleSave();
+      }, 0);
+    });
+
+    finishStepBtn.addEventListener('click', async () => {
+      if (!currentProject || !editor.value.trim()) return;
+      clearTimeout(saveTimer);
+      try {
+        const updated = await S.finishStep(currentProject.id, {
+          title: workTitle.value,
+          body: editor.value,
+        });
+        if (updated.status === 'complete') renderComplete(updated);
+        else renderEditor(updated);
+      } catch (err) {
+        console.error(err);
+        alert('保存に失敗しました。');
+      }
+    });
+
+    backHomeBtn.addEventListener('click', async () => {
+      clearTimeout(saveTimer);
+      if (currentProject && currentProject.status !== 'complete') {
+        try {
+          await S.saveDraft(currentProject.id, {
+            title: workTitle.value,
+            body: editor.value,
+          });
+        } catch (_) {}
+      }
+      await refreshHome();
+    });
+
+    toggleRefBtn.addEventListener('click', () => {
+      const collapsed = document.body.classList.toggle('ref-collapsed');
+      toggleRefBtn.textContent = collapsed ? '参照を見る' : '参照を隠す';
+    });
+
+    exportBtn.addEventListener('click', () => {
+      if (currentProject) S.exportProjectTxt(currentProject);
+    });
+
+    newBtn.addEventListener('click', async () => {
+      const project = await S.createProject();
+      renderEditor(project);
+    });
+
+    completeHomeBtn.addEventListener('click', refreshHome);
+
+    window.addEventListener('pagehide', () => {
+      clearTimeout(saveTimer);
+      if (!currentProject || currentProject.status === 'complete') return;
+      void S.saveDraft(currentProject.id, {
+        title: workTitle.value,
+        body: editor.value,
+      });
+    });
+
+    window.addEventListener('popstate', async () => {
+      const urlId = getProjectIdFromUrl();
+      if (urlId) await openProject(urlId);
+      else await refreshHome();
+    });
+
+    (async () => {
+      const urlId = getProjectIdFromUrl();
+      if (urlId) {
+        await openProject(urlId);
+        return;
+      }
+      await refreshHome();
+    })();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

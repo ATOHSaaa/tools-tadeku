@@ -529,7 +529,7 @@
     canvas.height = Math.max(H, 400);
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#f6f4ef';
+    ctx.fillStyle = '#faf8f4';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     let y = pad;

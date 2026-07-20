@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="小説執筆に役立つ外部サイトのツール・資料集。文体診断、形態素解析、名前生成、文学賞資料、公募情報、SS名刺メーカーなど。">
+  <title>小説執筆に便利なツール・サイト | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --ink: #1a1a1a;
+      --muted: #4a4a4a;
+      --accent-line: #e8913a;
+      --border: #d4d0c8;
+      --surface: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 4.5rem;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 2rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .back-link:hover {
+      color: var(--ink);
+    }
+    h1 {
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .intro {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.75;
+      color: var(--ink);
+      margin-bottom: 2.75rem;
+    }
+    .category + .category {
+      margin-top: 3.5rem;
+    }
+    .category-title {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      line-height: 1.2;
+      margin-bottom: 1.75rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+      }
+    }
+    .item {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem 1.35rem;
+      transition: border-color 0.15s ease;
+    }
+    .item:hover {
+      border-color: var(--ink);
+    }
+    .item h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1.3;
+      margin-bottom: 0.45rem;
+    }
+    .accent-line {
+      width: 2.5rem;
+      height: 3px;
+      background: var(--accent-line);
+      margin-bottom: 0.65rem;
+    }
+    .item p {
+      font-size: 0.88rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.7;
+      margin: 0;
+    }
+    .item-url {
+      display: block;
+      margin-top: 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #999;
+      word-break: break-all;
+    }
+    footer {
+      margin-top: 4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back-link" href="../">← tadeku-tools</a>
+    <h1>小説執筆に便利なツール・サイト</h1>
+    <p class="intro">tadeku-tools 以外で、執筆・創作に役立つ外部サイトをまとめています。リンク先はすべて別サイトです。</p>
+    <nav aria-label="外部ツール一覧">
+      <section class="category">
+        <h2 class="category-title">診断・分析</h2>
+        <div class="grid">
+          <a class="item" href="http://logoon.org/" target="_blank" rel="noopener noreferrer">
+            <h3>文体診断ロゴーン</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>文章を入力すると名文から類似の文体を探し出し、表現力や読みやすさも評価します。上限5000字。</p>
+            <span class="item-url">http://logoon.org/</span>
+          </a>
+          <a class="item" href="https://ennach.sakura.ne.jp/Morph/" target="_blank" rel="noopener noreferrer">
+            <h3>小説形態素解析CGI</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>小説文から台詞率や品詞頻度などの指標を算出し、文章の傾向を可視化します。章ごとのセグメント分割解析にも対応。</p>
+            <span class="item-url">https://ennach.sakura.ne.jp/Morph/</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">語彙・設定</h2>
+        <div class="grid">
+          <a class="item" href="https://namegen.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>すごい名前生成器</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>日本の人名をはじめ世界各国の名前をランダム生成。ゲームや小説のキャラ名付けのヒントに。</p>
+            <span class="item-url">https://namegen.jp/</span>
+          </a>
+          <a class="item" href="https://europe.worldsys.org/" target="_blank" rel="noopener noreferrer">
+            <h3>欧羅巴人名録</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>ヨーロッパ系の姓・名を言語別に索引。英語・ドイツ語・フランス語・ロシア語など、キャラ名付けの参考に。</p>
+            <span class="item-url">https://europe.worldsys.org/</span>
+          </a>
+          <a class="item" href="https://www.modalina.jp/modapedia/" target="_blank" rel="noopener noreferrer">
+            <h3>モダリーナ アパレル用語図鑑</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>ファッション・アパレル関連の専門用語をイラスト付きで索引。服飾描写やキャラ設定の参考に。</p>
+            <span class="item-url">https://www.modalina.jp/modapedia/</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">執筆エディタ</h2>
+        <div class="grid">
+          <a class="item" href="https://nola-novel.com/" target="_blank" rel="noopener noreferrer">
+            <h3>Nola</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>小説の執筆からプロット・登場人物・世界観の管理まで。PCとスマホで同期する作家向けクラウドエディタ。</p>
+            <span class="item-url">https://nola-novel.com/</span>
+          </a>
+          <a class="item" href="https://tateditor.app/home" target="_blank" rel="noopener noreferrer">
+            <h3>TATEditor</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>縦書き・横書きに対応した執筆ツール。Web・iOS・Android・macOS・VS Code拡張など複数環境で利用可能。</p>
+            <span class="item-url">https://tateditor.app/home</span>
+          </a>
+          <a class="item" href="https://tateshiki1966.blogspot.com/p/contact.html" target="_blank" rel="noopener noreferrer">
+            <h3>縦式</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>縦書き原稿執筆に特化したエディタ。ルビ・傍点・縦中横・PDF出力に対応。iOS・macOS向け。</p>
+            <span class="item-url">https://tateshiki1966.blogspot.com/p/contact.html</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">プロット</h2>
+        <div class="grid">
+          <a class="item" href="https://storyplotter.net/ja" target="_blank" rel="noopener noreferrer">
+            <h3>ストーリープロッター</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>プロット作成に特化したWebツール。物語の構成を視覚的に組み立て、執筆前の骨組みづくりに使える。</p>
+            <span class="item-url">https://storyplotter.net/ja</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">文学賞</h2>
+        <div class="grid">
+          <a class="item" href="https://prizesworld.com/naoki/" target="_blank" rel="noopener noreferrer">
+            <h3>直木賞のすべて</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>直木三十五賞の非公式資料サイト。受賞作・候補作一覧、選考委員・作家の群像、選評の概要など。</p>
+            <span class="item-url">https://prizesworld.com/naoki/</span>
+          </a>
+          <a class="item" href="https://prizesworld.com/akutagawa/" target="_blank" rel="noopener noreferrer">
+            <h3>芥川賞のすべて・のようなもの</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>芥川龍之介賞の非公式資料サイト。受賞作・候補作一覧、作家・選考委員の群像、選評の概要など。</p>
+            <span class="item-url">https://prizesworld.com/akutagawa/</span>
+          </a>
+          <a class="item" href="https://prizesworld.com/prizes/" target="_blank" rel="noopener noreferrer">
+            <h3>文学賞の世界</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>日本で行われてきた文学賞の基礎資料を網羅。小説・推理SF・詩・ライトノベルなどジャンル別に一覧。</p>
+            <span class="item-url">https://prizesworld.com/prizes/</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">公募・コンテスト</h2>
+        <div class="grid">
+          <a class="item" href="https://koubo.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>Koubo</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>小説・シナリオ・詩など創作系の公募・コンテスト情報を検索。季刊「公募ガイド」のWeb版。</p>
+            <span class="item-url">https://koubo.jp/</span>
+          </a>
+          <a class="item" href="https://creative-story.net/" target="_blank" rel="noopener noreferrer">
+            <h3>ノベルポータル</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>小説の文学賞・新人賞・公募、投稿サイトのコンテスト、持ち込み先出版社など創作情報をまとめたメディア。</p>
+            <span class="item-url">https://creative-story.net/</span>
+          </a>
+          <a class="item" href="https://compe.japandesign.ne.jp/" target="_blank" rel="noopener noreferrer">
+            <h3>登竜門</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>文芸・コピー・論文をはじめ、各種ジャンルのコンテスト・公募・コンペ情報を掲載する国内最大級の情報サイト。</p>
+            <span class="item-url">https://compe.japandesign.ne.jp/</span>
+          </a>
+        </div>
+      </section>
+      <section class="category">
+        <h2 class="category-title">画像・入稿</h2>
+        <div class="grid">
+          <a class="item" href="https://sscard.monokakitools.net/index.html" target="_blank" rel="noopener noreferrer">
+            <h3>SS名刺メーカー</h3>
+            <div class="accent-line" aria-hidden="true"></div>
+            <p>短い文章を名刺型レイアウトで画像化。文庫ページ・新書ページ・表紙メーカーなど関連ツールも多数。</p>
+            <span class="item-url">https://sscard.monokakitools.net/index.html</span>
+          </a>
+        </div>
+      </section>
+    </nav>
+    <footer>tools.tadeku.net</footer>
+  </div>
+</body>
+</html>

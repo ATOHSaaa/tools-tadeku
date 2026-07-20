@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="小説にならない文章を毎日1枚書いて蔵で寝かせ、熟成した断片を配牌して掌編にリミックスする執筆習慣ツール。">
+  <title>Kura — 断片を寝かせて小説にする | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #1a1a1a;
+      --surface: #ffffff;
+      --accent: #34618e;
+      --cat-scene: #3a7ca5;
+      --cat-person: #a5533a;
+      --cat-dialogue: #6a8f3d;
+      --cat-emotion: #8a5aa5;
+      --cat-object: #9a8432;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 5rem;
+    }
+
+    .page-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    .tagline {
+      margin-top: 0.35rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    /* --- tabs --- */
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      appearance: none;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.45rem 0.95rem;
+      background: transparent;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    .tab.is-active {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    .tab .badge {
+      font-size: 0.72rem;
+      font-weight: 900;
+      margin-left: 0.3rem;
+      color: var(--accent);
+    }
+
+    .tab.is-active .badge { color: #ffd27a; }
+
+    .view[hidden] { display: none !important; }
+
+    /* --- shared bits --- */
+    .card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.5rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .chip {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      padding: 0.1rem 0.5rem;
+      border: 1.5px solid currentColor;
+      margin-bottom: 0.6rem;
+    }
+
+    .chip.cat-scene { color: var(--cat-scene); }
+    .chip.cat-person { color: var(--cat-person); }
+    .chip.cat-dialogue { color: var(--cat-dialogue); }
+    .chip.cat-emotion { color: var(--cat-emotion); }
+    .chip.cat-object { color: var(--cat-object); }
+    .chip.cat-free { color: var(--muted); }
+
+    #write-form .write-footer {
+      justify-content: flex-end;
+    }
+
+    #write-form #post-btn {
+      display: block;
+      margin: 0.25rem auto 0;
+    }
+
+    .btn {
+      appearance: none;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.92rem;
+      padding: 0.65rem 1.6rem;
+      border: 2px solid var(--border);
+      background: var(--ink);
+      color: var(--bg);
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .btn.btn-ghost {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .btn.btn-small {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.9rem;
+    }
+
+    .link-btn {
+      appearance: none;
+      font: inherit;
+      font-size: 0.8rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    textarea, input[type="text"] {
+      font: inherit;
+      width: 100%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.85rem 0.9rem;
+      line-height: 1.9;
+      resize: vertical;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      outline: 3px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 0.8rem; }
+
+    /* --- write view --- */
+    .today-date {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .prompt-text {
+      font-size: clamp(1.2rem, 4vw, 1.55rem);
+      font-weight: 900;
+      line-height: 1.5;
+    }
+
+    #fragment-input {
+      min-height: 11em;
+      margin-top: 1rem;
+    }
+
+    .write-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.85rem;
+      gap: 1rem;
+    }
+
+    .char-count {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .posted-box {
+      text-align: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .posted-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      margin-bottom: 0.75rem;
+    }
+
+    .posted-stats {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* --- deal view --- */
+    .deal-status {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .deal-actions {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .deal-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .deal-cards { grid-template-columns: 1fr; }
+    }
+
+    .deal-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .deal-card .frag-prompt {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .deal-card .frag-text {
+      font-size: 0.88rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      flex: 1;
+    }
+
+    .deal-card .frag-date {
+      margin-top: 0.75rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    #work-title { margin-bottom: 0.75rem; }
+
+    #work-body { min-height: 16em; }
+
+    .deal-editor-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.85rem;
+      gap: 1rem;
+    }
+
+    /* --- kura view --- */
+    .stats-row {
+      display: flex;
+      gap: 1.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat .stat-num {
+      font-size: 1.6rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .stat .stat-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    select {
+      font: inherit;
+      font-size: 0.88rem;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.3rem 0.5rem;
+    }
+
+    .frag-list {
+      list-style: none;
+    }
+
+    .frag-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #ddd6c8;
+      font-size: 0.82rem;
+      flex-wrap: wrap;
+    }
+
+    .frag-list .chip { margin-bottom: 0; }
+
+    .frag-list .frag-seal {
+      flex: 1;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .frag-list .frag-state {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .frag-list .frag-state.is-aging { color: var(--muted); }
+
+    .kura-tools {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    /* --- works view --- */
+    .work-item .work-title {
+      font-size: 1.05rem;
+      font-weight: 900;
+      margin-bottom: 0.25rem;
+    }
+
+    .work-item .work-meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .work-item .work-body {
+      font-size: 0.92rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 1rem;
+    }
+
+    .work-sources {
+      border-top: 1px dashed #bbb;
+      padding-top: 0.85rem;
+    }
+
+    .work-sources .source-frag {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+      padding-left: 0.85rem;
+      border-left: 3px solid #ddd6c8;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .empty-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 2.5rem 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Kura</h1>
+      <p class="tagline">小説にならない文章を毎日1枚。蔵で寝かせて、配牌して、小説にする。</p>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab is-active" data-view="write">今日の1枚</button>
+      <button class="tab" data-view="deal">配牌<span class="badge" id="deal-badge" hidden></span></button>
+      <button class="tab" data-view="kura">蔵<span class="badge" id="kura-badge" hidden></span></button>
+      <button class="tab" data-view="works">作品<span class="badge" id="works-badge" hidden></span></button>
+    </nav>
+
+    <!-- ============ 今日の1枚 ============ -->
+    <section class="view" id="view-write">
+      <div id="write-form">
+        <div class="card">
+          <div class="today-date" id="today-date"></div>
+          <textarea id="fragment-input" placeholder="ここに書いて、そのまま蔵に投函する"></textarea>
+          <div class="write-footer">
+            <span class="char-count"><span id="frag-count">0</span> 字</span>
+          </div>
+        </div>
+        <button class="btn" id="post-btn" disabled>投稿</button>
+      </div>
+
+      <div id="write-done" hidden>
+        <div class="card posted-box">
+          <div class="posted-title">投函しました</div>
+          <div class="posted-stats" id="posted-stats"></div>
+          <button class="btn btn-ghost btn-small" id="write-more-btn">もう1枚書く</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 配牌 ============ -->
+    <section class="view" id="view-deal" hidden>
+      <p class="deal-status" id="deal-status"></p>
+      <div class="deal-actions">
+        <button class="btn" id="deal-btn">配牌する</button>
+        <button class="btn btn-ghost btn-small" id="redraw-btn" hidden>引き直す(1回だけ)</button>
+        <button class="link-btn" id="discard-deal-btn" hidden>この牌を流す</button>
+      </div>
+
+      <div id="deal-area" hidden>
+        <div class="deal-cards" id="deal-cards"></div>
+        <div class="section-label">この3枚を繋いで、掌編を書く</div>
+        <input type="text" id="work-title" placeholder="題(なくてもいい)">
+        <textarea id="work-body" placeholder="断片を素材に。全部使っても、一枚から一語だけ拾ってもいい。"></textarea>
+        <div class="deal-editor-footer">
+          <span class="char-count"><span id="work-count">0</span> 字</span>
+          <button class="btn" id="save-work-btn" disabled>作品として仕舞う</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 蔵 ============ -->
+    <section class="view" id="view-kura" hidden>
+      <div class="card">
+        <div class="section-label">蔵の中</div>
+        <div class="stats-row">
+          <div class="stat"><div class="stat-num" id="stat-aging">0</div><div class="stat-label">熟成中</div></div>
+          <div class="stat"><div class="stat-num" id="stat-matured">0</div><div class="stat-label">熟成済み</div></div>
+          <div class="stat"><div class="stat-num" id="stat-used">0</div><div class="stat-label">のべ使用</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">熟成期間</div>
+        <div class="setting-row">
+          <select id="aging-select">
+            <option value="0">寝かせない(お試し)</option>
+            <option value="3">3日</option>
+            <option value="7">7日</option>
+            <option value="14" selected>14日</option>
+          </select>
+          <span class="small muted">書いてからこの日数が経つと、配牌に現れます。</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">断片(中身は封印されています)</div>
+        <ul class="frag-list" id="frag-list"></ul>
+        <p class="empty-note" id="frag-empty" hidden>まだ何も入っていません。「今日の1枚」から始めてください。</p>
+        <div class="kura-tools">
+          <button class="btn btn-ghost btn-small" id="seed-btn">お試し用: サンプル断片を10枚仕込む</button>
+          <button class="btn btn-ghost btn-small" id="unseed-btn" hidden>サンプルを片付ける</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 作品 ============ -->
+    <section class="view" id="view-works" hidden>
+      <div id="works-list"></div>
+      <p class="empty-note" id="works-empty">まだ作品はありません。断片が熟成したら「配牌」からどうぞ。</p>
+    </section>
+  </div>
+
+  <script>
+    'use strict';
+
+    // ========== 型(お題)データ ==========
+    const CATS = {
+      scene: { label: '情景', cls: 'cat-scene' },
+      person: { label: '人物', cls: 'cat-person' },
+      dialogue: { label: '会話', cls: 'cat-dialogue' },
+      emotion: { label: '感情', cls: 'cat-emotion' },
+      object: { label: 'もの', cls: 'cat-object' },
+      free: { label: '自由', cls: 'cat-free' },
+    };
+
+    const PROMPTS = [
+      { cat: 'scene', text: '今日いた場所のひとつを、音だけで描写する' },
+      { cat: 'scene', text: '窓から見えるものを、色の名前を使わずに書く' },
+      { cat: 'scene', text: '今日の天気を、天気の単語を使わずに書く' },
+      { cat: 'scene', text: '最近通った道の、誰も気に留めないものを書く' },
+      { cat: 'scene', text: '今日の食事の場面を、味以外のことだけで書く' },
+      { cat: 'scene', text: '帰り道の光について書く' },
+      { cat: 'scene', text: '今いる部屋を、初めて来た人の目で描写する' },
+      { cat: 'scene', text: '今日いちばん静かだった瞬間を書く' },
+      { cat: 'person', text: '今日すれ違った知らない人の、想像の履歴書を書く' },
+      { cat: 'person', text: '身近な人の癖をひとつ、細かく描写する' },
+      { cat: 'person', text: '昔の知り合いを、名前を出さずに描写する' },
+      { cat: 'person', text: '今日言葉を交わした店員や係の人を描写する' },
+      { cat: 'person', text: '自分を他人として、後ろ姿から描写する' },
+      { cat: 'person', text: '「絶対に友達になれない人」の人物描写を書く' },
+      { cat: 'person', text: '誰かの手だけを描写する' },
+      { cat: 'person', text: '見かけた人の、その直前の10分間を想像して書く' },
+      { cat: 'dialogue', text: '今日聞こえてきた会話の切れ端を、そのまま書き留める' },
+      { cat: 'dialogue', text: '誰かの言い訳をひとつ、セリフだけで書く' },
+      { cat: 'dialogue', text: '言えなかった一言を、言えた世界のセリフとして書く' },
+      { cat: 'dialogue', text: '電話の片側だけの会話を書く' },
+      { cat: 'dialogue', text: '嘘をついている人のセリフを3行書く' },
+      { cat: 'dialogue', text: '別れ際の挨拶だけで成立する会話を書く' },
+      { cat: 'dialogue', text: '質問に質問で返し続ける会話を書く' },
+      { cat: 'dialogue', text: '「大丈夫」が本心でない会話を書く' },
+      { cat: 'emotion', text: '今日の気分を、感情の単語を使わずに書く' },
+      { cat: 'emotion', text: '最近の小さな後悔をひとつ書く' },
+      { cat: 'emotion', text: '誰にも言っていない楽しみについて書く' },
+      { cat: 'emotion', text: '待っている時間の気持ちを書く' },
+      { cat: 'emotion', text: '苛立ちを、天気や物に託して書く' },
+      { cat: 'emotion', text: '「懐かしい」の中身を分解して書く' },
+      { cat: 'emotion', text: '安心する瞬間をひとつ、具体的に書く' },
+      { cat: 'emotion', text: '名前のつかない感情に仮の名前をつけて説明する' },
+      { cat: 'object', text: '今日ポケットや鞄に入っていたものをひとつ描写する' },
+      { cat: 'object', text: '捨てられずにいるものについて書く' },
+      { cat: 'object', text: '壊れているのに使っているものを書く' },
+      { cat: 'object', text: '今日触れたものの手触りをひとつ書く' },
+      { cat: 'object', text: '誰かからもらったものの来歴を書く' },
+      { cat: 'object', text: '冷蔵庫や棚の中の、いちばん古いものを書く' },
+      { cat: 'object', text: 'なくしたものについて書く' },
+      { cat: 'object', text: '意味もなく持ち歩いているものを書く' },
+    ];
+
+    // ========== ストレージ ==========
+    const LS_FRAGMENTS = 'kura-fragments';
+    const LS_WORKS = 'kura-works';
+    const LS_PREFS = 'kura-prefs';
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    function saveJSON(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    let fragments = loadJSON(LS_FRAGMENTS, []);
+    let works = loadJSON(LS_WORKS, []);
+    let prefs = loadJSON(LS_PREFS, {});
+    if (typeof prefs.agingDays !== 'number') prefs.agingDays = 14;
+    if (!prefs.promptByDate) prefs.promptByDate = {};
+
+    function persist() {
+      saveJSON(LS_FRAGMENTS, fragments);
+      saveJSON(LS_WORKS, works);
+      saveJSON(LS_PREFS, prefs);
+    }
+
+    function genId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    // ========== ユーティリティ ==========
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function localDateKey(ts) {
+      const d = new Date(ts);
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
+    function formatDate(ts) {
+      const d = new Date(ts);
+      return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+
+    function hashStr(s) {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) {
+        h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      }
+      return h;
+    }
+
+    function countChars(s) {
+      return s.replace(/[\s\u3000]/g, '').length;
+    }
+
+    function isMatured(frag, now) {
+      return now - frag.createdAt >= prefs.agingDays * DAY_MS;
+    }
+
+    function maturedFragments() {
+      const now = Date.now();
+      return fragments.filter((f) => isMatured(f, now));
+    }
+
+    // ========== DOM ==========
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      tabs: $('tabs'),
+      dealBadge: $('deal-badge'),
+      kuraBadge: $('kura-badge'),
+      worksBadge: $('works-badge'),
+      todayDate: $('today-date'),
+      fragmentInput: $('fragment-input'),
+      fragCount: $('frag-count'),
+      postBtn: $('post-btn'),
+      writeForm: $('write-form'),
+      writeDone: $('write-done'),
+      postedStats: $('posted-stats'),
+      writeMoreBtn: $('write-more-btn'),
+      dealStatus: $('deal-status'),
+      dealBtn: $('deal-btn'),
+      redrawBtn: $('redraw-btn'),
+      discardDealBtn: $('discard-deal-btn'),
+      dealArea: $('deal-area'),
+      dealCards: $('deal-cards'),
+      workTitle: $('work-title'),
+      workBody: $('work-body'),
+      workCount: $('work-count'),
+      saveWorkBtn: $('save-work-btn'),
+      statAging: $('stat-aging'),
+      statMatured: $('stat-matured'),
+      statUsed: $('stat-used'),
+      agingSelect: $('aging-select'),
+      fragList: $('frag-list'),
+      fragEmpty: $('frag-empty'),
+      seedBtn: $('seed-btn'),
+      unseedBtn: $('unseed-btn'),
+      worksList: $('works-list'),
+      worksEmpty: $('works-empty'),
+    };
+
+    // ========== タブ ==========
+    function showView(name) {
+      els.tabs.querySelectorAll('.tab').forEach((t) => {
+        t.classList.toggle('is-active', t.dataset.view === name);
+      });
+      ['write', 'deal', 'kura', 'works'].forEach((v) => {
+        $(`view-${v}`).hidden = v !== name;
+      });
+      if (name === 'deal') renderDeal();
+      if (name === 'kura') renderKura();
+      if (name === 'works') renderWorks();
+      if (name === 'write') renderWrite();
+    }
+
+    els.tabs.addEventListener('click', (ev) => {
+      const tab = ev.target.closest('.tab');
+      if (tab) showView(tab.dataset.view);
+    });
+
+    function renderBadges() {
+      const matured = maturedFragments().length;
+      els.dealBadge.hidden = matured < 3;
+      els.dealBadge.textContent = matured >= 3 ? String(matured) : '';
+      els.kuraBadge.hidden = fragments.length === 0;
+      els.kuraBadge.textContent = fragments.length ? String(fragments.length) : '';
+      els.worksBadge.hidden = works.length === 0;
+      els.worksBadge.textContent = works.length ? String(works.length) : '';
+    }
+
+    // ========== 今日の1枚 ==========
+    let writeMoreMode = false;
+
+    function postedTodayCount() {
+      const key = localDateKey(Date.now());
+      return fragments.filter((f) => !f.sample && localDateKey(f.createdAt) === key).length;
+    }
+
+    function renderWrite() {
+      els.todayDate.textContent = formatDate(Date.now());
+
+      const done = postedTodayCount() > 0 && !writeMoreMode;
+      els.writeForm.hidden = done;
+      els.writeDone.hidden = !done;
+      if (done) {
+        const now = Date.now();
+        const aging = fragments.filter((f) => !isMatured(f, now)).length;
+        const matured = fragments.length - aging;
+        els.postedStats.textContent =
+          `蔵で熟成中の断片 ${aging}枚 / 熟成済み ${matured}枚`;
+      }
+      updateFragCount();
+    }
+
+    function updateFragCount() {
+      els.fragCount.textContent = String(countChars(els.fragmentInput.value));
+      els.postBtn.disabled = els.fragmentInput.value.trim().length === 0;
+    }
+
+    els.fragmentInput.addEventListener('input', updateFragCount);
+
+    els.postBtn.addEventListener('click', () => {
+      const text = els.fragmentInput.value.trim();
+      if (!text) return;
+      fragments.push({
+        id: genId(),
+        text,
+        cat: 'free',
+        prompt: '',
+        createdAt: Date.now(),
+        usedIn: [],
+      });
+      persist();
+      els.fragmentInput.value = '';
+      writeMoreMode = false;
+      renderWrite();
+      renderBadges();
+    });
+
+    els.writeMoreBtn.addEventListener('click', () => {
+      writeMoreMode = true;
+      renderWrite();
+    });
+
+    // ========== 配牌 ==========
+    function currentDeal() {
+      if (!prefs.deal) return null;
+      const byId = new Map(fragments.map((f) => [f.id, f]));
+      const cards = prefs.deal.ids.map((id) => byId.get(id)).filter(Boolean);
+      if (cards.length !== prefs.deal.ids.length) {
+        // 断片が削除された(サンプル片付け等)牌は無効
+        clearDeal();
+        return null;
+      }
+      return cards;
+    }
+
+    function clearDeal() {
+      delete prefs.deal;
+      delete prefs.dealDraft;
+      persist();
+    }
+
+    function drawCards() {
+      const pool = maturedFragments();
+      if (pool.length < 3) return null;
+      // なるべくカテゴリがばらけるように選ぶ
+      const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+      const picked = [];
+      const usedCats = new Set();
+      for (const f of shuffled) {
+        if (picked.length >= 3) break;
+        if (!usedCats.has(f.cat)) {
+          picked.push(f);
+          usedCats.add(f.cat);
+        }
+      }
+      for (const f of shuffled) {
+        if (picked.length >= 3) break;
+        if (!picked.includes(f)) picked.push(f);
+      }
+      return picked.map((f) => f.id);
+    }
+
+    function renderDeal() {
+      const matured = maturedFragments();
+      const deal = currentDeal();
+
+      if (deal) {
+        els.dealStatus.textContent = 'この3枚から、掌編をひとつ。';
+        els.dealBtn.hidden = true;
+        els.redrawBtn.hidden = !!prefs.deal.redrawUsed || matured.length < 4;
+        els.discardDealBtn.hidden = false;
+        els.dealArea.hidden = false;
+        els.dealCards.innerHTML = deal.map((f) => {
+          const cat = CATS[f.cat];
+          return `<div class="deal-card">
+            <span class="chip ${cat.cls}">${esc(cat.label)}</span>
+            <div class="frag-prompt">${f.prompt ? esc(f.prompt) : '—'}</div>
+            <div class="frag-text">${esc(f.text)}</div>
+            <div class="frag-date">${esc(formatDate(f.createdAt))} に投函</div>
+          </div>`;
+        }).join('');
+        const draft = prefs.dealDraft || {};
+        if (document.activeElement !== els.workTitle) els.workTitle.value = draft.title || '';
+        if (document.activeElement !== els.workBody) els.workBody.value = draft.body || '';
+        updateWorkCount();
+      } else {
+        els.dealBtn.hidden = false;
+        els.redrawBtn.hidden = true;
+        els.discardDealBtn.hidden = true;
+        els.dealArea.hidden = true;
+        if (matured.length >= 3) {
+          els.dealStatus.textContent = `熟成済みの断片が ${matured.length}枚あります。3枚配ります。`;
+          els.dealBtn.disabled = false;
+        } else {
+          const aging = fragments.length - matured.length;
+          els.dealStatus.textContent = aging > 0
+            ? `熟成済みの断片が足りません(${matured.length}/3枚)。${aging}枚が蔵で熟成中です。`
+            : '断片がまだありません。まず「今日の1枚」を書いてください。';
+          els.dealBtn.disabled = true;
+        }
+      }
+    }
+
+    els.dealBtn.addEventListener('click', () => {
+      const ids = drawCards();
+      if (!ids) return;
+      prefs.deal = { ids, redrawUsed: false };
+      delete prefs.dealDraft;
+      persist();
+      renderDeal();
+    });
+
+    els.redrawBtn.addEventListener('click', () => {
+      const ids = drawCards();
+      if (!ids) return;
+      prefs.deal = { ids, redrawUsed: true };
+      persist();
+      renderDeal();
+    });
+
+    els.discardDealBtn.addEventListener('click', () => {
+      const draft = prefs.dealDraft;
+      if (draft && (draft.body || '').trim()) {
+        if (!confirm('書きかけの掌編がありますが、牌ごと流しますか?')) return;
+      }
+      clearDeal();
+      renderDeal();
+    });
+
+    function updateWorkCount() {
+      els.workCount.textContent = String(countChars(els.workBody.value));
+      els.saveWorkBtn.disabled = els.workBody.value.trim().length === 0;
+    }
+
+    let draftTimer = null;
+    function scheduleDraftSave() {
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(() => {
+        if (!prefs.deal) return;
+        prefs.dealDraft = { title: els.workTitle.value, body: els.workBody.value };
+        persist();
+      }, 400);
+    }
+
+    els.workBody.addEventListener('input', () => { updateWorkCount(); scheduleDraftSave(); });
+    els.workTitle.addEventListener('input', scheduleDraftSave);
+
+    els.saveWorkBtn.addEventListener('click', () => {
+      const deal = currentDeal();
+      if (!deal) return;
+      const body = els.workBody.value.trim();
+      if (!body) return;
+      const work = {
+        id: genId(),
+        title: els.workTitle.value.trim() || '無題',
+        body,
+        cardIds: deal.map((f) => f.id),
+        createdAt: Date.now(),
+      };
+      works.unshift(work);
+      deal.forEach((f) => {
+        if (!f.usedIn) f.usedIn = [];
+        f.usedIn.push(work.id);
+      });
+      clearDeal();
+      persist();
+      renderBadges();
+      showView('works');
+    });
+
+    // ========== 蔵 ==========
+    const SAMPLES = [
+      { cat: 'scene', prompt: '帰り道の光について書く', text: '駅前のコンビニの白い光が歩道に四角く落ちていて、そこだけ夜が薄い。角を曲がると街灯が一本切れていて、切れた街灯の下がいちばん星が見えた。' },
+      { cat: 'scene', prompt: '今日いちばん静かだった瞬間を書く', text: '昼の食器を洗い終えて水道を止めた直後。冷蔵庫のモーターが止まっていて、耳の奥がしんとした。遠くで誰かがベランダの布団を叩く音だけが、間隔をあけて届いた。' },
+      { cat: 'person', prompt: '誰かの手だけを描写する', text: '電車で隣に座った人の手。爪が短く切りそろえられていて、薬指の付け根だけ日焼けの跡が白く残っていた。指輪を外して日が浅いのだと思った。膝の上で一度も動かなかった。' },
+      { cat: 'person', prompt: '今日すれ違った知らない人の、想像の履歴書を書く', text: 'ベージュのコートの男。趣味の欄には「ラジオの投稿」と書く。採用されたのは三回。ペンネームは飼っていた猫の名前。特技は初対面の人の出身地を当てること。ただし本人は口数が少ない。' },
+      { cat: 'dialogue', prompt: '電話の片側だけの会話を書く', text: '「うん。……うん、わかってる。」「だから、それは前も言ったじゃない。」「……ちがう、怒ってない。」「怒ってないって。」「もう切るね。夕飯、先に食べてて。」' },
+      { cat: 'dialogue', prompt: '誰かの言い訳をひとつ、セリフだけで書く', text: '「行こうとはしたんだよ。靴も履いた。でも玄関でさ、鍵がないって気づいて、探してるうちに、なんていうか、行かない方が正しい気がしてきたんだ。」' },
+      { cat: 'emotion', prompt: '待っている時間の気持ちを書く', text: '改札の前で待つ十五分。スマホを見て、しまって、また見る。遅れてくる人を許す準備を先に済ませておくと、待つのは案外わるくない。許す準備だけが増えていく。' },
+      { cat: 'emotion', prompt: '今日の気分を、感情の単語を使わずに書く', text: '朝から、セーターを前後ろ逆に着ていた。昼に気づいたが直さなかった。そういう日だった。' },
+      { cat: 'object', prompt: '捨てられずにいるものについて書く', text: '実家の鍵。もう合鍵は新しくなっていて、この鍵はどの扉も開けない。キーホルダーの熊は目が片方取れている。開けられる扉がないのに、鍵と呼び続けている。' },
+      { cat: 'object', prompt: '今日触れたものの手触りをひとつ書く', text: '図書館で借りた本のカバーに貼られた保護フィルム。角が少し浮いていて、爪の先が引っかかる。何人もの指が同じ場所で引っかかったのか、そこだけ白く曇っていた。' },
+    ];
+
+    function renderKura() {
+      const now = Date.now();
+      const matured = fragments.filter((f) => isMatured(f, now));
+      const aging = fragments.length - matured.length;
+      const used = fragments.reduce((n, f) => n + (f.usedIn ? f.usedIn.length : 0), 0);
+      els.statAging.textContent = String(aging);
+      els.statMatured.textContent = String(matured.length);
+      els.statUsed.textContent = String(used);
+
+      els.agingSelect.value = String(prefs.agingDays);
+
+      const sorted = fragments.slice().sort((a, b) => b.createdAt - a.createdAt);
+      els.fragEmpty.hidden = sorted.length > 0;
+      els.fragList.innerHTML = sorted.map((f) => {
+        const cat = CATS[f.cat];
+        let state;
+        if (isMatured(f, now)) {
+          const uses = f.usedIn ? f.usedIn.length : 0;
+          state = uses > 0 ? `使用 ${uses}回` : '熟成済み';
+        } else {
+          const daysLeft = Math.ceil((f.createdAt + prefs.agingDays * DAY_MS - now) / DAY_MS);
+          state = `熟成中 あと${daysLeft}日`;
+        }
+        const seal = '●'.repeat(Math.max(3, Math.min(12, Math.round(f.text.length / 25))));
+        return `<li>
+          <span class="chip ${cat.cls}">${esc(cat.label)}</span>
+          <span class="frag-seal">${seal}</span>
+          <span class="small muted">${esc(formatDate(f.createdAt))}</span>
+          <span class="frag-state${isMatured(f, now) ? '' : ' is-aging'}">${esc(state)}</span>
+        </li>`;
+      }).join('');
+
+      const hasSample = fragments.some((f) => f.sample);
+      els.unseedBtn.hidden = !hasSample;
+    }
+
+    els.agingSelect.addEventListener('change', () => {
+      prefs.agingDays = Number(els.agingSelect.value) || 0;
+      persist();
+      renderKura();
+      renderBadges();
+    });
+
+    els.seedBtn.addEventListener('click', () => {
+      const base = Date.now() - 30 * DAY_MS;
+      SAMPLES.forEach((s, i) => {
+        fragments.push({
+          id: genId(),
+          text: s.text,
+          cat: s.cat,
+          prompt: s.prompt,
+          createdAt: base + i * DAY_MS,
+          usedIn: [],
+          sample: true,
+        });
+      });
+      persist();
+      renderKura();
+      renderBadges();
+    });
+
+    els.unseedBtn.addEventListener('click', () => {
+      fragments = fragments.filter((f) => !f.sample);
+      if (prefs.deal && !prefs.deal.ids.every((id) => fragments.some((f) => f.id === id))) {
+        clearDeal();
+      }
+      persist();
+      renderKura();
+      renderBadges();
+    });
+
+    // ========== 作品 ==========
+    function renderWorks() {
+      els.worksEmpty.hidden = works.length > 0;
+      const byId = new Map(fragments.map((f) => [f.id, f]));
+      els.worksList.innerHTML = works.map((w) => {
+        const sources = (w.cardIds || []).map((id) => byId.get(id)).filter(Boolean);
+        return `<div class="card work-item">
+          <div class="work-title">${esc(w.title)}</div>
+          <div class="work-meta">${esc(formatDate(w.createdAt))} / ${countChars(w.body)}字</div>
+          <div class="work-body">${esc(w.body)}</div>
+          <div class="work-sources">
+            <div class="section-label">配牌された断片</div>
+            ${sources.map((f) => `<div class="source-frag">${esc(f.text)}</div>`).join('')}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ========== 初期化 ==========
+    renderWrite();
+    renderBadges();
+  </script>
+  <script src="../shared/site-link.js"></script>
+</body>
+</html>

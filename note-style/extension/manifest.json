@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Note Style",
+  "description": "noteの読み心地をスライダーで調整。縦書き・ゴシック・余白などを自由に変更できます。",
+  "version": "0.1.6",
+  "action": {
+    "default_title": "Note Style"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["panel.css"],
+      "matches": ["https://note.com/*"]
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://note.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://note.com/*"],
+      "js": ["settings.js", "panel.js", "content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

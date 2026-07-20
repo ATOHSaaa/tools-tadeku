@@ -54,6 +54,106 @@
     return Math.min(max, Math.max(min, n));
   }
 
+  // 縦組みでは横組み用の " " をダブルミニュート 〝 〟 に置き換える。
+  const VERTICAL_QUOTE_OPEN = '\u301D';
+  const VERTICAL_QUOTE_CLOSE = '\u301E';
+  const DOUBLE_QUOTE_OPEN = new Set(['\u201C', '\u201E']);
+  const DOUBLE_QUOTE_CLOSE = new Set(['\u201D', '\u201F']);
+
+  function toVerticalDoubleQuotes(text) {
+    if (!text || !/["\u201C\u201D\u201E\u201F]/.test(text)) return text;
+
+    let useOpen = true;
+    let out = '';
+    for (const ch of text) {
+      if (ch === VERTICAL_QUOTE_OPEN) {
+        out += ch;
+        useOpen = false;
+      } else if (ch === VERTICAL_QUOTE_CLOSE) {
+        out += ch;
+        useOpen = true;
+      } else if (DOUBLE_QUOTE_OPEN.has(ch)) {
+        out += VERTICAL_QUOTE_OPEN;
+        useOpen = false;
+      } else if (DOUBLE_QUOTE_CLOSE.has(ch)) {
+        out += VERTICAL_QUOTE_CLOSE;
+        useOpen = true;
+      } else if (ch === '"') {
+        out += useOpen ? VERTICAL_QUOTE_OPEN : VERTICAL_QUOTE_CLOSE;
+        useOpen = !useOpen;
+      } else {
+        out += ch;
+      }
+    }
+    return out;
+  }
+
+  // 青空文庫注記一覧「強調」のクラス名に対応。
+  // https://www.aozora.gr.jp/annotation/emphasis.html
+  // aozora.css は横書き用 PNG (background + repeat-x) で傍点・傍線を描くため、
+  // writing-mode: vertical-rl では文字の脇ではなく箱の上辺に崩れる。
+  // 縦書き時は text-emphasis / text-decoration に差し替える。
+  const BOTEN_STYLES = [
+    ['sesame_dot', 'filled sesame'],                 // 傍点（黒ゴマ）
+    ['white_sesame_dot', 'open sesame'],              // 白ゴマ傍点
+    ['black_circle', 'filled circle'],               // 丸傍点
+    ['white_circle', 'open circle'],                 // 白丸傍点
+    ['black_up-pointing_triangle', 'filled triangle'], // 黒三角傍点
+    ['white_up-pointing_triangle', 'open triangle'], // 白三角傍点
+    ['bullseye', 'filled double-circle'],            // 二重丸傍点
+    ['fisheye', '"◉"'],                              // 蛇の目傍点
+    ['saltire', '"×"'],                              // ばつ傍点
+  ];
+
+  const BOSEN_STYLES = [
+    ['solid', 'solid'],   // 傍線
+    ['double', 'double'], // 二重傍線
+    ['dotted', 'dotted'], // 鎖線
+    ['dashed', 'dashed'], // 破線
+    ['wave', 'wavy'],     // 波線
+  ];
+
+  function emphasisCss() {
+    const reset = 'font-style: normal !important; padding: 0 !important; background: none !important;';
+    const rules = [];
+
+    for (const [cls, style] of BOTEN_STYLES) {
+      const emphasis = [
+        `text-emphasis: ${style} !important`,
+        `-webkit-text-emphasis: ${style} !important`,
+      ].join('; ');
+      // 右傍点（縦組みでは文字の右 = over）
+      rules.push(`.${cls} { ${reset} ${emphasis}; text-emphasis-position: over !important; -webkit-text-emphasis-position: over right !important; }`);
+      // 左傍点（*_after / 縦組みでは文字の左 = under）
+      rules.push(`.${cls}_after { ${reset} ${emphasis}; text-emphasis-position: under !important; -webkit-text-emphasis-position: under left !important; }`);
+    }
+
+    for (const [cls, style] of BOSEN_STYLES) {
+      const deco = [
+        'text-decoration-line: underline !important',
+        `text-decoration-style: ${style} !important`,
+        'text-decoration-thickness: from-font !important',
+      ].join('; ');
+      const underlineCls = `underline_${cls}`;
+      const overlineCls = `overline_${cls}`;
+      const rbBorder = style === 'double'
+        ? 'border-right: 3px double currentColor !important'
+        : `border-right: 1px ${style} currentColor !important`;
+
+      // underline_* = 右傍線、overline_* = 左傍線
+      rules.push(`.${underlineCls} { ${reset} ${deco}; text-underline-position: under right !important; }`);
+      rules.push(`.${overlineCls} { ${reset} ${deco}; text-underline-position: under left !important; }`);
+
+      // 縦組みではルビ（rt）も右側に来るため、em 全体への傍線は rt と重なる。
+      // ルビ付きは傍線を rb の右辺に移し、読み（rt）の列とは分ける。
+      rules.push(`.${underlineCls}:has(ruby) { text-decoration-line: none !important; }`);
+      rules.push(`.${underlineCls}:has(ruby) ruby rb { ${reset} ${rbBorder}; }`);
+      rules.push(`.${underlineCls} ruby rt, .${underlineCls} ruby rp { text-decoration: none !important; }`);
+    }
+
+    return `${rules.join('\n')}\n\n`;
+  }
+
   function buildCss(state) {
     const s = normalize(state);
     const theme = getTheme(s.theme);
@@ -95,7 +195,7 @@ div[class*="jisage"] {
 .jisage_4 { margin-block-start: 4em !important; }
 .jisage_5 { margin-block-start: 5em !important; }
 
-`
+${emphasisCss()}`
       : '';
 
     return `${verticalExtras}body {
@@ -151,6 +251,7 @@ img.gaiji {
     letterSpacingFromSlider,
     normalize,
     getTheme,
+    toVerticalDoubleQuotes,
     buildCss,
   };
 

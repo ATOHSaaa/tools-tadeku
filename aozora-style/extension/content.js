@@ -4,6 +4,7 @@
   const STORAGE_KEY = 'aozoraStyle';
 
   let verticalWheelScroll = false;
+  const quoteOriginals = new WeakMap();
 
   function isReadingPage() {
     return Boolean(document.querySelector('.main_text, h1.title'));
@@ -22,6 +23,40 @@
   function clearStyles() {
     const styleEl = document.getElementById(STYLE_ID);
     if (styleEl) styleEl.remove();
+    applyVerticalQuotes(false);
+  }
+
+  function shouldSkipQuoteNode(node) {
+    const parent = node.parentElement;
+    if (!parent) return true;
+    const tag = parent.tagName;
+    return tag === 'RT' || tag === 'SCRIPT' || tag === 'STYLE';
+  }
+
+  function applyVerticalQuotes(enabled) {
+    const roots = document.querySelectorAll('.main_text, div.main_text');
+    roots.forEach((root) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      let current;
+      while ((current = walker.nextNode())) {
+        if (shouldSkipQuoteNode(current)) continue;
+        if (!/["\u201C\u201D\u201E\u201F\u301D\u301E]/.test(current.textContent)) continue;
+        nodes.push(current);
+      }
+
+      nodes.forEach((node) => {
+        if (enabled) {
+          if (!quoteOriginals.has(node)) quoteOriginals.set(node, node.textContent);
+          node.textContent = AozoraStyleSettings.toVerticalDoubleQuotes(quoteOriginals.get(node));
+          return;
+        }
+        if (quoteOriginals.has(node)) {
+          node.textContent = quoteOriginals.get(node);
+          quoteOriginals.delete(node);
+        }
+      });
+    });
   }
 
   function apply(data) {
@@ -38,6 +73,7 @@
 
     verticalWheelScroll = settings.writing === 'vertical';
     getStyleEl().textContent = AozoraStyleSettings.buildCss(settings);
+    applyVerticalQuotes(verticalWheelScroll);
   }
 
   function onWheel(e) {

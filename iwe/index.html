@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="メモ・プロット・原稿を一括管理する小説執筆環境。スナップショット履歴、GitHub同期、縦書き・原稿用紙・二段組プレビューに対応。">
+  <title>IWE — 総合執筆環境 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f8f6f2;
+      --surface: #fff;
+      --ink: #1a1a1a;
+      --muted: #666;
+      --border: #c8c4bc;
+      --accent: #2a5a8a;
+      --sidebar-w: 220px;
+      --right-w: min(42vw, 480px);
+      --header-h: auto;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      height: 100vh; height: 100dvh; overflow: hidden;
+      font-family: "Noto Sans JP", sans-serif; font-size: 14px; color: var(--ink); background: var(--bg);
+    }
+    button, input, select, textarea { font: inherit; }
+    .app { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
+    .header {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
+      padding: 0.65rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .brand { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; }
+    .header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-left: auto; }
+    .btn {
+      border: 1px solid var(--border); background: var(--surface); padding: 0.35rem 0.65rem;
+      border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.78rem;
+    }
+    .btn:hover { background: #eee; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { filter: brightness(1.08); }
+    #work-select { min-width: 10rem; padding: 0.35rem; border: 1px solid var(--border); border-radius: 4px; }
+    .main { display: grid; grid-template-columns: var(--sidebar-w) 1fr var(--right-w); min-height: 0; }
+    .pane { min-height: 0; overflow: auto; background: var(--surface); }
+    .left-pane { border-right: 1px solid var(--border); padding: 0.5rem; }
+    .center-pane { display: flex; flex-direction: column; min-width: 0; background: #faf9f7; }
+    .right-pane { border-left: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; }
+    .tree-section { margin-bottom: 0.75rem; }
+    .tree-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.25rem; }
+    .tree-add, .tree-del { border: none; background: transparent; cursor: pointer; color: var(--muted); padding: 0 0.25rem; }
+    .tree-add:hover, .tree-del:hover { color: var(--ink); }
+    .tree-section ul { list-style: none; }
+    .tree-section li { display: flex; align-items: center; gap: 0.15rem; }
+    .tree-file {
+      flex: 1; text-align: left; border: none; background: transparent; padding: 0.28rem 0.4rem;
+      border-radius: 3px; cursor: pointer; font-size: 0.85rem;
+    }
+    .tree-file:hover { background: #eee; }
+    .tree-file.active { background: #dce8f4; font-weight: 700; }
+    #promote-bar { padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); background: #f0ebe3; display: flex; gap: 0.5rem; }
+    .editor-wrap { flex: 1; position: relative; min-height: 0; display: flex; flex-direction: column; }
+    .editor-title-row { padding: 0.5rem 0.75rem 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .editor-doc-title {
+      width: 100%; border: none; font-size: 1.1rem; font-weight: 900; padding: 0.25rem 0; outline: none; background: transparent;
+    }
+    .editor-body-wrap { flex: 1; position: relative; min-height: 0; }
+    .editor-backdrop-clip { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .editor-backdrop {
+      padding: 1rem 1.25rem; white-space: pre-wrap; word-break: break-word; line-height: 1.85;
+      font-family: "Shippori Mincho", serif; font-size: 1rem; color: transparent;
+    }
+    #editor-wrap textarea {
+      position: absolute; inset: 0; width: 100%; height: 100%; resize: none; border: none; outline: none;
+      padding: 1rem 1.25rem; line-height: 1.85; font-family: "Shippori Mincho", serif; font-size: 1rem;
+      background: transparent; color: var(--ink); caret-color: var(--ink);
+    }
+    .hl-link { color: transparent; background: rgba(42,90,138,0.15); border-radius: 2px; }
+    .hl-heading { color: transparent; background: rgba(180,120,40,0.12); }
+    .hl-ruby { color: transparent; background: rgba(80,140,80,0.1); }
+    .hl-emphasis { color: transparent; background: rgba(160,60,60,0.1); }
+    .hl-break { color: transparent; background: rgba(100,100,100,0.12); }
+    .right-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: #f8f6f2; }
+    .right-tab {
+      border: none; background: transparent; padding: 0.45rem 0.65rem; font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; border-bottom: 2px solid transparent;
+    }
+    .right-tab.active { border-bottom-color: var(--accent); background: var(--surface); }
+    .right-panel { flex: 1; overflow: auto; padding: 0.65rem; min-height: 0; }
+    .preview-toolbar { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .preview-mode.active { background: #dce8f4; border-color: var(--accent); }
+    .preview-host { min-height: 200px; }
+    .preview-empty, .panel-empty { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
+    .ref-title { font-weight: 900; margin-bottom: 0.5rem; }
+    .ref-body { white-space: pre-wrap; font-family: "Shippori Mincho", serif; line-height: 1.7; font-size: 0.9rem; }
+    #ref-select { width: 100%; margin-bottom: 0.5rem; padding: 0.35rem; }
+    .status-bar {
+      padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 700; color: var(--muted);
+      background: var(--surface); border-top: 1px solid var(--border); display: flex; gap: 1rem; align-items: center;
+    }
+    #snapshot-badge {
+      margin-left: auto; padding: 0.15rem 0.5rem; background: #fde8c8; border-radius: 999px; font-size: 0.68rem;
+    }
+    #welcome { padding: 3rem 2rem; text-align: center; max-width: 36rem; margin: auto; }
+    #welcome h1 { font-size: 1.4rem; margin-bottom: 0.75rem; }
+    #welcome p { color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; }
+    .home-nav { display: flex; flex-direction: column; gap: 0.65rem; max-width: 16rem; margin: 0 auto; }
+    .home-nav .btn { padding: 0.85rem 1rem; font-size: 0.95rem; flex: 1; min-width: 0; }
+    @media (min-width: 901px) {
+      .home-nav { flex-direction: row; max-width: none; gap: 0.75rem; }
+      .home-nav .btn { flex: 0 1 auto; min-width: 7rem; }
+    }
+    .home-view, .list-view { flex: 1; overflow: auto; padding: 2rem 1.5rem; }
+    .home-view { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .home-view h2 { font-size: 1.1rem; margin-bottom: 0.35rem; }
+    .home-view .home-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.25rem; }
+    .list-view[hidden], .home-view[hidden], .editor-wrap.is-hidden { display: none; }
+    .list-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .list-head h2 { font-size: 1.05rem; flex: 1; }
+    .doc-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
+    .doc-list-item {
+      display: flex; align-items: center; gap: 0.5rem; width: 100%; text-align: left;
+      border: 1px solid var(--border); background: var(--surface); padding: 0.65rem 0.85rem;
+      border-radius: 6px; cursor: pointer; font-weight: 700;
+    }
+    .doc-list-item:hover { background: #eee; }
+    .doc-list-empty { color: var(--muted); padding: 1rem 0; font-size: 0.9rem; }
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 1rem;
+    }
+    .modal[hidden] { display: none; }
+    .modal-box {
+      background: var(--surface); border-radius: 8px; padding: 1rem; max-width: 520px; width: 100%; max-height: 85vh; overflow: auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    .modal-box h3 { margin-bottom: 0.75rem; }
+    .modal-box label { display: block; font-size: 0.78rem; font-weight: 700; margin: 0.5rem 0 0.2rem; }
+    .modal-box input, .modal-box textarea { width: 100%; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; }
+    .modal-note { font-size: 0.75rem; color: var(--muted); line-height: 1.5; margin: 0.5rem 0; }
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+    #search-panel {
+      position: fixed; top: 3.5rem; right: 1rem; width: min(420px, calc(100vw - 2rem));
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12); z-index: 150;
+    }
+    #search-panel[hidden] { display: none; }
+    #search-input { width: 100%; padding: 0.45rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 0.5rem; }
+    .search-group { margin-bottom: 0.75rem; }
+    .search-file { border: none; background: none; font-weight: 900; cursor: pointer; padding: 0; }
+    .search-group ul { list-style: none; font-size: 0.82rem; margin-top: 0.25rem; }
+    .search-group li { padding: 0.2rem 0; cursor: pointer; color: var(--muted); }
+    .search-group li:hover { color: var(--ink); }
+    .search-group .ln { color: var(--accent); font-weight: 700; margin-right: 0.35rem; }
+    .history-item { border-bottom: 1px solid var(--border); padding: 0.5rem 0; }
+    .history-msg { font-weight: 700; font-size: 0.85rem; }
+    .history-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+    .history-actions { display: flex; gap: 0.35rem; margin-top: 0.35rem; }
+    .history-actions button { font-size: 0.72rem; padding: 0.2rem 0.45rem; }
+    .diff-pre { font-size: 0.75rem; line-height: 1.45; white-space: pre-wrap; background: #f8f8f8; padding: 0.5rem; border-radius: 4px; }
+    .diff-add { color: #0a6; display: block; }
+    .diff-remove { color: #c33; display: block; }
+    .diff-same { color: #888; display: block; }
+    .stats-summary { margin-bottom: 0.75rem; font-size: 0.85rem; line-height: 1.6; }
+    .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; margin-top: 0.35rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); }
+    .stats-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+    .stats-bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+    .stats-bar-fill { width: 100%; background: var(--accent); opacity: 0.75; min-height: 2px; border-radius: 2px 2px 0 0; }
+    .stats-bar span { font-size: 0.55rem; color: var(--muted); margin-top: 2px; }
+    .cast-list { list-style: none; margin-bottom: 0.75rem; }
+    .cast-list button { border: none; background: none; cursor: pointer; padding: 0.15rem 0; }
+    .cast-list button:hover { text-decoration: underline; }
+    .cast-warn { font-size: 0.82rem; color: #a44; margin-bottom: 0.5rem; }
+    #backlinks h4 { font-size: 0.78rem; margin: 0.5rem 0 0.25rem; color: var(--muted); }
+    #backlinks ul { list-style: none; margin-bottom: 0.5rem; }
+    #backlinks button { border: none; background: none; cursor: pointer; font-size: 0.85rem; }
+    .conflict-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid #eee; }
+    #toast {
+      position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--ink); color: #fff; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.82rem;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 300;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .drawer-toggle { display: none; }
+    /* genko preview */
+    .preview-genko { background: #e8e4dc; padding: 0.5rem; }
+    .genko-preview-info { font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--muted); }
+    .genko-pages-scroll { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+    .genko-page {
+      --genko-cell: 20px;
+      display: grid; grid-template-columns: repeat(20, var(--genko-cell)); grid-template-rows: repeat(20, var(--genko-cell));
+      grid-auto-flow: column; direction: rtl; writing-mode: vertical-rl; background: #fff; border: 2px solid #333;
+      font-family: "Shippori Mincho", serif; font-size: calc(var(--genko-cell) * 0.72);
+    }
+    .genko-cell {
+      position: relative; display: flex; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14); line-height: 1;
+    }
+    .genko-cell.cell-sideways { transform: rotate(90deg); }
+    .genko-cell .cell-main, .genko-cell .cell-mark { position: absolute; line-height: 1; }
+    .genko-cell.cell-hang-kutouten .slot-main-raised, .genko-cell.cell-hang-close .slot-main-raised, .genko-cell.cell-hang-both .slot-main-raised { top: 15%; }
+    .genko-cell.cell-hang-kutouten .slot-lower, .genko-cell.cell-hang-both .slot-lower { bottom: 18%; font-size: 0.72em; }
+    .genko-cell.cell-hang-both .slot-lower-deep, .genko-cell.cell-hang-close .slot-lower-deep, .genko-cell.cell-pair .slot-lower-deep { bottom: 8%; font-size: 0.72em; }
+    .genko-cell.cell-pair .slot-upper { top: 18%; font-size: 0.72em; }
+    /* columns preview */
+    .preview-columns { padding: 0.5rem; }
+    .iwe-columns-sheet {
+      max-width: 420px; margin: 0 auto; background: #fff; padding: 1.5rem 1.25rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08); columns: 2; column-gap: 1.5rem; column-rule: 1px solid #ddd;
+      font-family: "Shippori Mincho", serif; font-size: 0.82rem; line-height: 1.85; text-align: justify;
+    }
+    .iwe-p { margin: 0 0 0.65em; text-indent: 1em; }
+    .iwe-p-gap { height: 0.65em; }
+    .iwe-h2 { column-span: all; font-size: 1.1em; margin: 0 0 0.75em; text-align: center; }
+    .iwe-h3 { font-size: 1em; margin: 0 0 0.5em; }
+    .iwe-emphasis-h { text-emphasis: filled dot; -webkit-text-emphasis: filled dot; }
+    .iwe-page-break { break-after: page; height: 1rem; }
+    /* nyuko vertical preview */
+    .preview-vertical { padding: 0.5rem; overflow: auto; background: #e8e6e1; }
+    .nyuko-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+    .nyuko-page { position: relative; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .nyuko-page-body.writing-vertical { writing-mode: vertical-rl; text-orientation: mixed; text-align: justify; overflow: hidden; }
+    .nyuko-page-body ruby { ruby-align: center; }
+    .nyuko-page-body rt { font-size: 0.5em; }
+    .nyuko-tcy { text-combine-upright: all; -webkit-text-combine: horizontal; }
+    .nyuko-heading-chapter { font-weight: 700; font-size: 1.4em; letter-spacing: 0.15em; }
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+      .left-pane, .right-pane {
+        position: fixed; top: 0; bottom: 0; z-index: 120; width: min(85vw, 300px);
+        transform: translateX(-110%); transition: transform 0.2s; box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+      }
+      .right-pane { right: 0; left: auto; transform: translateX(110%); width: min(92vw, 360px); }
+      body.left-open .left-pane { transform: translateX(0); }
+      body.right-open .right-pane { transform: translateX(0); }
+      .drawer-toggle { display: inline-flex; }
+    }
+  </style>
+  <script src="../shared/nyuko-data.js"></script>
+  <script src="../shared/nyuko-engine.js"></script>
+  <script src="../shared/genko-render.js"></script>
+  <script src="../shared/cast-engine.js"></script>
+  <script src="../shared/site-link.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand" data-tool-name="IWE">tadeku-tools / IWE</div>
+      <select id="work-select" aria-label="作品"></select>
+      <div class="header-actions">
+        <button type="button" class="btn" id="btn-home">トップ</button>
+        <button type="button" class="btn drawer-toggle" data-drawer="left-open">ファイル</button>
+        <button type="button" class="btn drawer-toggle" data-drawer="right-open">パネル</button>
+        <button type="button" class="btn" id="btn-search">検索</button>
+        <button type="button" class="btn" id="btn-snapshot">スナップショット</button>
+        <button type="button" class="btn" id="btn-github-upload">↑ GitHub</button>
+        <button type="button" class="btn" id="btn-github-download">↓ GitHub</button>
+        <button type="button" class="btn" id="btn-settings">設定</button>
+      </div>
+    </header>
+
+    <div id="welcome">
+      <h1>IWE — 総合執筆環境</h1>
+      <p>作品を選んで、執筆を始めましょう。</p>
+      <div class="home-nav">
+        <button type="button" class="btn" data-home-nav="memo" disabled>メモ</button>
+        <button type="button" class="btn" data-home-nav="plot" disabled>プロット</button>
+        <button type="button" class="btn" data-home-nav="manuscript" disabled>作品</button>
+      </div>
+    </div>
+
+    <div id="workspace" hidden>
+      <div class="main">
+        <aside class="pane left-pane" id="left-pane">
+          <div id="file-tree"></div>
+        </aside>
+        <main class="center-pane">
+          <div id="promote-bar"></div>
+          <div class="home-view" id="home-view">
+            <h2 id="home-work-title">—</h2>
+            <p class="home-sub">開きたい一覧を選んでください</p>
+            <div class="home-nav">
+              <button type="button" class="btn" data-list-nav="memo">メモ</button>
+              <button type="button" class="btn" data-list-nav="plot">プロット</button>
+              <button type="button" class="btn" data-list-nav="manuscript">作品</button>
+            </div>
+          </div>
+          <div class="list-view" id="list-view" hidden>
+            <div class="list-head">
+              <button type="button" class="btn" id="btn-list-back">← トップ</button>
+              <h2 id="list-title">一覧</h2>
+              <button type="button" class="btn" id="btn-list-new">+ 新規</button>
+            </div>
+            <ul class="doc-list" id="doc-list"></ul>
+          </div>
+          <div class="editor-wrap is-hidden" id="editor-wrap">
+            <div class="editor-title-row">
+              <input type="text" class="editor-doc-title" placeholder="タイトル" spellcheck="false">
+            </div>
+            <div class="editor-body-wrap">
+              <div class="editor-backdrop-clip" aria-hidden="true">
+                <div class="editor-backdrop"></div>
+              </div>
+              <textarea spellcheck="false" aria-label="本文"></textarea>
+            </div>
+          </div>
+        </main>
+        <aside class="pane right-pane" id="right-pane">
+          <div class="right-tabs">
+            <button type="button" class="right-tab active" data-panel="preview">プレビュー</button>
+            <button type="button" class="right-tab" data-panel="ref">参照</button>
+            <button type="button" class="right-tab" data-panel="history">履歴</button>
+            <button type="button" class="right-tab" data-panel="cast">人物</button>
+            <button type="button" class="right-tab" data-panel="stats">統計</button>
+          </div>
+          <div class="right-panel" id="panel-preview">
+            <div class="preview-toolbar">
+              <button type="button" class="btn preview-mode active" data-mode="vertical">縦書き</button>
+              <button type="button" class="btn preview-mode" data-mode="genko">原稿用紙</button>
+              <button type="button" class="btn preview-mode" data-mode="columns">二段組</button>
+            </div>
+            <div class="preview-host preview-vertical" id="preview-host"></div>
+          </div>
+          <div class="right-panel" id="panel-ref" hidden>
+            <select id="ref-select"></select>
+            <div id="ref-host"></div>
+            <div id="backlinks"></div>
+          </div>
+          <div class="right-panel" id="panel-history" hidden>
+            <div id="history-host"></div>
+          </div>
+          <div class="right-panel" id="panel-cast" hidden>
+            <button type="button" class="btn" id="btn-cast-refresh">再解析</button>
+            <div id="cast-host"></div>
+          </div>
+          <div class="right-panel" id="panel-stats" hidden>
+            <div id="stats-host"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer class="status-bar">
+      <span id="status-bar">—</span>
+      <span id="snapshot-badge" hidden>スナップショットしませんか</span>
+    </footer>
+  </div>
+
+  <div id="search-panel" hidden>
+    <input type="search" id="search-input" placeholder="作品内を検索…" spellcheck="false">
+    <div id="search-results"></div>
+  </div>
+
+  <div class="modal" id="settings-modal" hidden>
+    <div class="modal-box">
+      <h3>設定</h3>
+      <p class="modal-note">GitHub 連携は任意です。Fine-grained PAT を対象リポジトリ 1 つ・Contents Read/Write のみに限定してください。トークンはこのブラウザの localStorage にのみ保存されます。</p>
+      <label for="github-token">GitHub トークン</label>
+      <input type="password" id="github-token" autocomplete="off">
+      <label for="github-repo">リポジトリ (owner/repo)</label>
+      <input type="text" id="github-repo" placeholder="username/my-novel">
+      <label for="target-chars">目標文字数</label>
+      <input type="number" id="target-chars" min="0" step="1000" placeholder="例: 80000">
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close="settings-modal">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="settings-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="conflict-modal" hidden>
+    <div class="modal-box">
+      <h3>競合の解決</h3>
+      <p class="modal-note">ファイルごとに残す版を選んでください。</p>
+      <div id="conflict-list"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close="conflict-modal">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="conflict-apply">適用</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="diff-modal" hidden>
+    <div class="modal-box" style="max-width:720px">
+      <h3>差分</h3>
+      <div id="diff-body"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close="diff-modal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module" src="js/main.js"></script>
+  <script>
+    document.getElementById('btn-cast-refresh')?.addEventListener('click', () => {
+      document.querySelector('.right-tab[data-panel="cast"]')?.click();
+    });
+  </script>
+</body>
+</html>

@@ -17,10 +17,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
   <script src="../shared/nyuko-data.js?v=7"></script>
   <script src="../shared/export.js"></script>
-  <script src="../shared/nyuko-engine.js?v=5"></script>
+  <script src="../shared/nyuko-engine.js?v=7"></script>
   <style>
     :root {
-      --bg: #f0eeea;
+      --bg: #f8f6f2;
       --ink: #1a1a1a;
       --muted: #5a5a5a;
       --border: #d4d0c8;
@@ -80,7 +80,7 @@
     .brand {
       font-size: 1.05rem;
       font-weight: 900;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       white-space: nowrap;
     }
 
@@ -913,6 +913,20 @@
       letter-spacing: 0.08em;
       padding: 0.55rem 0.75rem;
       text-align: center;
+    }
+
+    .page-nonbule-start {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .page-nonbule-start .section-label {
+      margin-bottom: 0.75rem;
+    }
+
+    .page-nonbule-start .toggle-group {
+      margin-bottom: 0.85rem;
     }
 
     .empty-note {
@@ -1855,6 +1869,20 @@
             </div>
             <div class="page-section-row" id="page-section-colophon">奥付</div>
           </div>
+          <div class="page-nonbule-start">
+            <div class="section-label">ノンブル開始</div>
+            <div class="toggle-group" id="nonbule-start-group"></div>
+            <div class="page-blank-field" id="nonbule-start-page-field" hidden>
+              <label for="nonbule-start-page">開始頁</label>
+              <div class="page-blank-input-wrap">
+                <button type="button" class="page-blank-step" id="nonbule-start-prev" aria-label="1頁戻す">−</button>
+                <input type="number" id="nonbule-start-page" min="1" max="999" step="1" value="1" inputmode="numeric" aria-label="ノンブル開始頁">
+                <button type="button" class="page-blank-step" id="nonbule-start-next" aria-label="1頁進める">+</button>
+                <span>頁目から「1」</span>
+              </div>
+            </div>
+            <p class="pages-note" id="nonbule-start-note"></p>
+          </div>
         </div>
 
         <div class="panel" id="panel-toc" role="tabpanel">
@@ -1960,8 +1988,8 @@
 
   <script>
     (function () {
-      const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers } = window.NyukoData;
-      const { paginate, assembleLayout, createLayoutPage, exportPrint, pageDimensions } = window.NyukoEngine;
+      const { FORMATS, FORMAT_ORDER, FONTS, NONBULE_POSITIONS, NONBULE_START_ANCHORS, COLUMN_COUNTS, WRITING_DIRECTIONS, CHAPTER_MODES, BLEED_OPTIONS, DEFAULT_PAGE_SPACERS, resolveDraftSettings, bleedMmFromSetting, formatLineHeightLabel, hFromLineHeight, snapLineHeightH, normalizePageSpacers, clampNonbuleStartPage, normalizeNonbuleStartAnchor } = window.NyukoData;
+      const { paginate, assembleLayout, createLayoutPage, exportPrint, pageDimensions, firstBodyPageIndex, resolveNonbuleDisplayNumber } = window.NyukoEngine;
 
       const MARGIN_MIN_MM = 5;
       const MARGIN_MIN_BODY_MM = 35;
@@ -2026,6 +2054,8 @@
         marginOuter: null,
         fontId: 'literary',
         nonbulePosition: 'spread',
+        nonbuleStartAnchor: 'body',
+        nonbuleStartPage: 1,
         columnCount: 1,
         writingDirection: 'vertical',
         chapterMode: 'break-before',
@@ -2048,6 +2078,33 @@
       const SIDEBAR_LAYOUT_KEY = 'nyuko-sidebar-layout';
       const SPLIT_PANE_KEY = 'nyuko-split-pane-tab';
       const SPLIT_MOBILE_MQ = window.matchMedia('(max-width: 860px)');
+      let isPrinting = false;
+      let printRecoveryTimer = 0;
+      let printPreviewSnapshot = null;
+
+      function snapshotPreviewUi() {
+        printPreviewSnapshot = {
+          previewView: state.previewView,
+          previewFocusPage: state.previewFocusPage,
+          zoomMode: state.zoomMode,
+          zoom: state.zoom,
+        };
+      }
+
+      function restorePreviewUi() {
+        if (!printPreviewSnapshot) return;
+        const snap = printPreviewSnapshot;
+        printPreviewSnapshot = null;
+        state.previewView = snap.previewView;
+        state.previewFocusPage = snap.previewFocusPage;
+        state.zoomMode = snap.zoomMode;
+        state.zoom = snap.zoom;
+        els.previewViewBtns.forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.previewView === state.previewView);
+        });
+        updateZoomUI();
+        updatePageNavUI();
+      }
 
       const els = {
         main: document.getElementById('main'),
@@ -2127,6 +2184,12 @@
         pageBlockAfterToc: document.getElementById('page-block-after-toc'),
         pageSectionToc: document.getElementById('page-section-toc'),
         pageSectionColophon: document.getElementById('page-section-colophon'),
+        nonbuleStartGroup: document.getElementById('nonbule-start-group'),
+        nonbuleStartPageField: document.getElementById('nonbule-start-page-field'),
+        nonbuleStartPageInput: document.getElementById('nonbule-start-page'),
+        nonbuleStartPrev: document.getElementById('nonbule-start-prev'),
+        nonbuleStartNext: document.getElementById('nonbule-start-next'),
+        nonbuleStartNote: document.getElementById('nonbule-start-note'),
       };
 
       function isMobileLayout() {
@@ -2167,7 +2230,7 @@
       }
 
       function applyMobilePreviewDefaults() {
-        if (!isMobileLayout()) return;
+        if (!isMobileLayout() || isPrinting) return;
         if (state.previewView !== 'single') {
           state.previewView = 'single';
           els.previewViewBtns.forEach((btn) => {
@@ -2281,7 +2344,7 @@
         }
         els.blankAfterBody.value = String(spacers.afterBody + spacers.afterColophon);
 
-        document.querySelectorAll('.page-blank-step').forEach((btn) => {
+        document.querySelectorAll('.page-blank-step[data-spacer]').forEach((btn) => {
           const key = btn.dataset.spacer;
           const delta = Number(btn.dataset.delta);
           if (!key || !delta) return;
@@ -2523,6 +2586,82 @@
         return count;
       }
 
+      function nonbuleRenderOptions() {
+        return {
+          nonbuleStartAnchor: state.nonbuleStartAnchor,
+          nonbuleStartPage: state.nonbuleStartPage,
+          nonbuleStartNumber: 1,
+          layoutPages: state.layout.pages || [],
+        };
+      }
+
+      function resolvedNonbuleStartPage() {
+        const opts = nonbuleRenderOptions();
+        return window.NyukoEngine.resolveNonbuleStartPage(opts);
+      }
+
+      function nonbuleDisplayForPhysicalPage(physicalPageIndex, pageType) {
+        return resolveNonbuleDisplayNumber(physicalPageIndex, pageType || 'body', nonbuleRenderOptions());
+      }
+
+      function updateNonbuleStartUI() {
+        const pageCount = state.layout.pageCount || 0;
+        const firstBody = firstBodyPageIndex(state.layout.pages || []);
+        const startPage = pageCount ? resolvedNonbuleStartPage() : state.nonbuleStartPage;
+        const showCustom = state.nonbuleStartAnchor === 'custom';
+        if (els.nonbuleStartPageField) els.nonbuleStartPageField.hidden = !showCustom;
+        if (els.nonbuleStartPageInput) {
+          els.nonbuleStartPageInput.max = String(Math.max(1, pageCount || 999));
+          els.nonbuleStartPageInput.value = String(clampNonbuleStartPage(state.nonbuleStartPage, pageCount || 1));
+        }
+        if (els.nonbuleStartPrev) {
+          els.nonbuleStartPrev.disabled = !showCustom || clampNonbuleStartPage(state.nonbuleStartPage, pageCount || 1) <= 1;
+        }
+        if (els.nonbuleStartNext) {
+          els.nonbuleStartNext.disabled = !showCustom || !pageCount
+            || clampNonbuleStartPage(state.nonbuleStartPage, pageCount) >= pageCount;
+        }
+        if (els.nonbuleStartNote) {
+          if (state.nonbuleStartAnchor === 'body') {
+            els.nonbuleStartNote.textContent = pageCount
+              ? '本文1頁目（物理' + firstBody + '頁目）を「1」と数えます。それより前の頁には番号を付けません。'
+              : '本文1頁目を「1」と数えます。それより前の頁には番号を付けません。';
+          } else if (state.nonbuleStartAnchor === 'first') {
+            els.nonbuleStartNote.textContent = '物理1頁目を「1」と数えます。空白頁・目次・奥付には番号を付けません。';
+          } else {
+            els.nonbuleStartNote.textContent = pageCount
+              ? '物理' + startPage + '頁目を「1」と数えます。それより前の本文頁にも番号を付けません。'
+              : '指定した頁を「1」と数えます。';
+          }
+        }
+      }
+
+      function setNonbuleStartAnchor(anchor) {
+        state.nonbuleStartAnchor = normalizeNonbuleStartAnchor(anchor);
+        if (state.nonbuleStartAnchor === 'custom' && state.layout.pageCount) {
+          state.nonbuleStartPage = clampNonbuleStartPage(
+            state.nonbuleStartPage,
+            state.layout.pageCount
+          );
+        }
+        updateNonbuleStartUI();
+        saveDraft();
+        render();
+      }
+
+      function setNonbuleStartPage(page) {
+        const max = Math.max(1, state.layout.pageCount || 1);
+        state.nonbuleStartPage = clampNonbuleStartPage(page, max);
+        state.nonbuleStartAnchor = 'custom';
+        updateNonbuleStartUI();
+        saveDraft();
+        render();
+      }
+
+      function stepNonbuleStartPage(delta) {
+        setNonbuleStartPage(state.nonbuleStartPage + delta);
+      }
+
       function importChaptersFromManuscript() {
         const chapters = state.layout.chapters || [];
         if (!chapters.length) {
@@ -2531,7 +2670,15 @@
         }
         if (state.toc.length && !confirm('目次を章一覧で上書きしますか？')) return;
         const offset = pagesBeforeBodyCount();
-        setToc(chapters.map((chapter) => ({ title: chapter.title, page: chapter.page + offset })));
+        const firstBody = firstBodyPageIndex(state.layout.pages || []);
+        setToc(chapters.map((chapter) => {
+          const physicalPage = firstBody + chapter.page - 1;
+          const displayPage = nonbuleDisplayForPhysicalPage(physicalPage, 'body');
+          return {
+            title: chapter.title,
+            page: displayPage != null ? displayPage : chapter.page + offset,
+          };
+        }));
         saveDraft();
         renderTocList();
         render();
@@ -2560,6 +2707,8 @@
           marginOuter: state.marginOuter,
           fontId: state.fontId,
           nonbulePosition: state.nonbulePosition,
+          nonbuleStartAnchor: state.nonbuleStartAnchor,
+          nonbuleStartPage: state.nonbuleStartPage,
           columnCount: state.columnCount,
           writingDirection: state.writingDirection,
           chapterMode: state.chapterMode,
@@ -2601,6 +2750,8 @@
         state.marginOuter = null;
         state.fontId = 'literary';
         state.nonbulePosition = 'spread';
+        state.nonbuleStartAnchor = 'body';
+        state.nonbuleStartPage = 1;
         state.columnCount = 1;
         state.writingDirection = 'vertical';
         state.chapterMode = 'break-before';
@@ -2642,6 +2793,7 @@
           clearTimeout(textRenderTimer);
           textRenderTimer = null;
         }
+        if (isPrinting) return;
         refreshPreview();
       }
 
@@ -2649,6 +2801,7 @@
         if (textRenderTimer) clearTimeout(textRenderTimer);
         textRenderTimer = setTimeout(() => {
           textRenderTimer = null;
+          if (isPrinting) return;
           refreshPreview();
         }, TEXT_RENDER_DEBOUNCE_MS);
       }
@@ -2696,6 +2849,10 @@
           else if (data.fontId && FONTS[data.fontId]) state.fontId = data.fontId;
           if (data.nonbulePosition && NONBULE_POSITIONS.some((p) => p.id === data.nonbulePosition)) {
             state.nonbulePosition = data.nonbulePosition;
+          }
+          state.nonbuleStartAnchor = normalizeNonbuleStartAnchor(data.nonbuleStartAnchor);
+          if (typeof data.nonbuleStartPage === 'number' && Number.isFinite(data.nonbuleStartPage)) {
+            state.nonbuleStartPage = Math.max(1, Math.floor(data.nonbuleStartPage));
           }
           if (data.columnCount === 1 || data.columnCount === 2) {
             state.columnCount = data.columnCount;
@@ -2790,7 +2947,7 @@
       }
 
       function renderOptions() {
-        return {
+        return Object.assign({
           nonbulePosition: state.nonbulePosition,
           preview: true,
           lineHeightH: state.lineHeightH,
@@ -2799,7 +2956,7 @@
           writingDirection: state.writingDirection,
           chapterMode: state.chapterMode,
           tocFontSizePt: effectiveTocFontSizePt(),
-        };
+        }, nonbuleRenderOptions());
       }
 
       function layoutOptions() {
@@ -2957,8 +3114,15 @@
 
       function refreshPreview() {
         state.layout = buildFullLayout();
+        if (state.nonbuleStartAnchor === 'custom') {
+          state.nonbuleStartPage = clampNonbuleStartPage(
+            state.nonbuleStartPage,
+            state.layout.pageCount || 1
+          );
+        }
         updateLayoutMeta();
         updateTocMeta();
+        updateNonbuleStartUI();
         clampFocusPage();
         updatePageNavUI();
         if (state.zoomMode === 'fit') fitPreviewZoom();
@@ -2988,6 +3152,8 @@
           saveDraft();
           render();
         });
+        buildToggleGroup(els.nonbuleStartGroup, NONBULE_START_ANCHORS, state.nonbuleStartAnchor, setNonbuleStartAnchor);
+        updateNonbuleStartUI();
         els.columnSection.hidden = state.writingDirection === 'horizontal';
         if (state.writingDirection !== 'horizontal') {
           buildToggleGroup(els.columnGroup, COLUMN_COUNTS, state.columnCount, (id) => {
@@ -3794,11 +3960,23 @@
         els[id].addEventListener('input', commitPageSpacers);
       });
 
-      document.querySelectorAll('.page-blank-step').forEach((btn) => {
+      document.querySelectorAll('.page-blank-step[data-spacer]').forEach((btn) => {
         btn.addEventListener('click', () => {
           stepPageSpacer(btn.dataset.spacer, Number(btn.dataset.delta));
         });
       });
+
+      if (els.nonbuleStartPageInput) {
+        els.nonbuleStartPageInput.addEventListener('input', () => {
+          setNonbuleStartPage(els.nonbuleStartPageInput.value);
+        });
+      }
+      if (els.nonbuleStartPrev) {
+        els.nonbuleStartPrev.addEventListener('click', () => stepNonbuleStartPage(-1));
+      }
+      if (els.nonbuleStartNext) {
+        els.nonbuleStartNext.addEventListener('click', () => stepNonbuleStartPage(1));
+      }
 
       els.chapterModeSelect.addEventListener('change', () => {
         state.chapterMode = els.chapterModeSelect.value;
@@ -3862,15 +4040,29 @@
 
       if (typeof ResizeObserver !== 'undefined') {
         const previewResizeObserver = new ResizeObserver(() => {
-          if (state.zoomMode !== 'fit') return;
+          if (isPrinting || state.zoomMode !== 'fit') return;
           fitPreviewZoom();
           renderPreview();
         });
         previewResizeObserver.observe(els.previewScroll);
       }
 
+      function recoverFromPrint() {
+        if (!isPrinting) return;
+        isPrinting = false;
+        if (printRecoveryTimer) {
+          clearTimeout(printRecoveryTimer);
+          printRecoveryTimer = 0;
+        }
+        restorePreviewUi();
+        if (state.zoomMode === 'fit') fitPreviewZoom();
+        refreshPreview();
+      }
+
+      window.addEventListener('nyuko-after-print', recoverFromPrint);
       window.addEventListener('pagehide', flushPending);
       document.addEventListener('visibilitychange', () => {
+        if (isPrinting) return;
         if (document.visibilityState === 'hidden') flushPending();
       });
 
@@ -3879,14 +4071,14 @@
       }
 
       function exportLayoutOptions() {
-        return {
+        return Object.assign({
           nonbulePosition: state.nonbulePosition,
           lineHeightH: state.lineHeightH,
           letterSpacing: state.letterSpacing,
           columnCount: effectiveColumnCount(),
           writingDirection: state.writingDirection,
           tocFontSizePt: effectiveTocFontSizePt(),
-        };
+        }, nonbuleRenderOptions());
       }
 
       async function runExport(btn, run) {
@@ -3908,10 +4100,21 @@
 
       async function handleExportPdf() {
         try {
-          await runExport(els.btnExportPdf, () => exportPrint(
-            state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
-            exportLayoutOptions()
-          ));
+          await runExport(els.btnExportPdf, async () => {
+            snapshotPreviewUi();
+            isPrinting = true;
+            if (printRecoveryTimer) clearTimeout(printRecoveryTimer);
+            printRecoveryTimer = setTimeout(recoverFromPrint, 2000);
+            try {
+              await exportPrint(
+                state.layout, activeFormat(), effectiveFont(), currentBleedMm(), exportTitleLine(),
+                exportLayoutOptions()
+              );
+            } catch (err) {
+              recoverFromPrint();
+              throw err;
+            }
+          });
         } catch (err) {
           alert('印刷の準備に失敗しました。');
         }
@@ -3936,7 +4139,7 @@
           if (opts.save !== false) {
             try { localStorage.setItem(MOBILE_KEY, pane); } catch (_) {}
           }
-          if (!opts.skipPreviewUpdate && isMobileLayout() && (pane === 'preview' || pane === 'split')) {
+          if (!opts.skipPreviewUpdate && !isPrinting && isMobileLayout() && (pane === 'preview' || pane === 'split')) {
             applyMobilePreviewDefaults();
           }
         }
@@ -3961,6 +4164,7 @@
         }
 
         MOBILE_MQ.addEventListener('change', () => {
+          if (isPrinting) return;
           if (isMobileLayout()) {
             applyMobilePreviewDefaults();
           } else if (state.zoomMode === 'fit') {

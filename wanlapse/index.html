@@ -124,8 +124,13 @@
       font-weight: 700;
     }
 
-    body.is-recording .toolbar-settings {
-      display: none;
+    .toolbar-settings:has(:disabled) {
+      opacity: 0.45;
+    }
+
+    .toolbar select:disabled,
+    .toolbar-opt:has(input:disabled) {
+      cursor: not-allowed;
     }
 
     .toolbar-line {
@@ -203,9 +208,51 @@
 
     .btn-stop {
       display: none;
-      background: var(--rec);
-      border-color: var(--rec);
+      background: var(--ink);
+      border-color: var(--ink);
       color: #fff;
+    }
+
+    .toolbar-btns {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .rec-dot {
+      display: none;
+      position: relative;
+      width: 0.45rem;
+      height: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .rec-dot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--rec);
+    }
+
+    .rec-dot::after {
+      content: '';
+      position: absolute;
+      inset: -0.4rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(224, 48, 48, 0.7) 0%, rgba(224, 48, 48, 0.15) 45%, transparent 72%);
+      animation: rec-bloom 2s ease-in-out infinite;
+    }
+
+    @keyframes rec-bloom {
+      0%, 100% {
+        opacity: 0.55;
+        transform: scale(0.85);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.15);
+      }
     }
 
     body.is-recording .btn-record {
@@ -214,6 +261,10 @@
 
     body.is-recording .btn-stop {
       display: inline-block;
+    }
+
+    body.is-recording .rec-dot {
+      display: block;
     }
 
     .editor-wrap {
@@ -347,18 +398,6 @@
       background: #000;
     }
 
-    .notice {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--muted);
-      padding: 0 1.25rem 0.65rem;
-      line-height: 1.5;
-    }
-
-    body.is-recording .notice {
-      display: none;
-    }
-
     .error-toast {
       display: none;
       margin: 0 1.25rem 0.65rem;
@@ -371,6 +410,10 @@
 
     .error-toast.is-visible {
       display: block;
+    }
+
+    #library-load-wrap {
+      color: var(--muted);
     }
   </style>
   <link rel="stylesheet" href="../shared/site-link.css">
@@ -385,6 +428,7 @@
             <span class="rec-badge" id="rec-badge">REC</span>
             <span id="timer-wrap" hidden>経過 <strong id="elapsed">00:00</strong></span>
             <span id="countdown-wrap" hidden>残り <strong id="countdown">60:00</strong></span>
+            <span id="library-load-wrap" hidden>ライブラリ <strong id="library-load-status">読込中</strong></span>
             <span>文字数 <strong id="char-count">0</strong></span>
           </div>
         </div>
@@ -420,10 +464,12 @@
           <input type="checkbox" id="countdown-toggle" checked>
           <span>60分タイマー</span>
         </label>
-        <button type="button" class="btn btn-record" id="btn-record">録画開始</button>
-        <button type="button" class="btn btn-stop" id="btn-stop">停止</button>
+        <div class="toolbar-btns">
+          <button type="button" class="btn btn-record" id="btn-record">録画開始</button>
+          <button type="button" class="btn btn-stop" id="btn-stop">停止</button>
+          <span class="rec-dot" aria-hidden="true"></span>
+        </div>
       </div>
-      <p class="notice">初回のみ動画ライブラリ（約30MB）をダウンロードします。長文は720p・16x以上を推奨。</p>
       <div class="error-toast" id="error-toast" role="alert"></div>
     </header>
     <div class="editor-wrap">
@@ -474,8 +520,12 @@
     const resultActions = document.getElementById('result-actions');
     const resultVideos = document.getElementById('result-videos');
     const errorToast = document.getElementById('error-toast');
+    const libraryLoadWrap = document.getElementById('library-load-wrap');
+    const libraryLoadStatus = document.getElementById('library-load-status');
 
     const recorder = TadekuTimelapse.createRecorder();
+    let frameCache = null;
+    let libraryPreloadPromise = null;
     let timerInterval = null;
     let recordStartMs = 0;
     let previewUrls = [];
@@ -496,6 +546,43 @@
         },
       },
     );
+
+    function hideLibraryLoadUI() {
+      libraryLoadWrap.hidden = true;
+    }
+
+    function updateLibraryLoadUI({ percent, message }) {
+      libraryLoadWrap.hidden = false;
+      if (typeof percent === 'number' && percent > 0) {
+        libraryLoadStatus.textContent = `読込中 ${percent}%`;
+      } else {
+        libraryLoadStatus.textContent = message || '読込中';
+      }
+    }
+
+    function ensureBackgroundLibraryLoad() {
+      if (TadekuTimelapse.isFFmpegLoaded()) {
+        hideLibraryLoadUI();
+        return null;
+      }
+      if (libraryPreloadPromise) return libraryPreloadPromise;
+
+      updateLibraryLoadUI({ message: '読込中' });
+      libraryPreloadPromise = TadekuTimelapse.preloadFFmpeg((progress) => {
+        if (progress.phase === 'loading') {
+          updateLibraryLoadUI(progress);
+        }
+      }).then(() => {
+        hideLibraryLoadUI();
+      }).catch((err) => {
+        libraryPreloadPromise = null;
+        hideLibraryLoadUI();
+        showError(err.message || 'ライブラリの読み込みに失敗しました。');
+        throw err;
+      });
+
+      return libraryPreloadPromise;
+    }
 
     function scheduleSave() {
       library.scheduleSave();
@@ -522,21 +609,29 @@
       errorToast.classList.remove('is-visible');
     }
 
-    function setControlsDisabled(disabled) {
-      btnRecord.disabled = disabled;
-      btnStop.disabled = disabled;
+    function setSettingsDisabled(disabled) {
       speedSelect.disabled = disabled;
       resolutionSelect.disabled = disabled;
       formatSelect.disabled = disabled;
       countdownToggle.disabled = disabled;
     }
 
+    function setControlsDisabled(disabled) {
+      btnRecord.disabled = disabled;
+      btnStop.disabled = disabled;
+      setSettingsDisabled(disabled);
+    }
+
     function captureSnapshot() {
+      const before = recorder.snapshots.length;
       recorder.capture({
         text: editor.value,
         cursor: editor.selectionStart,
         title: workTitle.value,
       });
+      if (frameCache && recorder.snapshots.length > before) {
+        frameCache.notify(recorder.snapshots);
+      }
     }
 
     function updateTimers() {
@@ -641,18 +736,38 @@
       hideError();
       stopTimerUI();
       document.body.classList.remove('is-recording');
-      setControlsDisabled(true);
+      setSettingsDisabled(true);
+      btnRecord.disabled = true;
+      btnStop.disabled = true;
+      showProgress({ phase: 'render', percent: 0, message: '準備中…' });
+
+      const cache = frameCache;
+      frameCache = null;
+      if (cache) cache.stop();
 
       const snapshots = recorder.stop();
+      let preRenderedBlobs;
 
       try {
-        showProgress({ phase: 'render', percent: 0, message: '準備中…' });
+        if (cache) {
+          await cache.flush(snapshots, (done, total) => {
+            const pct = Math.round((done / total) * 100);
+            showProgress({
+              phase: 'render',
+              percent: pct,
+              message: done < total ? `残りのフレームを仕上げ中 ${pct}%` : 'フレーム準備完了',
+            });
+          });
+          preRenderedBlobs = cache.getBlobs();
+        }
+
         const blobs = await TadekuTimelapse.exportVideo(
           snapshots,
           {
             speed: Number(speedSelect.value) || 8,
             resolution: resolutionSelect.value,
             formats: getExportFormats(),
+            preRenderedBlobs,
           },
           showProgress,
         );
@@ -663,6 +778,8 @@
         hideProgress();
         showError(err.message || '動画の生成に失敗しました。');
       } finally {
+        frameCache = null;
+        btnStop.disabled = false;
         setControlsDisabled(false);
       }
     }
@@ -670,18 +787,33 @@
     function startRecording() {
       hideError();
       hideResult();
+
+      if (!TadekuTimelapse.isFFmpegLoaded()) {
+        ensureBackgroundLibraryLoad();
+      }
+
       document.body.classList.add('is-recording');
+      setSettingsDisabled(true);
+      btnRecord.disabled = true;
+      btnStop.disabled = false;
+      frameCache = TadekuTimelapse.createFrameCache(resolutionSelect.value);
+      frameCache.start();
       recorder.start({
         text: editor.value,
         cursor: editor.selectionStart,
         title: workTitle.value,
       });
+      frameCache.notify(recorder.snapshots);
       startTimerUI();
       editor.focus();
     }
 
     btnRecord.addEventListener('click', startRecording);
     btnStop.addEventListener('click', stopRecording);
+
+    if (TadekuTimelapse.isFFmpegLoaded()) {
+      hideLibraryLoadUI();
+    }
 
     editor.addEventListener('input', () => {
       updateCount();

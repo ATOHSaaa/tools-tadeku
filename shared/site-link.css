@@ -21,9 +21,18 @@
 .page-title {
   font-size: clamp(1.75rem, 5vw, 2.25rem);
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.03em;
   line-height: 1.1;
   margin-bottom: 0.35rem;
+}
+
+.question-text,
+.result-type,
+.result-name,
+.prompt-text,
+.modal-title,
+.cross-banner-title {
+  letter-spacing: 0.03em;
 }
 
 .page-title .brand-home {

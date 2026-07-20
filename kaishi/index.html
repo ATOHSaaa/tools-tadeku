@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="名作小説の書き出しを並べて読む。気になる一節をクリックすると、Amazonの商品ページへ。">
+  <title>Kakidashi-Stream — 一節から本に出会う | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #f8f3eb;
+      --ink: #000;
+      --muted: #3a3a3a;
+      --sans: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+      --header-pad-x: clamp(1.25rem, 4vw, 3rem);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      flex: none;
+      z-index: 10;
+      background: var(--bg);
+      padding: 1.25rem var(--header-pad-x) 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .lead {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-top: 0.5rem;
+    }
+
+    .main {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 var(--header-pad-x) 5rem;
+    }
+
+    .main.is-auto {
+      overflow: hidden;
+    }
+
+    .stream {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      will-change: transform;
+    }
+
+    .stream-item {
+      padding: 1.35rem 0;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .stream-item:last-child {
+      border-bottom: none;
+    }
+
+    .stream-line {
+      display: inline;
+      font-family: var(--sans);
+      font-size: clamp(1.2rem, 2.5vw, 1.45rem);
+      font-weight: 600;
+      color: #000;
+      line-height: 1.55;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      cursor: pointer;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .stream-line:hover {
+      text-decoration: underline;
+      text-decoration-color: #000;
+      text-underline-offset: 0.12em;
+    }
+
+    .empty {
+      margin-top: 2rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="page-title brand">
+        <a class="brand-home" href="../">tadeku-tools</a>
+        <span class="brand-sep"> / </span>Kakidashi-Stream
+      </h1>
+      <p class="lead">名作の書き出しを並べました。気になる一節をクリックすると、Amazonの商品ページへ移動します。Amazonのアソシエイトとして、tadeku-toolsは適格販売により収入を得ています。</p>
+    </header>
+
+    <main class="main is-auto" id="main">
+      <div class="stream" id="stream" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <script src="../shared/kaishi-data.js"></script>
+  <script src="../shared/site-link.js"></script>
+  <script>
+    const AMAZON_ASSOCIATE_TAG = 'kaishi-22';
+    const SCROLL_SPEED = 36;
+    const IDLE_RESUME_MS = 2000;
+
+    const items = window.KAISHI_DATA.ITEMS.slice();
+    const main = document.getElementById('main');
+    const stream = document.getElementById('stream');
+
+    let autoScroll = true;
+    let idleTimer = 0;
+    let lastTs = 0;
+    let offset = 0;
+    let loopHeight = 0;
+    let setHtml = '';
+    let setCount = 0;
+    let ignoreScroll = false;
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function withAmazonAssociateTag(url) {
+      if (!url || !AMAZON_ASSOCIATE_TAG) return url || '';
+      try {
+        const u = new URL(url);
+        if (!/amazon\.(?:co\.jp|com)/i.test(u.hostname)) return url;
+        u.searchParams.set('tag', AMAZON_ASSOCIATE_TAG);
+        return u.toString();
+      } catch {
+        return url;
+      }
+    }
+
+    function amazonUrlFromItem(item) {
+      if (item.asin) {
+        return withAmazonAssociateTag('https://www.amazon.co.jp/dp/' + item.asin);
+      }
+      if (item.searchQuery) {
+        const q = encodeURIComponent(item.searchQuery);
+        return withAmazonAssociateTag('https://www.amazon.co.jp/s?k=' + q);
+      }
+      return '';
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+      }
+      return a;
+    }
+
+    function renderLink(item) {
+      const url = amazonUrlFromItem(item);
+      if (!url) return '';
+
+      const label = '『' + item.title + '』' + item.author;
+      return (
+        '<div class="stream-item">' +
+          '<a class="stream-line" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer sponsored" title="' + esc(label) + '">' +
+            esc(item.excerpt) +
+          '</a>' +
+        '</div>'
+      );
+    }
+
+    function measureLoop() {
+      if (!setCount) {
+        loopHeight = 0;
+        return;
+      }
+      const perSet = Math.max(1, Math.floor(stream.children.length / setCount));
+      let h = 0;
+      for (let i = 0; i < perSet; i++) {
+        h += stream.children[i].offsetHeight;
+      }
+      loopHeight = h;
+    }
+
+    function ensureTallEnough() {
+      // 画面の2.5倍以上になるまでセットを複製
+      let guard = 0;
+      while (stream.scrollHeight < main.clientHeight * 2.5 && guard < 40) {
+        stream.insertAdjacentHTML('beforeend', setHtml);
+        setCount += 1;
+        guard += 1;
+      }
+      measureLoop();
+    }
+
+    function applyAutoTransform() {
+      stream.style.transform = 'translate3d(0,' + (-offset) + 'px,0)';
+    }
+
+    function enterAutoMode() {
+      if (autoScroll && main.classList.contains('is-auto')) {
+        lastTs = performance.now();
+        return;
+      }
+
+      // 手動スクロール位置をそのまま引き継ぐ（二重加算しない）
+      if (!main.classList.contains('is-auto')) {
+        offset = main.scrollTop % (loopHeight || 1);
+      }
+
+      ignoreScroll = true;
+      main.scrollTop = 0;
+      ignoreScroll = false;
+      main.classList.add('is-auto');
+      applyAutoTransform();
+      autoScroll = true;
+      lastTs = performance.now();
+    }
+
+    function enterManualMode() {
+      if (!autoScroll && !main.classList.contains('is-auto')) return;
+
+      autoScroll = false;
+      const current = offset % (loopHeight || 1);
+      offset = current;
+      main.classList.remove('is-auto');
+      stream.style.transform = '';
+      ignoreScroll = true;
+      main.scrollTop = current;
+      ignoreScroll = false;
+    }
+
+    function pauseAutoScroll() {
+      enterManualMode();
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(enterAutoMode, IDLE_RESUME_MS);
+    }
+
+    function tick(now) {
+      if (!lastTs) lastTs = now;
+      const dt = Math.min(0.064, (now - lastTs) / 1000);
+      lastTs = now;
+
+      if (autoScroll && loopHeight > 0) {
+        offset += SCROLL_SPEED * dt;
+        if (offset >= loopHeight) offset -= loopHeight;
+        applyAutoTransform();
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    const list = shuffle(items.filter((item) => amazonUrlFromItem(item)));
+    if (!list.length) {
+      stream.innerHTML = '<p class="empty">該当する一節がありません。</p>';
+    } else {
+      setHtml = list.map(renderLink).join('');
+      stream.innerHTML = setHtml + setHtml;
+      setCount = 2;
+
+      ensureTallEnough();
+
+      main.addEventListener('wheel', pauseAutoScroll, { passive: true });
+      main.addEventListener('touchstart', pauseAutoScroll, { passive: true });
+      main.addEventListener('pointerdown', pauseAutoScroll);
+      document.addEventListener('click', pauseAutoScroll);
+      main.addEventListener('scroll', () => {
+        if (ignoreScroll || autoScroll) return;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(enterAutoMode, IDLE_RESUME_MS);
+      }, { passive: true });
+
+      window.addEventListener('resize', () => {
+        ensureTallEnough();
+        if (autoScroll) applyAutoTransform();
+      });
+
+      lastTs = performance.now();
+      requestAnimationFrame(tick);
+    }
+  </script>
+</body>
+</html>

@@ -6,6 +6,13 @@
 
   const FFMPEG_UTIL_VERSION = '0.12.1';
   const FFMPEG_CORE_VERSION = '0.12.6';
+  const FFMPEG_CORE_BASE_URL = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${FFMPEG_CORE_VERSION}/dist/esm`;
+  const FFMPEG_LIBRARY_PARTS = [
+    { label: 'ffmpeg-core.wasm', bytes: 32_129_114 },
+    { label: 'ffmpeg-core.js', bytes: 114_494 },
+    { label: 'エンコード用ラッパー', bytes: 4_840 },
+    { label: '補助モジュール', bytes: 52_000 },
+  ];
   const MIN_VIDEO_DURATION = 3;
   const LAST_FRAME_DURATION = 0.5;
 
@@ -226,6 +233,155 @@
     });
   }
 
+  async function renderSnapshotsToJpegs(snapshots, dims, onProgress, preRenderedBlobs) {
+    const frameCount = snapshots.length;
+    const jpegBlobs = new Array(frameCount);
+    let readyCount = 0;
+
+    if (preRenderedBlobs) {
+      for (let i = 0; i < frameCount; i++) {
+        if (preRenderedBlobs[i]) {
+          jpegBlobs[i] = preRenderedBlobs[i];
+          readyCount++;
+        }
+      }
+    }
+
+    if (readyCount === frameCount) {
+      onProgress?.({ phase: 'render', percent: 100, message: 'フレーム準備完了' });
+      return jpegBlobs;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = dims.width;
+    canvas.height = dims.height;
+    const ctx = canvas.getContext('2d');
+
+    onProgress?.({
+      phase: 'render',
+      percent: Math.round((readyCount / frameCount) * 100),
+      message: readyCount > 0 ? '残りのフレームを描画中…' : 'フレームを描画中…',
+    });
+
+    for (let i = 0; i < frameCount; i++) {
+      if (jpegBlobs[i]) continue;
+      renderFrame(ctx, snapshots[i], dims);
+      jpegBlobs[i] = await canvasToJpegBlob(canvas);
+      readyCount++;
+      const pct = Math.round((readyCount / frameCount) * 100);
+      onProgress?.({ phase: 'render', percent: pct, message: `フレームを描画中 ${pct}%` });
+    }
+
+    return jpegBlobs;
+  }
+
+  function createFrameCache(resolution) {
+    const res = resolution === '1080p' ? '1080p' : '720p';
+    const dims = RESOLUTIONS[res];
+    const canvas = document.createElement('canvas');
+    canvas.width = dims.width;
+    canvas.height = dims.height;
+    const ctx = canvas.getContext('2d');
+    const blobs = [];
+    let nextIndex = 0;
+    let backgroundActive = false;
+    let work = Promise.resolve();
+
+    function idleWait() {
+      return new Promise((resolve) => {
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(() => resolve(), { timeout: 3000 });
+        } else {
+          setTimeout(resolve, 16);
+        }
+      });
+    }
+
+    async function renderIndex(snapshots, index) {
+      if (blobs[index]) return;
+      renderFrame(ctx, snapshots[index], dims);
+      blobs[index] = await canvasToJpegBlob(canvas);
+    }
+
+    function pumpBackground(snapshots) {
+      if (backgroundActive) return;
+      backgroundActive = true;
+      work = work.then(async () => {
+        while (backgroundActive && nextIndex < snapshots.length) {
+          await idleWait();
+          if (!backgroundActive) break;
+          const index = nextIndex;
+          await renderIndex(snapshots, index);
+          nextIndex = index + 1;
+        }
+        backgroundActive = false;
+      }).catch(() => {
+        backgroundActive = false;
+      });
+    }
+
+    return {
+      start() {
+        nextIndex = 0;
+        blobs.length = 0;
+        backgroundActive = false;
+        work = Promise.resolve();
+      },
+      notify(snapshots) {
+        pumpBackground(snapshots);
+      },
+      stop() {
+        backgroundActive = false;
+      },
+      async flush(snapshots, onProgress) {
+        backgroundActive = false;
+        await work;
+        while (nextIndex < snapshots.length) {
+          await renderIndex(snapshots, nextIndex);
+          nextIndex++;
+          onProgress?.(nextIndex, snapshots.length);
+        }
+      },
+      getBlobs() {
+        return blobs.slice();
+      },
+    };
+  }
+
+  function formatLibraryBytes(bytes) {
+    if (bytes >= 1_000_000) {
+      const mb = bytes / 1_000_000;
+      return mb >= 10 ? `約${Math.round(mb)}MB` : `約${mb.toFixed(1)}MB`;
+    }
+    if (bytes >= 1_000) return `約${Math.round(bytes / 1_000)}KB`;
+    return `${bytes}B`;
+  }
+
+  function getFFmpegLibraryInfo() {
+    const totalBytes = FFMPEG_LIBRARY_PARTS.reduce((sum, part) => sum + part.bytes, 0);
+    return {
+      totalBytes,
+      totalLabel: formatLibraryBytes(totalBytes),
+      parts: FFMPEG_LIBRARY_PARTS.map((part) => ({
+        label: part.label,
+        bytes: part.bytes,
+        sizeLabel: formatLibraryBytes(part.bytes),
+      })),
+    };
+  }
+
+  function isFFmpegLoaded() {
+    return !!ffmpegInstance;
+  }
+
+  function isFFmpegLoading() {
+    return !!ffmpegLoading;
+  }
+
+  function preloadFFmpeg(onProgress) {
+    return loadFFmpeg(onProgress);
+  }
+
   async function loadFFmpeg(onProgress) {
     if (ffmpegInstance) return ffmpegInstance;
     if (ffmpegLoading) return ffmpegLoading;
@@ -238,7 +394,7 @@
         import(`https://cdn.jsdelivr.net/npm/@ffmpeg/util@${FFMPEG_UTIL_VERSION}/+esm`),
       ]);
 
-      const baseURL = `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${FFMPEG_CORE_VERSION}/dist/esm`;
+      const baseURL = FFMPEG_CORE_BASE_URL;
       const ffmpeg = new FFmpeg();
 
       ffmpeg.on('progress', ({ progress }) => {
@@ -324,20 +480,12 @@
     const durations = computeDurations(snapshots, speed);
     const frameCount = snapshots.length;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = dims.width;
-    canvas.height = dims.height;
-    const ctx = canvas.getContext('2d');
-
-    onProgress?.({ phase: 'render', percent: 0, message: 'フレームを描画中…' });
-
-    const jpegBlobs = [];
-    for (let i = 0; i < frameCount; i++) {
-      renderFrame(ctx, snapshots[i], dims);
-      jpegBlobs.push(await canvasToJpegBlob(canvas));
-      const pct = Math.round(((i + 1) / frameCount) * 100);
-      onProgress?.({ phase: 'render', percent: pct, message: `フレームを描画中 ${pct}%` });
-    }
+    const jpegBlobs = await renderSnapshotsToJpegs(
+      snapshots,
+      dims,
+      onProgress,
+      options.preRenderedBlobs,
+    );
 
     const { ffmpeg, fetchFile } = await loadFFmpeg(onProgress);
 
@@ -381,9 +529,14 @@
   global.TadekuTimelapse = {
     RESOLUTIONS,
     createRecorder,
+    createFrameCache,
     renderFrame,
     exportVideo,
     estimateVideoDuration,
     computeDurations,
+    getFFmpegLibraryInfo,
+    isFFmpegLoaded,
+    isFFmpegLoading,
+    preloadFFmpeg,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
