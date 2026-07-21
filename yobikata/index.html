@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HN5C12BJ0W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HN5C12BJ0W');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="登場人物同士の呼び方・一人称をマトリクス表で整理するツール。セルの色分けやPNG出力に対応。">
+  <title>Yobikata — キャラ呼び方表 | tadeku-tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/site-link.css">
+  <style>
+    :root {
+      --bg: #fdfcfa;
+      --ink: #000000;
+      --muted: #333333;
+      --border: #000000;
+      --surface: #ffffff;
+      --accent: #e8913a;
+      --header-bg: #333333;
+      --header-fg: #ffffff;
+      --corner-bg: #333333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    .tagline {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 0.75rem;
+      margin-bottom: 1rem;
+      padding: 0.85rem 1rem;
+      background: var(--surface);
+      border: 2px solid var(--border);
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .toolbar-group + .toolbar-group {
+      padding-left: 0.75rem;
+      border-left: 2px solid var(--border);
+    }
+
+    @media (max-width: 640px) {
+      .toolbar-group + .toolbar-group {
+        padding-left: 0;
+        border-left: none;
+        width: 100%;
+      }
+    }
+
+    .toolbar-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-right: 0.15rem;
+    }
+
+    .btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.4rem 0.65rem;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn-accent {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .btn-accent:hover {
+      opacity: 0.85;
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .swatch {
+      width: 1.65rem;
+      height: 1.65rem;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .swatch:hover {
+      transform: scale(1.08);
+    }
+
+    .swatch.active {
+      box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
+    }
+
+    .swatch[data-color="none"] {
+      background: #fff;
+      position: relative;
+    }
+
+    .swatch[data-color="none"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 46%, #c0392b 46%, #c0392b 54%, transparent 54%);
+    }
+
+    .title-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .work-title {
+      flex: 1 1 12rem;
+      min-width: 0;
+      border: none;
+      border-bottom: 2px solid var(--border);
+      background: transparent;
+      font-family: inherit;
+      font-size: clamp(1.1rem, 3vw, 1.35rem);
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      color: var(--ink);
+      padding: 0.25rem 0;
+      outline: none;
+    }
+
+    .title-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 520px) {
+      .title-row {
+        align-items: stretch;
+      }
+
+      .title-actions {
+        width: 100%;
+      }
+
+      .title-actions .btn {
+        flex: 1 1 0;
+      }
+    }
+
+    .work-title::placeholder {
+      color: #c0bcb4;
+      font-weight: 900;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .matrix {
+      border-collapse: collapse;
+      min-width: 100%;
+      table-layout: fixed;
+    }
+
+    .matrix th,
+    .matrix td {
+      border: 1px solid var(--ink);
+      vertical-align: middle;
+      text-align: center;
+    }
+
+    .corner {
+      width: 5.5rem;
+      min-width: 5.5rem;
+      height: 3.5rem;
+      background: var(--corner-bg);
+      color: var(--header-fg);
+      position: relative;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .corner-diagonal {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      color: var(--header-fg);
+    }
+
+    .corner-diagonal line {
+      stroke: currentColor;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+      shape-rendering: crispEdges;
+    }
+
+    .corner-label {
+      position: absolute;
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+      color: var(--header-fg);
+      pointer-events: none;
+    }
+
+    .corner-label.called {
+      top: 0.35rem;
+      right: 0.35rem;
+      text-align: right;
+    }
+
+    .corner-label.caller {
+      bottom: 0.35rem;
+      left: 0.35rem;
+      text-align: left;
+    }
+
+    .char-header,
+    .row-header {
+      min-width: 5.5rem;
+      width: 5.5rem;
+      background: var(--header-bg);
+      color: var(--header-fg);
+      padding: 0;
+    }
+
+    .char-name-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.4rem;
+    }
+
+    .char-header input,
+    .row-header input,
+    .cell-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      color: inherit;
+      padding: 0.55rem 1.1rem 0.55rem 0.35rem;
+      outline: none;
+    }
+
+    .char-remove {
+      position: absolute;
+      right: 0.2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.75);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 400;
+      line-height: 1;
+      padding: 0 0.1rem;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s, color 0.12s;
+    }
+
+    .char-header:hover .char-remove,
+    .row-header:hover .char-remove,
+    .char-header:focus-within .char-remove,
+    .row-header:focus-within .char-remove {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .char-remove:hover {
+      color: #fff;
+    }
+
+    .char-header input {
+      font-size: 0.72rem;
+    }
+
+    .char-header input::placeholder,
+    .row-header input::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 700;
+    }
+
+    .matrix-cell {
+      min-width: 5.5rem;
+      width: 5.5rem;
+      padding: 0;
+      cursor: text;
+      transition: box-shadow 0.1s;
+    }
+
+    .matrix-cell.selected {
+      box-shadow: inset 0 0 0 2px var(--ink);
+    }
+
+    .matrix-cell .cell-input {
+      font-weight: 500;
+      font-size: 0.76rem;
+      min-height: 2.4rem;
+    }
+
+    .matrix-cell .cell-input::placeholder {
+      color: rgba(0, 0, 0, 0.28);
+      font-weight: 500;
+    }
+
+    .status {
+      margin-top: 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-height: 1.1rem;
+    }
+
+    .status.ok { color: var(--accent); }
+  </style>
+  <link rel="stylesheet" href="../shared/site-typography.css">
+</head>
+<body>
+  <div class="layout">
+    <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Yobikata</h1>
+    <p class="tagline">登場人物同士の呼び方・一人称をマトリクス表で整理します。縦が「呼ぶ側」、横が「呼ばれる側」。対角線は一人称です。</p>
+
+    <div class="title-row">
+      <input type="text" class="work-title" id="work-title" placeholder="作品タイトル（任意）" maxlength="60" spellcheck="false">
+      <div class="title-actions">
+        <button type="button" class="btn btn-accent" id="btn-export-png">画像を保存</button>
+        <button type="button" class="btn" id="btn-reset">リセット</button>
+      </div>
+    </div>
+
+    <div class="toolbar" role="toolbar" aria-label="操作">
+      <div class="toolbar-group">
+        <button type="button" class="btn" id="btn-add">＋ キャラ追加</button>
+      </div>
+      <div class="toolbar-group">
+        <span class="toolbar-label">色</span>
+        <div class="palette" id="palette" role="group" aria-label="セルの色"></div>
+      </div>
+    </div>
+
+    <div class="table-wrap" id="table-wrap">
+      <table class="matrix" id="matrix" aria-label="キャラ呼び方表"></table>
+    </div>
+
+    <p class="status" id="status" aria-live="polite"></p>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'yobikata-matrix-v1';
+    const EXPORT_FONT = '"Noto Sans JP", "Hiragino Sans", sans-serif';
+    const HEADER_BG = '#333333';
+    const MIN_CHARS = 2;
+    const MAX_CHARS = 12;
+    const DEFAULT_COUNT = 4;
+
+    const COLORS = {
+      none:   { label: 'なし', bg: '#ffffff', fg: '#000000' },
+      orange: { label: '一人称・ニックネーム', bg: '#f4a460', fg: '#000000' },
+      yellow: { label: '名前呼び', bg: '#fff59d', fg: '#000000' },
+      blue:   { label: '〜くん', bg: '#90caf9', fg: '#000000' },
+      green:  { label: '〜さん', bg: '#a5d6a7', fg: '#000000' },
+      purple: { label: '〜様', bg: '#ce93d8', fg: '#000000' },
+      red:    { label: '〜ちゃん', bg: '#ef9a9a', fg: '#000000' },
+      cyan:   { label: 'メモ', bg: '#b3e5fc', fg: '#000000' },
+    };
+
+    let state = createDefaultState();
+    let activeColor = 'none';
+    let selectedCell = null;
+    let saveTimer = null;
+
+    const matrixEl = document.getElementById('matrix');
+    const paletteEl = document.getElementById('palette');
+    const statusEl = document.getElementById('status');
+    const workTitleEl = document.getElementById('work-title');
+
+    function createDefaultState() {
+      const characters = Array.from({ length: DEFAULT_COUNT }, () => '');
+      return {
+        title: '',
+        characters,
+        cells: {},
+      };
+    }
+
+    function defaultName(index) {
+      const labels = 'ABCDEFGHIJKL';
+      return 'キャラ' + (labels[index] || String(index + 1));
+    }
+
+    function charDisplayName(index) {
+      return (state.characters[index] || '').trim() || defaultName(index);
+    }
+
+    function cellKey(row, col) {
+      return row + '-' + col;
+    }
+
+    function getCell(row, col) {
+      const key = cellKey(row, col);
+      if (!state.cells[key]) state.cells[key] = { text: '', color: 'none' };
+      return state.cells[key];
+    }
+
+    function setStatus(msg, ok) {
+      statusEl.textContent = msg || '';
+      statusEl.classList.toggle('ok', !!ok);
+      if (msg) {
+        clearTimeout(setStatus._t);
+        setStatus._t = setTimeout(() => {
+          statusEl.textContent = '';
+          statusEl.classList.remove('ok');
+        }, 2200);
+      }
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveState, 350);
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_) {}
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.characters) || data.characters.length < MIN_CHARS) return;
+        state = {
+          title: typeof data.title === 'string' ? data.title : '',
+          characters: data.characters.slice(0, MAX_CHARS),
+          cells: data.cells && typeof data.cells === 'object' ? data.cells : {},
+        };
+        workTitleEl.value = state.title;
+      } catch (_) {}
+    }
+
+    function buildPalette() {
+      paletteEl.innerHTML = '';
+      Object.entries(COLORS).forEach(([key, meta]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'swatch' + (key === activeColor ? ' active' : '');
+        btn.dataset.color = key;
+        btn.style.background = meta.bg;
+        btn.title = meta.label;
+        btn.setAttribute('aria-label', meta.label);
+        btn.addEventListener('click', () => {
+          activeColor = key;
+          paletteEl.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.color === key));
+          if (selectedCell) applyColorToCell(selectedCell.row, selectedCell.col, key);
+        });
+        paletteEl.appendChild(btn);
+      });
+    }
+
+    function applyColorToCell(row, col, colorKey) {
+      const cell = getCell(row, col);
+      cell.color = colorKey;
+      const meta = COLORS[colorKey] || COLORS.none;
+      const td = matrixEl.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      if (td) {
+        td.style.background = meta.bg;
+        td.style.color = meta.fg;
+        const input = td.querySelector('.cell-input');
+        if (input) input.style.color = meta.fg;
+      }
+      scheduleSave();
+    }
+
+    function createCharNameWrap(index, axis) {
+      const wrap = document.createElement('div');
+      wrap.className = 'char-name-wrap';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = state.characters[index];
+      input.placeholder = defaultName(index);
+      input.maxLength = 20;
+      input.spellcheck = false;
+      input.setAttribute('aria-label', axis === 'col'
+        ? `呼ばれる側 ${index + 1}番目のキャラ名`
+        : `呼ぶ側 ${index + 1}番目のキャラ名`);
+
+      input.addEventListener('input', () => {
+        state.characters[index] = input.value;
+        const other = axis === 'col'
+          ? matrixEl.querySelector(`.row-header[data-row="${index}"] input`)
+          : matrixEl.querySelector(`thead .char-header[data-col="${index}"] input`);
+        if (other && other !== document.activeElement) other.value = input.value;
+        scheduleSave();
+      });
+
+      wrap.appendChild(input);
+
+      if (state.characters.length > MIN_CHARS) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'char-remove';
+        removeBtn.textContent = '×';
+        removeBtn.setAttribute('aria-label', `${charDisplayName(index)}を削除`);
+        removeBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          removeCharacterAt(index);
+        });
+        wrap.appendChild(removeBtn);
+      }
+
+      return wrap;
+    }
+
+    function renderMatrix() {
+      const n = state.characters.length;
+      matrixEl.innerHTML = '';
+
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+
+      const corner = document.createElement('th');
+      corner.className = 'corner';
+      corner.scope = 'col';
+      corner.innerHTML = '<svg class="corner-diagonal" aria-hidden="true" preserveAspectRatio="none"><line x1="0" y1="0" x2="100%" y2="100%"></line></svg><span class="corner-label called">呼ばれる側</span><span class="corner-label caller">呼ぶ側</span>';
+      headRow.appendChild(corner);
+
+      for (let col = 0; col < n; col++) {
+        const th = document.createElement('th');
+        th.className = 'char-header';
+        th.scope = 'col';
+        th.dataset.col = String(col);
+        th.appendChild(createCharNameWrap(col, 'col'));
+        headRow.appendChild(th);
+      }
+      thead.appendChild(headRow);
+      matrixEl.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      for (let row = 0; row < n; row++) {
+        const tr = document.createElement('tr');
+
+        const rowTh = document.createElement('th');
+        rowTh.className = 'row-header';
+        rowTh.scope = 'row';
+        rowTh.dataset.row = String(row);
+        rowTh.appendChild(createCharNameWrap(row, 'row'));
+        tr.appendChild(rowTh);
+
+        for (let col = 0; col < n; col++) {
+          const cell = getCell(row, col);
+          const meta = COLORS[cell.color] || COLORS.none;
+          const td = document.createElement('td');
+          td.className = 'matrix-cell';
+          td.dataset.row = String(row);
+          td.dataset.col = String(col);
+          td.style.background = meta.bg;
+          td.style.color = meta.fg;
+
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'cell-input';
+          input.value = cell.text;
+          input.placeholder = row === col ? '一人称' : '';
+          input.maxLength = 40;
+          input.spellcheck = false;
+          input.style.color = meta.fg;
+          input.setAttribute('aria-label', `${charDisplayName(row)} から ${charDisplayName(col)} への呼び方`);
+
+          input.addEventListener('focus', () => selectCell(row, col, td));
+          input.addEventListener('input', () => {
+            getCell(row, col).text = input.value;
+            scheduleSave();
+          });
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key !== 'Enter' || ev.isComposing) return;
+            ev.preventDefault();
+            getCell(row, col).text = input.value;
+            const shift = ev.shiftKey;
+            setTimeout(() => moveFocus(row, col, shift ? -1 : 1), 0);
+          });
+
+          td.addEventListener('mousedown', (ev) => {
+            if (ev.target === input) return;
+            input.focus();
+          });
+
+          td.appendChild(input);
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      matrixEl.appendChild(tbody);
+
+      if (selectedCell) {
+        const td = matrixEl.querySelector(`[data-row="${selectedCell.row}"][data-col="${selectedCell.col}"]`);
+        if (td) td.classList.add('selected');
+      }
+    }
+
+    function selectCell(row, col, td) {
+      selectedCell = { row, col };
+      matrixEl.querySelectorAll('.matrix-cell.selected').forEach(el => el.classList.remove('selected'));
+      if (td) td.classList.add('selected');
+    }
+
+    function moveFocus(row, col, delta) {
+      const n = state.characters.length;
+      let nextCol = col + delta;
+      let nextRow = row;
+      if (nextCol >= n) {
+        nextCol = 0;
+        nextRow = row + 1;
+      } else if (nextCol < 0) {
+        nextCol = n - 1;
+        nextRow = row - 1;
+      }
+      if (nextRow < 0 || nextRow >= n) return;
+      const next = matrixEl.querySelector(`.matrix-cell[data-row="${nextRow}"][data-col="${nextCol}"] .cell-input`);
+      if (next) next.focus();
+    }
+
+    function addCharacter() {
+      if (state.characters.length >= MAX_CHARS) {
+        setStatus(`キャラは最大 ${MAX_CHARS} 人までです`);
+        return;
+      }
+      const idx = state.characters.length;
+      state.characters.push('');
+      renderMatrix();
+      scheduleSave();
+      setStatus('キャラを追加しました', true);
+    }
+
+    function removeCharacterAt(idx) {
+      if (state.characters.length <= MIN_CHARS) {
+        alert(`キャラは最低 ${MIN_CHARS} 人必要です`);
+        return;
+      }
+      const name = charDisplayName(idx);
+      if (!confirm(`「${name}」の行・列を削除しますか？`)) return;
+
+      state.characters.splice(idx, 1);
+      const nextCells = {};
+      Object.entries(state.cells).forEach(([key, val]) => {
+        const [r, c] = key.split('-').map(Number);
+        if (r === idx || c === idx) return;
+        const nr = r > idx ? r - 1 : r;
+        const nc = c > idx ? c - 1 : c;
+        nextCells[nr + '-' + nc] = val;
+      });
+      state.cells = nextCells;
+      renderMatrix();
+      scheduleSave();
+      setStatus('キャラを削除しました', true);
+    }
+
+    function wrapCanvasLines(ctx, text, maxWidth) {
+      const src = (text || '').trim() || '';
+      if (!src) return [''];
+      const lines = [];
+      let line = '';
+      for (const ch of src) {
+        if (ch === '\n') {
+          lines.push(line);
+          line = '';
+          continue;
+        }
+        const next = line + ch;
+        if (line && ctx.measureText(next).width > maxWidth) {
+          lines.push(line);
+          line = ch;
+        } else {
+          line = next;
+        }
+      }
+      if (line) lines.push(line);
+      return lines.length ? lines : [''];
+    }
+
+    function resetAll() {
+      if (!confirm('表の内容をすべてリセットしますか？')) return;
+      state = createDefaultState();
+      activeColor = 'none';
+      selectedCell = null;
+      workTitleEl.value = '';
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (_) {}
+      buildPalette();
+      renderMatrix();
+      setStatus('リセットしました', true);
+    }
+
+    function exportPng() {
+      const n = state.characters.length;
+      const cellW = 88;
+      const cellH = 44;
+      const headerW = 88;
+      const headerH = 44;
+      const cornerW = headerW;
+      const cornerH = headerH;
+      const titleH = state.title.trim() ? 36 : 0;
+      const pad = 24;
+      const tableW = cornerW + n * cellW;
+      const tableH = cornerH + n * cellH;
+      const canvasW = tableW + pad * 2;
+      const canvasH = tableH + pad * 2 + titleH + 8;
+      const scale = 2;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW * scale;
+      canvas.height = canvasH * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+
+      let y = pad;
+      if (titleH) {
+        ctx.fillStyle = '#000';
+        ctx.font = `900 16px ${EXPORT_FONT}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(state.title.trim(), pad, y);
+        y += titleH;
+      }
+
+      const ox = pad;
+      const oy = y;
+
+      function drawCellFill(x, y, w, h, bg, text, bold, fontSize, fg) {
+        const textColor = fg || '#000';
+        ctx.fillStyle = bg;
+        ctx.fillRect(x, y, w, h);
+
+        const innerW = w - 10;
+        ctx.font = `${bold ? '700' : '500'} ${fontSize}px ${EXPORT_FONT}`;
+        ctx.fillStyle = textColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const lines = wrapCanvasLines(ctx, text, innerW);
+        const lineH = fontSize + 4;
+        const blockH = lines.length * lineH;
+        let ty = y + (h - blockH) / 2 + lineH / 2;
+        for (const line of lines) {
+          ctx.fillText(line, x + w / 2, ty);
+          ty += lineH;
+        }
+      }
+
+      function drawTableGrid() {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+          const x = ox + headerW + i * cellW + 0.5;
+          ctx.moveTo(x, oy);
+          ctx.lineTo(x, oy + tableH);
+        }
+        const xLeft = ox + 0.5;
+        ctx.moveTo(xLeft, oy);
+        ctx.lineTo(xLeft, oy + tableH);
+        for (let i = 0; i <= n; i++) {
+          const y = oy + headerH + i * cellH + 0.5;
+          ctx.moveTo(ox, y);
+          ctx.lineTo(ox + tableW, y);
+        }
+        const yTop = oy + 0.5;
+        ctx.moveTo(ox, yTop);
+        ctx.lineTo(ox + tableW, yTop);
+        ctx.stroke();
+      }
+
+      drawCellFill(ox, oy, cornerW, cornerH, HEADER_BG, '', false, 11, '#ffffff');
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'square';
+      ctx.beginPath();
+      ctx.moveTo(ox, oy);
+      ctx.lineTo(ox + cornerW, oy + cornerH);
+      ctx.stroke();
+      ctx.font = `700 9px ${EXPORT_FONT}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText('呼ばれる側', ox + cornerW - 6, oy + 5);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('呼ぶ側', ox + 6, oy + cornerH - 5);
+
+      for (let col = 0; col < n; col++) {
+        drawCellFill(ox + cornerW + col * cellW, oy, cellW, headerH, HEADER_BG, charDisplayName(col), true, 11, '#ffffff');
+      }
+
+      for (let row = 0; row < n; row++) {
+        const rowY = oy + headerH + row * cellH;
+        drawCellFill(ox, rowY, headerW, cellH, HEADER_BG, charDisplayName(row), true, 11, '#ffffff');
+        for (let col = 0; col < n; col++) {
+          const cell = getCell(row, col);
+          const meta = COLORS[cell.color] || COLORS.none;
+          drawCellFill(ox + headerW + col * cellW, rowY, cellW, cellH, meta.bg, cell.text, false, 11);
+        }
+      }
+
+      drawTableGrid();
+
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        const base = (state.title || 'キャラ呼び方表').replace(/[\\/:*?"<>|\x00-\x1f]/g, '').trim() || 'キャラ呼び方表';
+        a.href = URL.createObjectURL(blob);
+        a.download = base + '.png';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        setStatus('画像を保存しました', true);
+      }, 'image/png');
+    }
+
+    document.getElementById('btn-add').addEventListener('click', addCharacter);
+    document.getElementById('btn-reset').addEventListener('click', resetAll);
+    document.getElementById('btn-export-png').addEventListener('click', exportPng);
+
+    workTitleEl.addEventListener('input', () => {
+      state.title = workTitleEl.value;
+      scheduleSave();
+    });
+
+    buildPalette();
+    loadState();
+    renderMatrix();
+  </script>
+</body>
+</html>
