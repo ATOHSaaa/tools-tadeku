@@ -334,7 +334,7 @@
       display: block;
       width: 100%;
       box-sizing: border-box;
-      padding: 0.55rem 1.15rem 0.55rem 0.3rem;
+      padding: 0.55rem 1.35rem 0.55rem 0.3rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -354,7 +354,8 @@
       right: 0;
       top: 0;
       bottom: 0;
-      width: 1.15rem;
+      z-index: 2;
+      width: 1.35rem;
       border: none;
       background: transparent;
       color: rgba(255, 255, 255, 0.75);
@@ -370,6 +371,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .char-header:hover .char-remove,
@@ -384,14 +387,52 @@
       color: #fff;
     }
 
-    /* スマホ: ×を常時表示（列幅は広げない） */
-    @media (hover: none) and (pointer: coarse) {
+    /* タッチ端末・狭い画面: ×を常時表示
+       Twitter内ブラウザは hover メディアクエリが不正確なことがある */
+    @media (hover: none), (max-width: 900px) {
       .char-remove {
         opacity: 0.85;
         pointer-events: auto;
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
       }
+    }
+
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    .confirm-overlay[hidden] {
+      display: none;
+    }
+
+    .confirm-dialog {
+      width: min(22rem, 100%);
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.1rem 1rem 1rem;
+    }
+
+    .confirm-message {
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .confirm-actions .btn {
+      min-width: 4.5rem;
     }
 
     .char-header input {
@@ -480,6 +521,16 @@
     <p class="status" id="status" aria-live="polite"></p>
   </div>
 
+  <div class="confirm-overlay" id="confirm-overlay" hidden>
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-message">
+      <p class="confirm-message" id="confirm-message"></p>
+      <div class="confirm-actions">
+        <button type="button" class="btn" id="confirm-cancel">キャンセル</button>
+        <button type="button" class="btn btn-accent" id="confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = 'yobikata-matrix-v1';
     const EXPORT_FONT = '"Noto Sans JP", "Hiragino Sans", sans-serif';
@@ -509,6 +560,47 @@
     const paletteEl = document.getElementById('palette');
     const statusEl = document.getElementById('status');
     const workTitleEl = document.getElementById('work-title');
+    const confirmOverlayEl = document.getElementById('confirm-overlay');
+    const confirmMessageEl = document.getElementById('confirm-message');
+    const confirmOkEl = document.getElementById('confirm-ok');
+    const confirmCancelEl = document.getElementById('confirm-cancel');
+    let confirmResolver = null;
+
+    function askConfirm(message) {
+      return new Promise((resolve) => {
+        if (confirmResolver) {
+          confirmResolver(false);
+          confirmResolver = null;
+        }
+        confirmResolver = resolve;
+        confirmMessageEl.textContent = message;
+        confirmOverlayEl.hidden = false;
+        confirmOkEl.focus();
+      });
+    }
+
+    function closeConfirm(result) {
+      confirmOverlayEl.hidden = true;
+      const resolve = confirmResolver;
+      confirmResolver = null;
+      if (resolve) resolve(result);
+    }
+
+    confirmOkEl.addEventListener('click', () => closeConfirm(true));
+    confirmCancelEl.addEventListener('click', () => closeConfirm(false));
+    confirmOverlayEl.addEventListener('click', (ev) => {
+      if (ev.target === confirmOverlayEl) closeConfirm(false);
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (confirmOverlayEl.hidden) return;
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        closeConfirm(false);
+      } else if (ev.key === 'Enter') {
+        ev.preventDefault();
+        closeConfirm(true);
+      }
+    });
 
     function createDefaultState() {
       const characters = Array.from({ length: DEFAULT_COUNT }, () => '');
@@ -640,15 +732,15 @@
         removeBtn.className = 'char-remove';
         removeBtn.textContent = '×';
         removeBtn.setAttribute('aria-label', `${charDisplayName(index)}を削除`);
-        removeBtn.addEventListener('pointerdown', (ev) => {
-          ev.preventDefault();
-          ev.stopPropagation();
-        });
         removeBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          // iOS Safari: click で preventDefault した直後の confirm は常に false になる
           const idx = index;
+          // ネイティブ confirm は Twitter 内ブラウザ等で壊れるため自前ダイアログへ
           setTimeout(() => removeCharacterAt(idx), 0);
+        });
+        // 入力欄へのフォーカス奪取を防ぐ（click を潰さないよう preventDefault はしない）
+        removeBtn.addEventListener('pointerdown', (ev) => {
+          ev.stopPropagation();
         });
         wrap.appendChild(removeBtn);
       }
@@ -787,38 +879,35 @@
       setStatus('キャラを追加しました', true);
     }
 
-    function removeCharacterAt(idx) {
+    async function removeCharacterAt(idx) {
       if (removingCharacter) return;
       if (state.characters.length <= MIN_CHARS) {
-        alert(`キャラは最低 ${MIN_CHARS} 人必要です`);
+        setStatus(`キャラは最低 ${MIN_CHARS} 人必要です`);
         return;
       }
       const name = charDisplayName(idx);
-      if (!confirm(`「${name}」の行・列を削除しますか？`)) return;
+      const ok = await askConfirm(`「${name}」の行・列を削除しますか？`);
+      if (!ok) return;
+      if (idx < 0 || idx >= state.characters.length) return;
+      if (state.characters.length <= MIN_CHARS) return;
+      if (removingCharacter) return;
+      removingCharacter = true;
 
-      // iOS Safari: confirm 直後の DOM 更新が無視されることがあるため次フレームで実行
-      setTimeout(() => {
-        if (idx < 0 || idx >= state.characters.length) return;
-        if (state.characters.length <= MIN_CHARS) return;
-        if (removingCharacter) return;
-        removingCharacter = true;
-
-        state.characters.splice(idx, 1);
-        const nextCells = {};
-        Object.entries(state.cells).forEach(([key, val]) => {
-          const [r, c] = key.split('-').map(Number);
-          if (r === idx || c === idx) return;
-          const nr = r > idx ? r - 1 : r;
-          const nc = c > idx ? c - 1 : c;
-          nextCells[nr + '-' + nc] = val;
-        });
-        state.cells = nextCells;
-        selectedCell = null;
-        renderMatrix();
-        scheduleSave();
-        setStatus('キャラを削除しました', true);
-        removingCharacter = false;
-      }, 0);
+      state.characters.splice(idx, 1);
+      const nextCells = {};
+      Object.entries(state.cells).forEach(([key, val]) => {
+        const [r, c] = key.split('-').map(Number);
+        if (r === idx || c === idx) return;
+        const nr = r > idx ? r - 1 : r;
+        const nc = c > idx ? c - 1 : c;
+        nextCells[nr + '-' + nc] = val;
+      });
+      state.cells = nextCells;
+      selectedCell = null;
+      renderMatrix();
+      scheduleSave();
+      setStatus('キャラを削除しました', true);
+      removingCharacter = false;
     }
 
     function wrapCanvasLines(ctx, text, maxWidth) {
@@ -844,8 +933,9 @@
       return lines.length ? lines : [''];
     }
 
-    function resetAll() {
-      if (!confirm('表の内容をすべてリセットしますか？')) return;
+    async function resetAll() {
+      const ok = await askConfirm('表の内容をすべてリセットしますか？');
+      if (!ok) return;
       state = createDefaultState();
       activeColor = 'none';
       selectedCell = null;
