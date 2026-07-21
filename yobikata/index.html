@@ -350,6 +350,23 @@
       color: #fff;
     }
 
+    /* スマホ: ×を常時表示し、タップ領域を広げる（focus-within 依存をやめる） */
+    @media (hover: none) and (pointer: coarse) {
+      .char-remove {
+        opacity: 0.85;
+        pointer-events: auto;
+        z-index: 1;
+        min-width: 2.25rem;
+        min-height: 2.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+    }
+
     .char-header input {
       font-size: 0.72rem;
     }
@@ -392,6 +409,16 @@
     }
 
     .status.ok { color: var(--accent); }
+
+    /* iOS Safari: 入力欄が16px未満だとフォーカス時に画面が拡大される */
+    @media (hover: none) and (pointer: coarse) {
+      .char-header input,
+      .row-header input,
+      .matrix-cell .cell-input,
+      .work-title {
+        font-size: 16px;
+      }
+    }
   </style>
   <link rel="stylesheet" href="../shared/site-typography.css">
 </head>
@@ -448,6 +475,7 @@
     let activeColor = 'none';
     let selectedCell = null;
     let saveTimer = null;
+    let removingCharacter = false;
 
     const matrixEl = document.getElementById('matrix');
     const paletteEl = document.getElementById('palette');
@@ -584,10 +612,15 @@
         removeBtn.className = 'char-remove';
         removeBtn.textContent = '×';
         removeBtn.setAttribute('aria-label', `${charDisplayName(index)}を削除`);
-        removeBtn.addEventListener('click', (ev) => {
+        removeBtn.addEventListener('pointerdown', (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
-          removeCharacterAt(index);
+        });
+        removeBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          // iOS Safari: click で preventDefault した直後の confirm は常に false になる
+          const idx = index;
+          setTimeout(() => removeCharacterAt(idx), 0);
         });
         wrap.appendChild(removeBtn);
       }
@@ -716,6 +749,7 @@
     }
 
     function removeCharacterAt(idx) {
+      if (removingCharacter) return;
       if (state.characters.length <= MIN_CHARS) {
         alert(`キャラは最低 ${MIN_CHARS} 人必要です`);
         return;
@@ -723,19 +757,29 @@
       const name = charDisplayName(idx);
       if (!confirm(`「${name}」の行・列を削除しますか？`)) return;
 
-      state.characters.splice(idx, 1);
-      const nextCells = {};
-      Object.entries(state.cells).forEach(([key, val]) => {
-        const [r, c] = key.split('-').map(Number);
-        if (r === idx || c === idx) return;
-        const nr = r > idx ? r - 1 : r;
-        const nc = c > idx ? c - 1 : c;
-        nextCells[nr + '-' + nc] = val;
-      });
-      state.cells = nextCells;
-      renderMatrix();
-      scheduleSave();
-      setStatus('キャラを削除しました', true);
+      // iOS Safari: confirm 直後の DOM 更新が無視されることがあるため次フレームで実行
+      setTimeout(() => {
+        if (idx < 0 || idx >= state.characters.length) return;
+        if (state.characters.length <= MIN_CHARS) return;
+        if (removingCharacter) return;
+        removingCharacter = true;
+
+        state.characters.splice(idx, 1);
+        const nextCells = {};
+        Object.entries(state.cells).forEach(([key, val]) => {
+          const [r, c] = key.split('-').map(Number);
+          if (r === idx || c === idx) return;
+          const nr = r > idx ? r - 1 : r;
+          const nc = c > idx ? c - 1 : c;
+          nextCells[nr + '-' + nc] = val;
+        });
+        state.cells = nextCells;
+        selectedCell = null;
+        renderMatrix();
+        scheduleSave();
+        setStatus('キャラを削除しました', true);
+        removingCharacter = false;
+      }, 0);
     }
 
     function wrapCanvasLines(ctx, text, maxWidth) {
