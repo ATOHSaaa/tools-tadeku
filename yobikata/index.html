@@ -28,6 +28,8 @@
       --header-bg: #333333;
       --header-fg: #ffffff;
       --corner-bg: #333333;
+      --matrix-side: 5.5rem;
+      --matrix-cell: 5.5rem;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -221,25 +223,32 @@
       overflow: auto;
       border: 2px solid var(--border);
       background: var(--surface);
+      width: fit-content;
+      max-width: 100%;
       -webkit-overflow-scrolling: touch;
     }
 
     .matrix {
       border-collapse: collapse;
-      min-width: 100%;
+      width: max-content;
       table-layout: fixed;
     }
+
+    .col-side { width: var(--matrix-side); }
+    .col-data { width: var(--matrix-cell); }
 
     .matrix th,
     .matrix td {
       border: 1px solid var(--ink);
       vertical-align: middle;
       text-align: center;
+      box-sizing: border-box;
     }
 
     .corner {
-      width: 5.5rem;
-      min-width: 5.5rem;
+      width: var(--matrix-side);
+      min-width: var(--matrix-side);
+      max-width: var(--matrix-side);
       height: 3.5rem;
       background: var(--corner-bg);
       color: var(--header-fg);
@@ -289,17 +298,21 @@
 
     .char-header,
     .row-header {
-      min-width: 5.5rem;
-      width: 5.5rem;
+      width: var(--matrix-side);
+      min-width: var(--matrix-side);
+      max-width: var(--matrix-side);
       background: var(--header-bg);
       color: var(--header-fg);
       padding: 0;
+      overflow: hidden;
     }
 
     .char-name-wrap {
-      display: flex;
-      align-items: center;
+      position: relative;
+      display: block;
       width: 100%;
+      max-width: 100%;
+      overflow: hidden;
       min-height: 2.4rem;
     }
 
@@ -318,12 +331,17 @@
 
     .char-header input,
     .row-header input {
-      flex: 1 1 0;
-      min-width: 0;
-      width: auto;
-      padding: 0.55rem 0.15rem 0.55rem 0.35rem;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.55rem 1.15rem 0.55rem 0.3rem;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .char-name-wrap:not(:has(.char-remove)) input {
+      padding-right: 0.3rem;
     }
 
     .cell-input {
@@ -332,18 +350,19 @@
     }
 
     .char-remove {
-      flex: 0 0 1.2rem;
-      width: 1.2rem;
-      height: 1.2rem;
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 1.15rem;
       border: none;
       background: transparent;
       color: rgba(255, 255, 255, 0.75);
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 400;
       line-height: 1;
       padding: 0;
-      margin-right: 0.15rem;
       cursor: pointer;
       opacity: 0;
       pointer-events: none;
@@ -365,17 +384,11 @@
       color: #fff;
     }
 
-    /* スマホ: ×を常時表示し、タップ領域を広げる（focus-within 依存をやめる） */
+    /* スマホ: ×を常時表示（列幅は広げない） */
     @media (hover: none) and (pointer: coarse) {
       .char-remove {
         opacity: 0.85;
         pointer-events: auto;
-        flex: 0 0 2rem;
-        width: 2rem;
-        height: 2rem;
-        min-width: 2rem;
-        min-height: 2rem;
-        margin-right: 0.1rem;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
       }
@@ -392,8 +405,9 @@
     }
 
     .matrix-cell {
-      min-width: 5.5rem;
-      width: 5.5rem;
+      width: var(--matrix-cell);
+      min-width: var(--matrix-cell);
+      max-width: var(--matrix-cell);
       padding: 0;
       cursor: text;
       transition: box-shadow 0.1s;
@@ -645,6 +659,17 @@
     function renderMatrix() {
       const n = state.characters.length;
       matrixEl.innerHTML = '';
+
+      const colgroup = document.createElement('colgroup');
+      const sideCol = document.createElement('col');
+      sideCol.className = 'col-side';
+      colgroup.appendChild(sideCol);
+      for (let col = 0; col < n; col++) {
+        const dataCol = document.createElement('col');
+        dataCol.className = 'col-data';
+        colgroup.appendChild(dataCol);
+      }
+      matrixEl.appendChild(colgroup);
 
       const thead = document.createElement('thead');
       const headRow = document.createElement('tr');
