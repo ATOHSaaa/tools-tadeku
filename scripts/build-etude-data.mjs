@@ -351,6 +351,18 @@ const ENDING_WORDS = [
 ].sort((a, b) => b.length - a.length);
 
 const MAX_ENDING_COUNT = 2;
+const LIMITED_PLACES = new Set(['屋上', '地下室']);
+const MAX_LIMITED_PLACE_COUNT = 10;
+
+function limitedPlaceHits(prompt) {
+  const hits = [];
+  for (const place of LIMITED_PLACES) {
+    const prefix = new RegExp(`^${place}(の|に|を|へ|で|から)`);
+    if (prefix.test(prompt)) hits.push(place);
+    else if (prompt.endsWith(`の${place}`)) hits.push(place);
+  }
+  return hits;
+}
 
 function endingKey(prompt) {
   const particle = prompt.match(/(で|から|へ|まで|より)$/);
@@ -376,21 +388,28 @@ function isValidPrompt(prompt) {
   return true;
 }
 
-function canAddPrompt(prompt, endingCounts) {
-  return (endingCounts.get(endingKey(prompt)) || 0) < MAX_ENDING_COUNT;
+function canAddPrompt(prompt, endingCounts, placeCounts) {
+  if ((endingCounts.get(endingKey(prompt)) || 0) >= MAX_ENDING_COUNT) return false;
+  for (const place of limitedPlaceHits(prompt)) {
+    if ((placeCounts.get(place) || 0) >= MAX_LIMITED_PLACE_COUNT) return false;
+  }
+  return true;
 }
 
-function recordPrompt(prompt, endingCounts) {
+function recordPrompt(prompt, endingCounts, placeCounts) {
   const key = endingKey(prompt);
   endingCounts.set(key, (endingCounts.get(key) || 0) + 1);
+  for (const place of limitedPlaceHits(prompt)) {
+    placeCounts.set(place, (placeCounts.get(place) || 0) + 1);
+  }
 }
 
-function tryAdd(candidate, seen, endingCounts, bucket) {
-  if (seen.has(candidate) || !isValidPrompt(candidate) || !canAddPrompt(candidate, endingCounts)) {
+function tryAdd(candidate, seen, endingCounts, placeCounts, bucket) {
+  if (seen.has(candidate) || !isValidPrompt(candidate) || !canAddPrompt(candidate, endingCounts, placeCounts)) {
     return false;
   }
   seen.add(candidate);
-  recordPrompt(candidate, endingCounts);
+  recordPrompt(candidate, endingCounts, placeCounts);
   bucket.push(candidate);
   return true;
 }
@@ -547,18 +566,19 @@ function* interleaveGenerators() {
 
 const seen = new Set(ORIGINAL_PROMPTS);
 const endingCounts = new Map();
+const placeCounts = new Map();
 const newPrompts = [];
 
-for (const p of ORIGINAL_PROMPTS) recordPrompt(p, endingCounts);
+for (const p of ORIGINAL_PROMPTS) recordPrompt(p, endingCounts, placeCounts);
 
 for (const candidate of interleaveGenerators()) {
-  tryAdd(candidate, seen, endingCounts, newPrompts);
+  tryAdd(candidate, seen, endingCounts, placeCounts, newPrompts);
   if (newPrompts.length >= 1000) break;
 }
 
 if (newPrompts.length < 1000) {
   for (const candidate of generators()) {
-    tryAdd(candidate, seen, endingCounts, newPrompts);
+    tryAdd(candidate, seen, endingCounts, placeCounts, newPrompts);
     if (newPrompts.length >= 1000) break;
   }
 }
