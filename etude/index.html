@@ -657,6 +657,7 @@
       margin: 0;
       background: #fdfcfa;
       vertical-align: top;
+      -webkit-touch-callout: default;
     }
 
     .image-preview-item.is-vertical {
@@ -674,6 +675,15 @@
       font-size: 0.82rem;
       line-height: 1.7;
       color: var(--muted);
+    }
+
+    .image-save-hint {
+      font-size: 0.72rem;
+      line-height: 1.6;
+      color: var(--muted);
+      text-align: center;
+      margin: -0.35rem 0 0.65rem;
+      flex-shrink: 0;
     }
 
     .modal-actions {
@@ -829,6 +839,7 @@
         <div class="image-preview-grid" id="image-preview-grid"></div>
       </div>
       <div class="share-primary-actions">
+        <p class="image-save-hint" id="image-save-hint" hidden>共有メニューから「写真に保存」を選んでください</p>
         <button type="button" class="btn" id="download-images-btn">画像を保存</button>
         <button type="button" class="btn btn-primary" id="share-finish-btn">Twitterにシェア</button>
       </div>
@@ -841,7 +852,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
   <script src="../shared/genko-render.js?v=vert21"></script>
-  <script src="../shared/etude-engine.js?v=preview19"></script>
+  <script src="../shared/etude-engine.js?v=photosave1"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -870,6 +881,7 @@
       linesPerPageSlider: document.getElementById('lines-per-page-slider'),
       linesPerPageValue: document.getElementById('lines-per-page-value'),
       downloadImagesBtn: document.getElementById('download-images-btn'),
+      imageSaveHint: document.getElementById('image-save-hint'),
       imagePreviewSummary: document.getElementById('image-preview-summary'),
       imagePreviewGrid: document.getElementById('image-preview-grid'),
       shareFinishBtn: document.getElementById('share-finish-btn'),
@@ -890,6 +902,7 @@
     let imageOrientation = 'horizontal';
     let imagePreviewToken = 0;
     let imagePreviewTimer = null;
+    let imagePreviewCache = null;
     let exportWork = null;
     let readerWork = null;
     let editorViewport = TadekuEditorMobileViewport.bind({
@@ -992,9 +1005,42 @@
       }
     }
 
+    function imagePreviewCacheKey(work) {
+      if (!work) return '';
+      return [work.body, work.slotKey, imageLinesPerPage, imageOrientation].join('\0');
+    }
+
+    function isImagePreviewCacheValid(work) {
+      return !!(
+        imagePreviewCache &&
+        work &&
+        imagePreviewCache.key === imagePreviewCacheKey(work) &&
+        imagePreviewCache.files &&
+        imagePreviewCache.files.length
+      );
+    }
+
+    function updateSaveButtonState() {
+      const work = getExportWork();
+      const shareMode = typeof E.prefersPhotoLibrarySave === 'function' && E.prefersPhotoLibrarySave();
+      if (shareMode) {
+        const ready = isImagePreviewCacheValid(work);
+        els.downloadImagesBtn.disabled = !ready;
+        els.imageSaveHint.hidden = false;
+        els.imageSaveHint.textContent = ready
+          ? '共有メニューから「写真に保存」を選んでください'
+          : 'プレビューの準備ができたら保存できます';
+      } else {
+        els.imageSaveHint.hidden = true;
+        els.downloadImagesBtn.disabled = false;
+      }
+    }
+
     function setImagePreviewMessage(message) {
       els.imagePreviewSummary.textContent = message;
       els.imagePreviewGrid.innerHTML = '';
+      imagePreviewCache = null;
+      updateSaveButtonState();
     }
 
     async function updateImagePreview() {
@@ -1017,6 +1063,8 @@
           work.body.trim().length + '字を' + parts.length + '枚の' + orientationLabel() +
           '画像に分割（1枚あたり' + imageLinesPerPage + '行）';
         els.imagePreviewGrid.innerHTML = '';
+        imagePreviewCache = null;
+        updateSaveButtonState();
         const loading = document.createElement('p');
         loading.className = 'image-preview-loading';
         loading.textContent = 'プレビューを生成しています…';
@@ -1054,6 +1102,16 @@
           item.appendChild(img);
           els.imagePreviewGrid.appendChild(item);
         });
+
+        if (typeof E.canvasesToImageFiles === 'function') {
+          const files = await E.canvasesToImageFiles(canvases, work.slotKey);
+          if (token !== imagePreviewToken) return;
+          imagePreviewCache = {
+            key: imagePreviewCacheKey(work),
+            files,
+          };
+        }
+        updateSaveButtonState();
       } catch (err) {
         if (token !== imagePreviewToken) return;
         console.error(err);
@@ -1263,6 +1321,7 @@
       configureLinesPerPageSlider();
       applyDefaultImageLinesPerPage();
       openModal(els.shareModal);
+      updateSaveButtonState();
       scheduleImagePreview(0);
     }
 
@@ -1270,6 +1329,7 @@
       clearTimeout(imagePreviewTimer);
       imagePreviewTimer = null;
       imagePreviewToken += 1;
+      imagePreviewCache = null;
       exportWork = null;
       closeModal(els.shareModal);
     }
@@ -1433,21 +1493,43 @@
       scheduleImagePreview(180);
     });
 
-    els.downloadImagesBtn.addEventListener('click', async () => {
+    els.downloadImagesBtn.addEventListener('click', () => {
       const work = getExportWork();
       if (!work || !work.body.trim()) return;
-      els.downloadImagesBtn.disabled = true;
-      try {
-        await E.downloadTextImages({
-          prompt: work.prompt,
-          body: work.body,
-          linesPerPage: imageLinesPerPage,
-          slotKey: work.slotKey,
-          orientation: imageOrientation,
-        });
-      } finally {
-        els.downloadImagesBtn.disabled = false;
+
+      const shareMode = typeof E.prefersPhotoLibrarySave === 'function' && E.prefersPhotoLibrarySave();
+      if (shareMode && isImagePreviewCacheValid(work) && typeof E.shareImageFiles === 'function') {
+        els.downloadImagesBtn.disabled = true;
+        E.shareImageFiles(imagePreviewCache.files)
+          .then((result) => {
+            if (result === 'partial' && imagePreviewCache.files.length > 1) {
+              alert(
+                '1枚目を共有しました。残りはプレビューを長押しして「写真に追加」を選んでください。',
+              );
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            alert('保存できませんでした。プレビューを長押しして「写真に追加」を選んでください。');
+          })
+          .finally(() => updateSaveButtonState());
+        return;
       }
+
+      (async () => {
+        els.downloadImagesBtn.disabled = true;
+        try {
+          await E.downloadTextImages({
+            prompt: work.prompt,
+            body: work.body,
+            linesPerPage: imageLinesPerPage,
+            slotKey: work.slotKey,
+            orientation: imageOrientation,
+          });
+        } finally {
+          updateSaveButtonState();
+        }
+      })();
     });
 
     async function init() {

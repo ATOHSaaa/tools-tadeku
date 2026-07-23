@@ -630,6 +630,59 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
+  function isIos() {
+    const ua = navigator.userAgent || '';
+    if (/iPad|iPhone|iPod/.test(ua)) return true;
+    return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  }
+
+  /** iOS Safari は a[download] ではなく共有シート経由で写真アプリへ保存する */
+  function prefersPhotoLibrarySave() {
+    return isIos() && typeof navigator.share === 'function';
+  }
+
+  function canShareImageFiles(files) {
+    if (!files || !files.length || !navigator.canShare) return false;
+    try {
+      return navigator.canShare({ files });
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function canvasesToImageFiles(canvases, slotKey) {
+    const files = [];
+    for (let i = 0; i < canvases.length; i++) {
+      const blob = await canvasToBlob(canvases[i]);
+      const suffix = canvases.length > 1 ? '-' + (i + 1) : '';
+      files.push(new File([blob], 'etude-' + slotKey + suffix + '.png', { type: 'image/png' }));
+    }
+    return files;
+  }
+
+  async function shareImageFiles(files) {
+    if (!files || !files.length) throw new Error('no files');
+    if (canShareImageFiles(files)) {
+      try {
+        await navigator.share({ files });
+      } catch (err) {
+        if (err && err.name === 'AbortError') return 'cancelled';
+        throw err;
+      }
+      return 'all';
+    }
+    if (files.length > 1 && canShareImageFiles([files[0]])) {
+      try {
+        await navigator.share({ files: [files[0]] });
+      } catch (err) {
+        if (err && err.name === 'AbortError') return 'cancelled';
+        throw err;
+      }
+      return 'partial';
+    }
+    throw new Error('share unavailable');
+  }
+
   function buildWorkTxtContent(work) {
     const meta = [
       work.finishedLabel || formatFinishedAt(work.finishedAt),
@@ -726,6 +779,10 @@
     suggestLinesPerPage,
     getLinesPerPageRange,
     renderTextImages,
+    canvasesToImageFiles,
+    prefersPhotoLibrarySave,
+    canShareImageFiles,
+    shareImageFiles,
     downloadTextImages,
     downloadFinishedWorksTxtZip,
   };
