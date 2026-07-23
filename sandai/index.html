@@ -293,6 +293,8 @@
         grid-template-columns: 1fr;
         row-gap: var(--cards-gap);
         max-width: 320px;
+        /* Avoid stretching short rows when JS locked a multi-card row height */
+        min-height: 0 !important;
       }
 
       .cards-row--with-seps .card-slot + .card-slot::before {
@@ -404,6 +406,11 @@
 
       let lockedCardHeight = 0;
       let lockedRowHeight = 0;
+      const desktopLayoutMq = window.matchMedia('(min-width: 641px)');
+
+      function isDesktopLayout() {
+        return desktopLayoutMq.matches;
+      }
 
       function lockCardDimensions() {
         if (lockedCardHeight) return;
@@ -415,15 +422,18 @@
           lockedCardHeight = Math.max(lockedCardHeight, card.offsetHeight);
         });
 
-        const firstRow = cardsEl.querySelector('.cards-row');
-        if (firstRow) {
-          lockedRowHeight = firstRow.offsetHeight;
+        // Mobile stacks cards in one column inside each row, so locking the
+        // full row height makes newly added (short) rows stretch cards tall.
+        if (isDesktopLayout()) {
+          const firstRow = cardsEl.querySelector('.cards-row');
+          lockedRowHeight = firstRow ? firstRow.offsetHeight : lockedCardHeight;
+          document.documentElement.style.setProperty('--cards-row-height', `${lockedRowHeight}px`);
         } else {
-          lockedRowHeight = lockedCardHeight;
+          lockedRowHeight = 0;
+          document.documentElement.style.removeProperty('--cards-row-height');
         }
 
         document.documentElement.style.setProperty('--card-height', `${lockedCardHeight}px`);
-        document.documentElement.style.setProperty('--cards-row-height', `${lockedRowHeight}px`);
       }
 
       function applyLockedDimensions() {
@@ -433,7 +443,11 @@
           card.style.minHeight = `${lockedCardHeight}px`;
         });
         cardsEl.querySelectorAll('.cards-row').forEach((row) => {
-          row.style.minHeight = `${lockedRowHeight}px`;
+          if (lockedRowHeight) {
+            row.style.minHeight = `${lockedRowHeight}px`;
+          } else {
+            row.style.removeProperty('min-height');
+          }
         });
       }
 
