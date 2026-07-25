@@ -621,13 +621,18 @@
     });
   }
 
+  const MULTI_DOWNLOAD_DELAY_MS = 500;
+
   function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
   function isIos() {
@@ -636,9 +641,21 @@
     return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
   }
 
-  /** iOS Safari は a[download] ではなく共有シート経由で写真アプリへ保存する */
+  function canShareFilesOnDevice() {
+    if (!navigator.canShare) return false;
+    try {
+      const test = new File([''], 'test.png', { type: 'image/png' });
+      return navigator.canShare({ files: [test] });
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** a[download] が不安定な環境では共有シート経由で写真アプリへ保存する */
   function prefersPhotoLibrarySave() {
-    return isIos() && typeof navigator.share === 'function';
+    if (typeof navigator.share !== 'function') return false;
+    if (isIos()) return true;
+    return canShareFilesOnDevice();
   }
 
   function canShareImageFiles(files) {
@@ -730,17 +747,21 @@
     return works.length;
   }
 
-  async function downloadTextImages({ prompt, body, linesPerPage, slotKey, orientation }) {
-    const canvases = await renderTextImages({ prompt, body, linesPerPage, orientation });
-    for (let i = 0; i < canvases.length; i++) {
-      const blob = await canvasToBlob(canvases[i]);
-      const suffix = canvases.length > 1 ? '-' + (i + 1) : '';
-      downloadBlob(blob, 'etude-' + slotKey + suffix + '.png');
-      if (i < canvases.length - 1) {
-        await new Promise((r) => setTimeout(r, 120));
+  async function downloadImageFiles(files) {
+    if (!files || !files.length) return 0;
+    for (let i = 0; i < files.length; i++) {
+      downloadBlob(files[i], files[i].name);
+      if (i < files.length - 1) {
+        await new Promise((r) => setTimeout(r, MULTI_DOWNLOAD_DELAY_MS));
       }
     }
-    return canvases.length;
+    return files.length;
+  }
+
+  async function downloadTextImages({ prompt, body, linesPerPage, slotKey, orientation }) {
+    const canvases = await renderTextImages({ prompt, body, linesPerPage, orientation });
+    const files = await canvasesToImageFiles(canvases, slotKey);
+    return downloadImageFiles(files);
   }
 
   global.TadekuEtude = {
@@ -783,6 +804,7 @@
     prefersPhotoLibrarySave,
     canShareImageFiles,
     shareImageFiles,
+    downloadImageFiles,
     downloadTextImages,
     downloadFinishedWorksTxtZip,
   };

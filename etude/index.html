@@ -852,7 +852,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
   <script src="../shared/genko-render.js?v=vert21"></script>
-  <script src="../shared/etude-engine.js?v=photosave1"></script>
+  <script src="../shared/etude-engine.js?v=photosave2"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -1519,13 +1519,17 @@
       (async () => {
         els.downloadImagesBtn.disabled = true;
         try {
-          await E.downloadTextImages({
-            prompt: work.prompt,
-            body: work.body,
-            linesPerPage: imageLinesPerPage,
-            slotKey: work.slotKey,
-            orientation: imageOrientation,
-          });
+          if (isImagePreviewCacheValid(work) && imagePreviewCache.files) {
+            await E.downloadImageFiles(imagePreviewCache.files);
+          } else {
+            await E.downloadTextImages({
+              prompt: work.prompt,
+              body: work.body,
+              linesPerPage: imageLinesPerPage,
+              slotKey: work.slotKey,
+              orientation: imageOrientation,
+            });
+          }
         } finally {
           updateSaveButtonState();
         }
