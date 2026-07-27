@@ -839,7 +839,7 @@
         <div class="image-preview-grid" id="image-preview-grid"></div>
       </div>
       <div class="share-primary-actions">
-        <p class="image-save-hint" id="image-save-hint" hidden>共有メニューから「写真に保存」を選んでください</p>
+        <p class="image-save-hint" id="image-save-hint" hidden>共有メニューで「写真に追加」を選んでください。うまくいかない場合はプレビュー画像の長押しでも保存できます</p>
         <button type="button" class="btn" id="download-images-btn">画像を保存</button>
         <button type="button" class="btn btn-primary" id="share-finish-btn">Twitterにシェア</button>
       </div>
@@ -851,8 +851,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/etude-data.js"></script>
-  <script src="../shared/genko-render.js?v=vert21"></script>
-  <script src="../shared/etude-engine.js?v=photosave2"></script>
+  <script src="../shared/genko-render.js?v=vert22"></script>
+  <script src="../shared/etude-engine.js?v=photosave3"></script>
   <script>
     const E = TadekuEtude;
     const prompts = ETUDE_DATA.prompts;
@@ -1026,11 +1026,17 @@
       if (shareMode) {
         const ready = isImagePreviewCacheValid(work);
         els.downloadImagesBtn.disabled = !ready;
+        els.downloadImagesBtn.textContent = '写真に保存';
+        els.downloadImagesBtn.classList.add('btn-primary');
+        els.shareFinishBtn.classList.remove('btn-primary');
         els.imageSaveHint.hidden = false;
         els.imageSaveHint.textContent = ready
-          ? '共有メニューから「写真に保存」を選んでください'
+          ? '共有メニューで「写真に追加」を選んでください。うまくいかない場合はプレビュー画像の長押しでも保存できます'
           : 'プレビューの準備ができたら保存できます';
       } else {
+        els.downloadImagesBtn.textContent = '画像を保存';
+        els.downloadImagesBtn.classList.remove('btn-primary');
+        els.shareFinishBtn.classList.add('btn-primary');
         els.imageSaveHint.hidden = true;
         els.downloadImagesBtn.disabled = false;
       }
