@@ -393,6 +393,9 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       padding: 1rem 1.15rem;
       font-size: 0.98rem;
       line-height: 2;
@@ -436,6 +439,10 @@
       resize: none;
       outline: none;
       caret-color: var(--ink);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
 
     #editor[readonly] {
@@ -445,12 +452,13 @@
     @media (max-width: 720px) {
       .editor-body {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 1.2fr) minmax(140px, 0.8fr);
+        grid-template-rows: minmax(0, 1fr) auto;
       }
 
       .write-panel {
         grid-column: 1;
         grid-row: 1;
+        min-height: 0;
       }
 
       .ref-panel {
@@ -458,7 +466,11 @@
         grid-row: 2;
         border-right: none;
         border-top: 2px solid var(--border);
-        min-height: 0;
+        height: 38vh;
+        height: 38svh;
+        max-height: 38vh;
+        max-height: 38svh;
+        min-height: 9.5rem;
       }
 
       .write-panel.is-full {

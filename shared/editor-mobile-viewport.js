@@ -26,6 +26,7 @@
     function reset() {
       const el = getRoot();
       if (!el) return;
+      if (!el.style.height && !el.style.transform) return;
       el.style.height = '';
       el.style.transform = '';
     }
