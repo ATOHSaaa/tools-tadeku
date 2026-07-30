@@ -47,6 +47,12 @@ try {
 
   await writeAndFinish('初稿の本文です。', '第二稿');
 
+  const collapsedAfterOpen = await page.evaluate(() => document.body.classList.contains('ref-collapsed'));
+  if (collapsedAfterOpen) throw new Error('書きかけの第二稿で参照がデフォルト表示になっていません');
+
+  const toggleLabel = await page.textContent('#toggle-ref-btn');
+  if (!toggleLabel.includes('参照を隠す')) throw new Error('参照トグルの文言が不正: ' + toggleLabel);
+
   const refText = await page.textContent('#ref-body');
   if (!refText.includes('初稿の本文')) throw new Error('前の版が表示されていません: ' + refText);
 
@@ -67,25 +73,49 @@ try {
     const expect = i < draftLabels.length - 1 ? draftLabels[i + 1] : 'complete';
     await writeAndFinish(draftLabels[i] + 'の本文。', expect);
   }
-  const cards = await page.$$('.version-card');
-  if (cards.length !== 6) throw new Error('完成版が6つではありません: ' + cards.length);
+
+  const afterComplete = await page.evaluate(() => ({
+    body: document.getElementById('complete-body')?.textContent,
+    tabs: [...document.querySelectorAll('#complete-tabs .ref-tab')].map((e) => e.textContent),
+    activeTab: document.querySelector('#complete-tabs .ref-tab.is-active')?.textContent,
+    completeVisible: !document.getElementById('complete-view').hidden,
+  }));
+  if (!afterComplete.completeVisible) throw new Error('完了後に閲覧画面になっていません');
+  if (!afterComplete.body.includes('第六稿の本文')) throw new Error('完了直後の第六稿本文が不正');
+  if (afterComplete.tabs.length !== 6) throw new Error('稿タブが6つではありません: ' + afterComplete.tabs.join(','));
+  if (afterComplete.activeTab !== '第六稿') throw new Error('初期タブが第六稿ではありません: ' + afterComplete.activeTab);
+
+  await page.click('#complete-tabs .ref-tab[data-step="0"]');
+  const read初稿 = await page.textContent('#complete-body');
+  if (!read初稿.includes('初稿の本文')) throw new Error('タブで以前の稿を表示できません');
 
   await page.click('#complete-home-btn');
   await page.waitForSelector('#home-view:not([hidden])', { timeout: 5000 });
   const historyText = await page.textContent('#history-list');
   if (!historyText.includes('テスト短編')) throw new Error('履歴に作品がありません');
 
+  await page.click('#history-list a.btn');
+  await page.waitForSelector('#complete-view:not([hidden])', { timeout: 5000 });
+  const finalBody = await page.textContent('#complete-body');
+  if (!finalBody.includes('第六稿の本文')) throw new Error('第六稿本文がありません: ' + finalBody);
+  const openTabs = await page.$$eval('#complete-tabs .ref-tab', (els) => els.map((e) => e.textContent));
+  if (!openTabs.includes('初稿') || !openTabs.includes('第六稿')) {
+    throw new Error('開いた直後のタブが不正: ' + openTabs.join(','));
+  }
+
   const projectId = await page.evaluate(() => sessionStorage.getItem('tadeku-suiko-active'));
   if (!projectId) throw new Error('作品IDが保存されていません');
 
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goto(`http://127.0.0.1:${PORT}/suiko/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#home-view:not([hidden])', { timeout: 5000 });
   const onHomeAfterReload = await page.$eval('#home-view', (el) => !el.hidden);
   if (!onHomeAfterReload) throw new Error('パラメータなしのリロードで一覧が表示されません');
 
   await page.goto(`http://127.0.0.1:${PORT}/suiko/index.html?id=${encodeURIComponent(projectId)}`, { waitUntil: 'domcontentloaded' });
-  const onEditor = await page.$eval('#editor-view', (el) => !el.hidden).catch(() => false);
   const onComplete = await page.$eval('#complete-view', (el) => !el.hidden).catch(() => false);
-  if (!onEditor && !onComplete) throw new Error('?id= 指定で作品が開きません');
+  if (!onComplete) throw new Error('?id= 指定で完了作品が開きません');
+  const bodyAfterId = await page.textContent('#complete-body');
+  if (!bodyAfterId.includes('第六稿の本文')) throw new Error('?id= で第六稿が開きません');
 
   await page.goto(`http://127.0.0.1:${PORT}/suiko/index.html?id=missing-project`, { waitUntil: 'domcontentloaded' });
   const onHomeAfterMissing = await page.$eval('#home-view', (el) => !el.hidden);

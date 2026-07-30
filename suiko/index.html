@@ -10,7 +10,7 @@
     gtag('config', 'G-HN5C12BJ0W');
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="description" content="短編を初稿から第六稿まで書き直す執筆ツール。前の版を横に見ながら、1稿ずつ進めます。原稿はブラウザに自動保存されます。">
+  <meta name="description" content="短編を初稿から第六稿まで書き直す執筆ツール。前の版を横に見ながら、一稿ずつ進めます。原稿はブラウザに自動保存されます。">
   <title>Suiko — 初稿から第六稿まで | tadeku-tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,88 +71,134 @@
     }
 
     .home-actions {
-      margin-top: 2rem;
+      margin-top: 1.75rem;
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 0.65rem;
     }
 
+    .home-actions .btn {
+      padding: 0.7rem 1.35rem;
+      font-size: 0.82rem;
+    }
+
     .tool-about {
-      margin-top: 2.25rem;
-      padding: 1.15rem 1.25rem;
-      background: var(--surface);
-      border: 2px solid var(--border);
+      margin-top: 1.5rem;
+      padding: 0 0.25rem;
     }
 
     .tool-about-list {
-      font-size: 0.85rem;
+      list-style: none;
+      font-size: 0.98rem;
+      line-height: 1.9;
       color: var(--ink);
-      line-height: 1.85;
-      padding-left: 1.1rem;
     }
 
-    .tool-about-list li + li { margin-top: 0.35rem; }
+    .tool-about-list li {
+      position: relative;
+      padding-left: 1.25rem;
+    }
+
+    .tool-about-list li::before {
+      content: "・";
+      position: absolute;
+      left: 0;
+      color: var(--ink);
+      font-weight: 700;
+    }
 
     .history-section {
       margin-top: 2.5rem;
+      padding: 0 0.25rem;
+    }
+
+    .history-section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .history-section-titles {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-export-all-btn {
+      flex-shrink: 0;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.72rem;
+    }
+
+    .history-section[hidden] {
+      display: none !important;
     }
 
     .history-heading {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      color: var(--muted);
-      margin-bottom: 0.85rem;
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .history-notice {
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--ink);
+      margin-bottom: 0;
     }
 
     .history-list {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 0.55rem;
+      gap: 0.65rem;
     }
 
     .history-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      background: var(--surface);
       border: 2px solid var(--border);
+      background: var(--surface);
+      padding: 0.85rem 0.9rem;
     }
 
     .history-item-main {
-      min-width: 0;
       flex: 1;
+      min-width: 0;
     }
 
     .history-item-title {
       font-size: 0.92rem;
       font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.5;
+      margin-bottom: 0.35rem;
     }
 
     .history-item-meta {
       font-size: 0.72rem;
-      margin-top: 0.2rem;
-    }
-
-    .history-item-step {
-      color: var(--ink);
       font-weight: 700;
-    }
-
-    .history-item-date {
+      letter-spacing: 0.04em;
       color: var(--muted);
+      line-height: 1.6;
     }
 
     .history-item-actions {
       display: flex;
-      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.45rem;
       flex-shrink: 0;
+    }
+
+    .history-item-actions .btn {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.72rem;
     }
 
     /* --- editor --- */
@@ -253,7 +299,18 @@
     }
 
     .editor-title-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
       padding: 0 1.25rem 0.65rem;
+    }
+
+    .editor-title-row .back-to-list {
+      margin-bottom: 0.55rem;
+    }
+
+    .editor-title-row .work-title {
+      width: 100%;
     }
 
     .editor-toolbar {
@@ -279,6 +336,8 @@
       min-height: 0;
       border-right: 2px solid var(--border);
       background: #fdfcfa;
+      grid-column: 1;
+      grid-row: 1;
     }
 
     .ref-panel[hidden] { display: none !important; }
@@ -347,6 +406,8 @@
       flex-direction: column;
       min-height: 0;
       background: var(--surface);
+      grid-column: 2;
+      grid-row: 1;
     }
 
     .write-panel.is-full {
@@ -377,21 +438,32 @@
       caret-color: var(--ink);
     }
 
+    #editor[readonly] {
+      caret-color: transparent;
+    }
+
     @media (max-width: 720px) {
       .editor-body {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 1fr) minmax(0, 1.2fr);
+        grid-template-rows: minmax(0, 1.2fr) minmax(140px, 0.8fr);
+      }
+
+      .write-panel {
+        grid-column: 1;
+        grid-row: 1;
       }
 
       .ref-panel {
+        grid-column: 1;
+        grid-row: 2;
         border-right: none;
-        border-bottom: 2px solid var(--border);
-        max-height: 35vh;
+        border-top: 2px solid var(--border);
+        min-height: 0;
       }
 
       .write-panel.is-full {
-        grid-column: auto;
-        grid-row: 1;
+        grid-column: 1;
+        grid-row: 1 / -1;
       }
 
       body.ref-collapsed .ref-panel { display: none; }
@@ -399,27 +471,164 @@
       body.ref-collapsed .write-panel { grid-row: 1; }
     }
 
-    /* --- complete --- */
+    /* --- complete / reading --- */
     .complete {
-      max-width: 720px;
+      max-width: 680px;
       margin: 0 auto;
       padding: 2rem 1.25rem 5rem;
     }
 
     .complete-header {
-      margin-bottom: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .complete-header .page-title {
+      margin-bottom: 1rem;
+    }
+
+    .back-to-list {
+      appearance: none;
+      display: inline-block;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      margin: 0 0 0.65rem;
+      text-align: left;
+    }
+
+    .back-to-list:hover {
+      color: var(--ink);
     }
 
     .complete-title {
       font-size: 1.25rem;
       font-weight: 900;
-      margin-top: 0.35rem;
+      margin-top: 0;
     }
 
     .complete-meta {
       font-size: 0.82rem;
       color: var(--muted);
       margin-top: 0.35rem;
+    }
+
+    .complete-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .complete-tabs::-webkit-scrollbar { display: none; }
+
+    .complete-panel {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .complete-panel-meta {
+      padding: 0.45rem 1rem 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #3f3a33;
+    }
+
+    .complete-body {
+      padding: 1rem 1.15rem 1.35rem;
+      font-size: 0.98rem;
+      line-height: 2;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--ink);
+    }
+
+    .complete-body::selection,
+    .ref-body::selection,
+    #editor::selection {
+      background: #c2dbff;
+      color: var(--ink);
+    }
+
+    .complete-body::-moz-selection,
+    .ref-body::-moz-selection,
+    #editor::-moz-selection {
+      background: #c2dbff;
+      color: var(--ink);
+    }
+
+    .complete-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.65rem;
+      margin-top: 1.5rem;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+
+    .modal-backdrop.is-open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1.25rem 1.25rem 1.15rem;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+    }
+
+    .export-step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-bottom: 1.15rem;
+    }
+
+    .export-step-list label {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .export-step-list input {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.55rem;
     }
 
     .version-card {
@@ -449,13 +658,6 @@
       word-break: break-word;
       max-height: 12rem;
       overflow-y: auto;
-    }
-
-    .complete-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.65rem;
-      margin-top: 1.5rem;
     }
 
     /* --- shared --- */
@@ -527,19 +729,25 @@
   <div class="view" id="home-view">
     <div class="home">
       <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</h1>
-      <p class="lead">短編を初稿から第六稿まで、書き直す。前の版を横に見ながら、1稿ずつ進めます。</p>
-      <div class="home-actions">
-        <button type="button" class="btn btn-primary" id="start-btn">書き始める</button>
-      </div>
+      <p class="lead">短編を初稿から第六稿まで、書き直す。前の版を横に見ながら、一稿ずつ進めます。</p>
       <div class="tool-about">
         <ul class="tool-about-list">
           <li>初稿を書き終えたら、第二稿から第六稿まで書き直します。</li>
-          <li>書き直しのたびに、これまでの稿を読み取り専用で横に参照できます。</li>
+          <li>書き直しのたびに、これまでの稿を読み取り専用で参照できます。</li>
           <li>原稿はブラウザに自動保存されます。外部サーバーには送信されません。</li>
         </ul>
       </div>
+      <div class="home-actions">
+        <button type="button" class="btn btn-primary" id="start-btn">書き始める</button>
+      </div>
       <section class="history-section" id="history-section" hidden>
-        <h2 class="history-heading">作品一覧</h2>
+        <div class="history-section-header">
+          <div class="history-section-titles">
+            <h2 class="history-heading">書き終わった作品</h2>
+            <p class="history-notice">作品はブラウザ内に保存されており、外部サーバーには送信されていません。</p>
+          </div>
+          <button type="button" class="btn history-export-all-btn" id="history-export-all-btn">一括書き出し</button>
+        </div>
         <ul class="history-list" id="history-list"></ul>
       </section>
     </div>
@@ -551,20 +759,21 @@
         <div class="editor-header-top">
           <div class="brand"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</div>
           <div class="editor-stats">
-            <span class="step-badge" id="step-badge">初稿</span>
             <span class="save-indicator" id="save-indicator"></span>
             <span>文字数 <strong id="char-count">0</strong></span>
             <span class="char-delta" id="char-delta" hidden></span>
+            <span class="step-badge" id="step-badge">初稿</span>
           </div>
         </div>
         <div class="progress-track" id="progress-track" aria-hidden="true"></div>
         <div class="editor-title-row">
+          <button type="button" class="back-to-list" id="back-home-btn">← 一覧に戻る</button>
           <input type="text" class="work-title" id="work-title" placeholder="Title" maxlength="60" spellcheck="false">
         </div>
         <div class="editor-toolbar">
-          <button type="button" class="link-btn" id="back-home-btn">一覧に戻る</button>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-            <button type="button" class="btn btn-small btn-ghost" id="toggle-ref-btn" hidden>参照を隠す</button>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-left:auto;">
+            <button type="button" class="btn btn-small btn-ghost" id="toggle-ref-btn" hidden>参照を見る</button>
+            <button type="button" class="btn btn-small" id="editor-export-btn" hidden>全ての稿を書き出し</button>
             <button type="button" class="btn btn-primary" id="finish-step-btn" disabled>この回を終える</button>
           </div>
         </div>
@@ -585,19 +794,35 @@
   <div class="view" id="complete-view" hidden>
     <div class="complete">
       <div class="complete-header">
-        <div class="brand"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</div>
+        <h1 class="page-title"><a class="brand-home" href="../">tadeku-tools</a><span class="brand-sep"> / </span>Suiko</h1>
+        <button type="button" class="back-to-list" id="complete-home-btn">← 一覧に戻る</button>
         <h2 class="complete-title" id="complete-title">（無題）</h2>
         <p class="complete-meta" id="complete-meta"></p>
       </div>
-      <div id="version-list"></div>
+      <div class="complete-tabs" id="complete-tabs" role="tablist" aria-label="稿を切り替える"></div>
+      <div class="complete-panel">
+        <div class="complete-panel-meta" id="complete-panel-meta"></div>
+        <div class="complete-body" id="complete-body"></div>
+      </div>
       <div class="complete-actions">
-        <button type="button" class="btn btn-primary" id="export-btn">全文を書き出し（.txt）</button>
-        <button type="button" class="btn" id="new-btn">新しい短編</button>
-        <button type="button" class="btn btn-ghost" id="complete-home-btn">一覧に戻る</button>
+        <button type="button" class="btn btn-primary" id="export-select-btn">稿を選んで書き出し</button>
+        <button type="button" class="btn btn-primary" id="export-btn">全ての稿を書き出し</button>
       </div>
     </div>
   </div>
 
+  <div class="modal-backdrop" id="export-select-modal" hidden>
+    <div class="modal" role="dialog" aria-labelledby="export-select-title">
+      <h2 class="modal-title" id="export-select-title">稿を選んで書き出し</h2>
+      <ul class="export-step-list" id="export-step-list"></ul>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="export-select-cancel">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="export-select-confirm">書き出す</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../shared/suiko-engine.js"></script>
   <script>
     'use strict';
@@ -611,6 +836,7 @@
     const startBtn = document.getElementById('start-btn');
     const historySection = document.getElementById('history-section');
     const historyList = document.getElementById('history-list');
+    const historyExportAllBtn = document.getElementById('history-export-all-btn');
 
     const stepBadge = document.getElementById('step-badge');
     const saveIndicator = document.getElementById('save-indicator');
@@ -627,12 +853,19 @@
     const finishStepBtn = document.getElementById('finish-step-btn');
     const backHomeBtn = document.getElementById('back-home-btn');
     const toggleRefBtn = document.getElementById('toggle-ref-btn');
+    const editorExportBtn = document.getElementById('editor-export-btn');
 
     const completeTitle = document.getElementById('complete-title');
     const completeMeta = document.getElementById('complete-meta');
-    const versionList = document.getElementById('version-list');
+    const completeTabs = document.getElementById('complete-tabs');
+    const completePanelMeta = document.getElementById('complete-panel-meta');
+    const completeBody = document.getElementById('complete-body');
     const exportBtn = document.getElementById('export-btn');
-    const newBtn = document.getElementById('new-btn');
+    const exportSelectBtn = document.getElementById('export-select-btn');
+    const exportSelectModal = document.getElementById('export-select-modal');
+    const exportStepList = document.getElementById('export-step-list');
+    const exportSelectCancel = document.getElementById('export-select-cancel');
+    const exportSelectConfirm = document.getElementById('export-select-confirm');
     const completeHomeBtn = document.getElementById('complete-home-btn');
 
     const editorViewport = TadekuEditorMobileViewport.bind({
@@ -685,6 +918,9 @@
       editorView.hidden = name !== 'editor';
       completeView.hidden = name !== 'complete';
       document.body.classList.toggle('is-editing', name === 'editor');
+      if (name !== 'editor') {
+        document.body.classList.remove('ref-collapsed');
+      }
       editorViewport.sync();
     }
 
@@ -694,7 +930,7 @@
     }
 
     function scheduleSave() {
-      if (!currentProject) return;
+      if (!currentProject || currentProject.status === 'complete') return;
       saveIndicator.textContent = '保存中…';
       saveIndicator.classList.remove('saved');
       clearTimeout(saveTimer);
@@ -715,6 +951,12 @@
     }
 
     function updateCharStats() {
+      if (currentProject && currentProject.status === 'complete') {
+        finishStepBtn.disabled = true;
+        charDelta.hidden = true;
+        return;
+      }
+
       const len = editor.value.length;
       charCount.textContent = len;
       finishStepBtn.disabled = !editor.value.trim();
@@ -747,7 +989,17 @@
       }).join('');
     }
 
-    function renderReference(project) {
+    function getFinalVersion(project) {
+      if (!project || !project.versions || !project.versions.length) return null;
+      return [...project.versions].sort((a, b) => a.step - b.step).at(-1);
+    }
+
+    function allReadableVersions(project) {
+      if (!project || !project.versions) return [];
+      return [...project.versions].sort((a, b) => a.step - b.step);
+    }
+
+    function renderReference(project, { resetCollapse = false } = {}) {
       const viewable = S.getViewableVersions(project);
       if (!viewable.length) {
         refPanel.hidden = true;
@@ -765,6 +1017,10 @@
 
       const selected = S.getVersionByStep(project, refViewStep) || viewable[viewable.length - 1];
       refViewStep = selected.step;
+
+      if (resetCollapse) {
+        document.body.classList.remove('ref-collapsed');
+      }
 
       refPanel.hidden = false;
       writePanel.classList.remove('is-full');
@@ -791,46 +1047,74 @@
       toggleRefBtn.textContent = collapsed ? '参照を見る' : '参照を隠す';
     }
 
-    function renderEditor(project) {
+    function renderEditor(project, options) {
       currentProject = project;
       refViewStep = null;
       rememberActive(project.id);
       syncProjectUrl(project.id);
-      stepBadge.textContent = project.status === 'complete'
-        ? '完了'
-        : S.stepLabel(project.step);
+
+      stepBadge.textContent = S.stepLabel(project.step);
       workTitle.value = project.title || '';
+      workTitle.readOnly = false;
       editor.value = project.draftBody || '';
+      editor.readOnly = false;
       editor.placeholder = project.step === 0
         ? '初稿をここに書く'
         : S.stepLabel(project.step) + 'をここに書く';
+      finishStepBtn.hidden = false;
+      editorExportBtn.hidden = true;
+
       renderProgress(project);
-      renderReference(project);
+      renderReference(project, { resetCollapse: true });
       updateCharStats();
       saveIndicator.textContent = '';
       saveIndicator.classList.remove('saved');
       showView('editor');
-      editor.focus();
+      if (options && options.focusTitle) workTitle.focus();
+      else editor.focus();
+    }
+
+    function renderCompleteBody(project) {
+      const versions = allReadableVersions(project);
+      const final = getFinalVersion(project);
+      if (refViewStep == null) {
+        refViewStep = final ? final.step : null;
+      }
+      const selected = S.getVersionByStep(project, refViewStep) || final || versions[versions.length - 1];
+      if (selected) refViewStep = selected.step;
+
+      completeTabs.innerHTML = versions.map((v) => (
+        '<button type="button" class="ref-tab' + (v.step === refViewStep ? ' is-active' : '') + '" ' +
+          'role="tab" aria-selected="' + (v.step === refViewStep) + '" data-step="' + v.step + '">' +
+          esc(S.stepLabel(v.step)) +
+        '</button>'
+      )).join('');
+
+      completeTabs.querySelectorAll('[data-step]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          refViewStep = Number(btn.dataset.step);
+          renderCompleteBody(currentProject);
+        });
+      });
+
+      completePanelMeta.textContent = selected
+        ? (S.stepLabel(selected.step) + ' · ' + selected.charCount + '字')
+        : '';
+      completeBody.textContent = selected ? (selected.body || '') : '';
     }
 
     function renderComplete(project) {
       currentProject = project;
+      refViewStep = null;
       rememberActive(project.id);
       syncProjectUrl(project.id);
       completeTitle.textContent = displayTitle(project);
       const totalChars = project.versions.reduce((n, v) => n + v.charCount, 0);
       completeMeta.textContent =
-        '6版 · ' + S.formatDateTime(project.updatedAt) + ' · 合計 ' + totalChars + '字';
-      const sorted = [...project.versions].sort((a, b) => a.step - b.step);
-      versionList.innerHTML = sorted.map((v) => (
-        '<article class="version-card">' +
-          '<div class="version-card-header">' +
-            '<span>' + esc(S.stepLabel(v.step)) + '</span>' +
-            '<span>' + v.charCount + '字 · ' + esc(S.formatDateTime(v.finishedAt)) + '</span>' +
-          '</div>' +
-          '<div class="version-card-body">' + esc(v.body || '') + '</div>' +
-        '</article>'
-      )).join('');
+        S.formatDateTime(project.updatedAt) + ' · 合計 ' + totalChars + '字';
+      const final = getFinalVersion(project);
+      refViewStep = final ? final.step : null;
+      renderCompleteBody(project);
       showView('complete');
     }
 
@@ -851,29 +1135,33 @@
 
       if (projects.length) {
         historySection.hidden = false;
+        historyExportAllBtn.disabled = false;
         historyList.innerHTML = projects.map((p) => {
           const stepLabel = p.status === 'complete' ? '完了' : S.progressLabel(p);
           const dateLabel = S.formatDateTime(p.updatedAt);
+          const metaParts = [stepLabel, dateLabel];
+          if (p.status === 'complete' && p.versions && p.versions.length) {
+            const totalChars = p.versions.reduce((n, v) => n + (v.charCount || 0), 0);
+            metaParts.push(totalChars + '字');
+          }
           return (
-            '<li class="history-item">' +
+            '<li class="history-item" data-open="' + esc(p.id) + '">' +
               '<div class="history-item-main">' +
                 '<div class="history-item-title">' + esc(displayTitle(p)) + '</div>' +
-                '<div class="history-item-meta">' +
-                  '<span class="history-item-step">' + esc(stepLabel) + '</span>' +
-                  ' · ' +
-                  '<span class="history-item-date">' + esc(dateLabel) + '</span>' +
-                '</div>' +
+                '<div class="history-item-meta">' + esc(metaParts.join(' · ')) + '</div>' +
               '</div>' +
               '<div class="history-item-actions">' +
-                '<a class="btn btn-small" href="' + esc(projectHref(p.id)) + '">開く</a>' +
-                '<button type="button" class="btn btn-small btn-danger" data-delete="' + esc(p.id) + '">削除</button>' +
+                '<a class="btn" href="' + esc(projectHref(p.id)) + '">開く</a>' +
+                '<button type="button" class="btn btn-danger" data-delete="' + esc(p.id) + '">削除</button>' +
               '</div>' +
             '</li>'
           );
         }).join('');
 
         historyList.querySelectorAll('[data-delete]').forEach((btn) => {
-          btn.addEventListener('click', async () => {
+          btn.addEventListener('click', async (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
             const id = btn.dataset.delete;
             const p = await S.getProject(id);
             if (!p) return refreshHome();
@@ -892,9 +1180,23 @@
       currentProject = null;
     }
 
+    historyExportAllBtn.addEventListener('click', async () => {
+      if (!confirm('作品を一括で書き出しますか？')) return;
+      historyExportAllBtn.disabled = true;
+      try {
+        const count = await S.downloadProjectsTxtZip();
+        if (!count) alert('書き出せる作品がありません。');
+      } catch (err) {
+        console.error(err);
+        alert('書き出しに失敗しました。');
+      } finally {
+        historyExportAllBtn.disabled = false;
+      }
+    });
+
     startBtn.addEventListener('click', async () => {
       const project = await S.createProject();
-      renderEditor(project);
+      renderEditor(project, { focusTitle: true });
     });
 
     workTitle.addEventListener('input', scheduleSave);
@@ -945,13 +1247,52 @@
       toggleRefBtn.textContent = collapsed ? '参照を見る' : '参照を隠す';
     });
 
+    function openExportSelectModal() {
+      if (!currentProject || !currentProject.versions || !currentProject.versions.length) return;
+      const versions = allReadableVersions(currentProject);
+      exportStepList.innerHTML = versions.map((v) => (
+        '<li>' +
+          '<label>' +
+            '<input type="checkbox" name="export-step" value="' + v.step + '" checked>' +
+            '<span>' + esc(S.stepLabel(v.step)) + '（' + v.charCount + '字）</span>' +
+          '</label>' +
+        '</li>'
+      )).join('');
+      exportSelectModal.hidden = false;
+      exportSelectModal.classList.add('is-open');
+    }
+
+    function closeExportSelectModal() {
+      exportSelectModal.classList.remove('is-open');
+      exportSelectModal.hidden = true;
+    }
+
+    editorExportBtn.addEventListener('click', () => {
+      if (currentProject) S.exportProjectTxt(currentProject);
+    });
+
     exportBtn.addEventListener('click', () => {
       if (currentProject) S.exportProjectTxt(currentProject);
     });
 
-    newBtn.addEventListener('click', async () => {
-      const project = await S.createProject();
-      renderEditor(project);
+    exportSelectBtn.addEventListener('click', openExportSelectModal);
+
+    exportSelectCancel.addEventListener('click', closeExportSelectModal);
+
+    exportSelectConfirm.addEventListener('click', () => {
+      if (!currentProject) return;
+      const steps = [...exportStepList.querySelectorAll('input[name="export-step"]:checked')]
+        .map((el) => Number(el.value));
+      if (!steps.length) {
+        alert('書き出す稿を選んでください。');
+        return;
+      }
+      S.exportProjectTxt(currentProject, { steps });
+      closeExportSelectModal();
+    });
+
+    exportSelectModal.addEventListener('click', (ev) => {
+      if (ev.target === exportSelectModal) closeExportSelectModal();
     });
 
     completeHomeBtn.addEventListener('click', refreshHome);

@@ -49,13 +49,22 @@
 
   function getViewableVersions(project) {
     if (!project || !project.versions) return [];
+    let cutoff = project.step;
+    if (project.status === 'complete' && project.versions.length) {
+      cutoff = Math.max(...project.versions.map((v) => v.step));
+    }
     return [...project.versions]
-      .filter((v) => v.step < project.step)
+      .filter((v) => v.step < cutoff)
       .sort((a, b) => a.step - b.step);
   }
 
   function defaultRefStep(project) {
-    if (!project || project.step <= 0) return null;
+    if (!project) return null;
+    if (project.status === 'complete') {
+      const viewable = getViewableVersions(project);
+      return viewable.length ? viewable[viewable.length - 1].step : null;
+    }
+    if (project.step <= 0) return null;
     return project.step - 1;
   }
 
@@ -176,13 +185,18 @@
     });
   }
 
-  function buildExportTxt(project) {
+  function buildExportTxt(project, options) {
     const lines = [];
     const title = (project.title || '').trim();
     if (title) {
       lines.push(title, '');
     }
-    const versions = [...(project.versions || [])].sort((a, b) => a.step - b.step);
+    let versions = [...(project.versions || [])].sort((a, b) => a.step - b.step);
+    const steps = options && options.steps;
+    if (steps && steps.length) {
+      const allowed = new Set(steps.map(Number));
+      versions = versions.filter((v) => allowed.has(v.step));
+    }
     for (const v of versions) {
       lines.push(
         '--- ' + stepLabel(v.step) + ' (' + v.charCount + '字) · ' + formatDateTime(v.finishedAt) + ' ---',
@@ -212,9 +226,42 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  function exportProjectTxt(project) {
-    const blob = new Blob([buildExportTxt(project)], { type: 'text/plain;charset=utf-8' });
+  function exportProjectTxt(project, options) {
+    const blob = new Blob([buildExportTxt(project, options)], { type: 'text/plain;charset=utf-8' });
     downloadBlob(blob, safeFilename(project.title) + '.txt');
+  }
+
+  function projectTxtEntryName(project, used) {
+    const base = safeFilename(project.title);
+    let name = base + '.txt';
+    if (!used.has(name)) {
+      used.add(name);
+      return name;
+    }
+    let n = 2;
+    while (used.has(base + ' (' + n + ').txt')) n += 1;
+    name = base + ' (' + n + ').txt';
+    used.add(name);
+    return name;
+  }
+
+  function projectsZipFilename() {
+    const d = new Date();
+    return 'suiko-works-' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '.zip';
+  }
+
+  async function downloadProjectsTxtZip() {
+    if (!global.JSZip) throw new Error('JSZip missing');
+    const projects = await listProjects();
+    if (!projects.length) return 0;
+    const zip = new global.JSZip();
+    const used = new Set();
+    for (const project of projects) {
+      zip.file(projectTxtEntryName(project, used), buildExportTxt(project));
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(blob, projectsZipFilename());
+    return projects.length;
   }
 
   global.TadekuSuiko = {
@@ -237,5 +284,6 @@
     deleteProject,
     buildExportTxt,
     exportProjectTxt,
+    downloadProjectsTxtZip,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
