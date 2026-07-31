@@ -96,6 +96,12 @@ body.is-editing #editor-view {
     flex-shrink: 0;
   }
 
+  /* キーボード表示時は「シーンを追加」以下を隠して入力領域を広げる */
+  body:has(> .app > .scene-list) .app.is-keyboard-open > .add-scene,
+  body:has(> .app > .scene-list) .app.is-keyboard-open > .footer {
+    display: none;
+  }
+
   .editor-wrap,
   #editor,
   textarea {

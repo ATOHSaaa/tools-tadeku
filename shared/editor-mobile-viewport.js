@@ -26,6 +26,7 @@
     function reset() {
       const el = getRoot();
       if (!el) return;
+      el.classList.remove('is-keyboard-open');
       if (!el.style.height && !el.style.transform) return;
       el.style.height = '';
       el.style.transform = '';
@@ -51,6 +52,7 @@
       const keyboardOpen = viewportHeight < layoutHeight - 64;
 
       if (keyboardOpen) {
+        el.classList.add('is-keyboard-open');
         el.style.height = `${viewportHeight}px`;
         el.style.transform = offsetTop > 0 ? `translateY(${offsetTop}px)` : '';
       } else {
