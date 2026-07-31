@@ -65,35 +65,40 @@ body.is-editing #editor-view {
   }
 
   body:has(> .app > .scene-list) > .app {
-    display: flex;
-    flex-direction: column;
     max-width: none;
     margin: 0;
     padding: 0;
     height: 100%;
     min-height: 0;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  body:has(> .app > .scene-list) .header {
-    flex-shrink: 0;
-    padding: 1rem 1rem 0.85rem;
-    margin-bottom: 0;
-    border-bottom: 2px solid var(--border);
-  }
-
-  body:has(> .app > .scene-list) .scene-list {
-    flex: 1;
-    min-height: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    scroll-padding-top: 8rem;
   }
 
-  body:has(> .app > .scene-list) .add-scene,
+  /* ブランド〜タイトル〜操作〜シーン数/合計字数までを上部固定 */
+  body:has(> .app > .scene-list) .header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: 1rem 1rem 0.85rem;
+    margin-bottom: 0;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg, #ffffff);
+  }
+
+  body:has(> .app > .scene-list) .scene-list {
+    padding: 0.75rem 1rem 0;
+  }
+
+  body:has(> .app > .scene-list) .add-scene {
+    margin-top: 0.75rem;
+  }
+
   body:has(> .app > .scene-list) .footer {
-    flex-shrink: 0;
+    margin-top: 1.5rem;
+    padding: 0 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* キーボード表示時は「シーンを追加」以下を隠して入力領域を広げる */
