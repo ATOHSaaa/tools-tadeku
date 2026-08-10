@@ -81,7 +81,7 @@
     }
     @media (min-width: 720px) {
       .grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 1.25rem;
       }
     }
@@ -91,6 +91,7 @@
       text-decoration: none;
       background: var(--surface);
       border: 2px solid var(--ink);
+      border-radius: 4px;
       padding: 1.25rem 1.35rem;
       transition: border-color 0.15s ease;
     }
