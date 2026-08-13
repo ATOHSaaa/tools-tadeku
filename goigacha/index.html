@@ -218,9 +218,18 @@
         };
       }
 
-      let allItems = (window.WORDFALL_CONFIG?.words || [])
-        .map(normalizeWord)
-        .filter((item) => item.word);
+      function isGachaWord(item) {
+        const word = (item?.word || '').trim();
+        if (!word) return false;
+        if (word.includes('例文のリソース')) return false;
+        return true;
+      }
+
+      function filterGachaWords(items) {
+        return items.map(normalizeWord).filter(isGachaWord);
+      }
+
+      let allItems = filterGachaWords(window.WORDFALL_CONFIG?.words || []);
 
       const state = Array.from({ length: CARD_COUNT }, (_, i) => ({
         id: i,
@@ -343,7 +352,7 @@
           })
           .then((fresh) => {
             if (!fresh?.length) return;
-            allItems = fresh.map(normalizeWord).filter((item) => item.word);
+            allItems = filterGachaWords(fresh);
           })
           .catch(() => {});
       }
