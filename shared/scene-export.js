@@ -1,7 +1,7 @@
 (function (global) {
   const EXPORT_W = 720;
   const EXPORT_SCALE = 2;
-  const EXPORT_FONT = '"Noto Sans JP", "Hiragino Sans", sans-serif';
+  const EXPORT_FONT = 'YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif';
   const DEFAULT_MAX_CHARS = 300;
 
   function wrapCanvasLines(ctx, text, maxWidth) {

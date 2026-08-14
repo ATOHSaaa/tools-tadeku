@@ -40,7 +40,7 @@
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
-      font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+      font-family: YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif;
       font-size: 15px;
       line-height: 1.6;
       color: var(--ink);
@@ -113,6 +113,51 @@
       background: var(--bg);
     }
 
+    .shared-preview-host {
+      display: none;
+      min-height: 100%;
+      padding: 1rem 1.25rem 1.5rem;
+      background: var(--bg);
+    }
+
+    body.shared-render-mode .pages-scroll {
+      display: none;
+    }
+
+    body.shared-render-mode .shared-preview-host {
+      display: block;
+    }
+
+    .genko-preview-info {
+      margin-bottom: 0.9rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .genko-pages-scroll {
+      display: flex;
+      direction: rtl;
+      align-items: center;
+      gap: 2rem;
+      padding: 0.5rem 0 1rem;
+      width: max-content;
+      min-width: 100%;
+      min-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .genko-page {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(20, var(--genko-cell));
+      grid-template-rows: repeat(20, var(--genko-cell));
+      grid-auto-flow: column;
+      direction: rtl;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      flex: none;
+    }
+
     .pages-scroll {
       display: flex;
       direction: rtl;
@@ -141,7 +186,7 @@
       position: relative;
       width: var(--cell-size);
       height: var(--cell-size);
-      font-family: "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif;
+      font-family: YakuHanJPs, "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif;
       color: var(--ink);
       box-shadow: inset 0 0 0 1px var(--grid-line);
       writing-mode: vertical-rl;
@@ -272,7 +317,7 @@
       writing-mode: vertical-rl;
       text-orientation: mixed;
       direction: ltr;
-      font-family: "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif;
+      font-family: YakuHanJPs, "Yu Mincho", "Hiragino Mincho ProN", "YuMincho", serif;
       font-size: calc(var(--cell-size) * 0.72);
       line-height: var(--cell-size);
       border: none;
@@ -525,6 +570,7 @@
 
     <div class="editor-wrap" id="editor-wrap">
       <div class="pages-scroll" id="pages-scroll"></div>
+      <div class="shared-preview-host" id="shared-preview-host"></div>
     </div>
 
     <aside class="panel">
@@ -571,14 +617,17 @@
   <script src="../shared/editor-library.js"></script>
   <script src="../shared/editor-draft.js"></script>
   <script src="../shared/editor-undo.js"></script>
+  <script src="../shared/genko-render.js?v=vert24"></script>
   <script>
     const ROWS = 20;             // 1列あたりのマス数
     const COLS = 20;             // 1枚あたりの列数
     const PER_PAGE = ROWS * COLS; // 400
     let CELL_PX = 28;             // マス1辺(px)。画面サイズに合わせて動的に決まる
+    const useSharedRender = new URLSearchParams(location.search).get('shared-render') === '1';
 
     const els = {
       pagesScroll: document.getElementById('pages-scroll'),
+      sharedPreviewHost: document.getElementById('shared-preview-host'),
       editorWrap: document.getElementById('editor-wrap'),
       saveIndicator: document.getElementById('save-indicator'),
       charCount: document.getElementById('char-count'),
@@ -589,6 +638,11 @@
       pageCurrent: document.getElementById('page-current'),
       pageBar: document.getElementById('page-bar'),
     };
+
+    if (useSharedRender) {
+      document.body.classList.add('shared-render-mode');
+      els.saveIndicator.textContent = '共有描画モード';
+    }
 
     // 文字データモデル: 1要素 = 1書記素。'\n' は改行（段落）トークン。
     let doc = [];
@@ -746,7 +800,7 @@
       return ch !== undefined && ROTATE_SIDEWAYS.has(ch);
     }
 
-    const EXPORT_FONT_FAMILY = 'Yu Mincho, Hiragino Mincho ProN, YuMincho, serif';
+    const EXPORT_FONT_FAMILY = 'YakuHanJPs, Yu Mincho, Hiragino Mincho ProN, YuMincho, serif';
     const vGlyphCache = new Map();   // key: px|ch -> { img, size, ready:Promise }
 
     function vGlyphKey(px, ch) { return px + '|' + ch; }
@@ -1162,6 +1216,17 @@
 
     function render() {
       if (composing) return;
+      if (useSharedRender) {
+        const text = serialize();
+        const G = window.TadekuGenkoRender;
+        if (G && typeof G.renderPreview === 'function' && typeof G.computeLayout === 'function') {
+          G.renderPreview(els.sharedPreviewHost, text, { cellPx: CELL_PX });
+          const L = G.computeLayout([...(text || '').replace(/\r\n/g, '\n')], { rows: ROWS, cols: COLS });
+          lastLayout = L;
+          updateStats(L);
+          return;
+        }
+      }
       caret = Math.max(0, Math.min(caret, doc.length));
       const L = computeLayout(doc, caret);
       lastLayout = L;
@@ -1417,6 +1482,7 @@
     }
 
     els.pagesScroll.addEventListener('mousedown', (e) => {
+      if (useSharedRender) return;
       if (e.button !== 0) return;
       const pos = indexFromPoint(e.clientX, e.clientY, e.target);
       if (pos === null) { setTimeout(() => capture.focus(), 0); return; }
@@ -1429,6 +1495,7 @@
     });
 
     document.addEventListener('mousemove', (e) => {
+      if (useSharedRender) return;
       if (!dragging) return;
       const pos = indexFromPoint(e.clientX, e.clientY, e.target);
       if (pos === null || pos === caret) return;
@@ -1437,6 +1504,7 @@
     });
 
     document.addEventListener('mouseup', () => {
+      if (useSharedRender) return;
       if (!dragging) return;
       dragging = false;
       if (anchor === caret) anchor = null;
@@ -1677,6 +1745,7 @@
     });
 
     els.editorWrap.addEventListener('mousedown', (e) => {
+      if (useSharedRender) return;
       if (e.target === els.editorWrap || e.target === els.pagesScroll) {
         setTimeout(() => capture.focus(), 0);
       }
@@ -1713,7 +1782,7 @@
     (async () => {
       await library.initFromUrl();
       render();
-      capture.focus();
+      if (!useSharedRender) capture.focus();
     })();
   </script>
   <script>TadekuEditorMobileViewport.bind({ root: '.layout' });</script>

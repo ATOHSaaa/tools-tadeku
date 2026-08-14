@@ -33,7 +33,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       height: 100vh; height: 100dvh; overflow: hidden;
-      font-family: "Noto Sans JP", sans-serif; font-size: 14px; color: var(--ink); background: var(--bg);
+      font-family: YakuHanJPs, "Noto Sans JP", sans-serif; font-size: 14px; color: var(--ink); background: var(--bg);
     }
     button, input, select, textarea { font: inherit; }
     .app { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
@@ -78,11 +78,11 @@
     .editor-backdrop-clip { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
     .editor-backdrop {
       padding: 1rem 1.25rem; white-space: pre-wrap; word-break: break-word; line-height: 1.85;
-      font-family: "Shippori Mincho", serif; font-size: 1rem; color: transparent;
+      font-family: YakuHanJPs, "Shippori Mincho", serif; font-size: 1rem; color: transparent;
     }
     #editor-wrap textarea {
       position: absolute; inset: 0; width: 100%; height: 100%; resize: none; border: none; outline: none;
-      padding: 1rem 1.25rem; line-height: 1.85; font-family: "Shippori Mincho", serif; font-size: 1rem;
+      padding: 1rem 1.25rem; line-height: 1.85; font-family: YakuHanJPs, "Shippori Mincho", serif; font-size: 1rem;
       background: transparent; color: var(--ink); caret-color: var(--ink);
     }
     .hl-link { color: transparent; background: rgba(42,90,138,0.15); border-radius: 2px; }
@@ -102,7 +102,7 @@
     .preview-host { min-height: 200px; }
     .preview-empty, .panel-empty { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
     .ref-title { font-weight: 900; margin-bottom: 0.5rem; }
-    .ref-body { white-space: pre-wrap; font-family: "Shippori Mincho", serif; line-height: 1.7; font-size: 0.9rem; }
+    .ref-body { white-space: pre-wrap; font-family: YakuHanJPs, "Shippori Mincho", serif; line-height: 1.7; font-size: 0.9rem; }
     #ref-select { width: 100%; margin-bottom: 0.5rem; padding: 0.35rem; }
     .status-bar {
       padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 700; color: var(--muted);
@@ -201,7 +201,7 @@
       --genko-cell: 20px;
       display: grid; grid-template-columns: repeat(20, var(--genko-cell)); grid-template-rows: repeat(20, var(--genko-cell));
       grid-auto-flow: column; direction: rtl; writing-mode: vertical-rl; background: #fff; border: 2px solid #333;
-      font-family: "Shippori Mincho", serif; font-size: calc(var(--genko-cell) * 0.72);
+      font-family: YakuHanJPs, "Shippori Mincho", serif; font-size: calc(var(--genko-cell) * 0.72);
     }
     .genko-cell {
       position: relative; display: flex; align-items: center; justify-content: center;
@@ -218,7 +218,7 @@
     .iwe-columns-sheet {
       max-width: 420px; margin: 0 auto; background: #fff; padding: 1.5rem 1.25rem;
       box-shadow: 0 2px 12px rgba(0,0,0,0.08); columns: 2; column-gap: 1.5rem; column-rule: 1px solid #ddd;
-      font-family: "Shippori Mincho", serif; font-size: 0.82rem; line-height: 1.85; text-align: justify;
+      font-family: YakuHanJPs, "Shippori Mincho", serif; font-size: 0.82rem; line-height: 1.85; text-align: justify;
     }
     .iwe-p { margin: 0 0 0.65em; text-indent: 1em; }
     .iwe-p-gap { height: 0.65em; }

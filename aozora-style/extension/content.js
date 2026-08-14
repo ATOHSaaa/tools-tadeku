@@ -1,5 +1,6 @@
 (function () {
   const STYLE_ID = 'aozora-style-injected';
+  const YAKUHAN_LINK_ID = 'aozora-style-yakuhanjp';
   const WIDGET_HOST_ID = 'aozora-style-widget-host';
   const STORAGE_KEY = 'aozoraStyle';
 
@@ -23,7 +24,18 @@
   function clearStyles() {
     const styleEl = document.getElementById(STYLE_ID);
     if (styleEl) styleEl.remove();
+    const yakuhanLink = document.getElementById(YAKUHAN_LINK_ID);
+    if (yakuhanLink) yakuhanLink.remove();
     applyVerticalQuotes(false);
+  }
+
+  function ensureYakuHanFont() {
+    if (document.getElementById(YAKUHAN_LINK_ID)) return;
+    const link = document.createElement('link');
+    link.id = YAKUHAN_LINK_ID;
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/yakuhanjp@4.1.1/dist/css/yakuhanjp_s.css';
+    document.head.appendChild(link);
   }
 
   function shouldSkipQuoteNode(node) {
@@ -72,6 +84,7 @@
     }
 
     verticalWheelScroll = settings.writing === 'vertical';
+    ensureYakuHanFont();
     getStyleEl().textContent = AozoraStyleSettings.buildCss(settings);
     applyVerticalQuotes(verticalWheelScroll);
   }

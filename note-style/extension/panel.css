@@ -1,10 +1,12 @@
+@import url('https://cdn.jsdelivr.net/npm/yakuhanjp@4.1.1/dist/css/yakuhanjp_s.css');
+
 :host {
   all: initial;
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 2147483647;
-  font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-family: YakuHanJPs, "Hiragino Sans", "Noto Sans JP", sans-serif;
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink);

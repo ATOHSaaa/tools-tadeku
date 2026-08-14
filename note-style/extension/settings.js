@@ -20,8 +20,8 @@
 
   const DEFAULTS = { ...PRESET };
 
-  const FONT_SANS = '"Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif';
-  const FONT_SERIF = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
+  const FONT_SANS = 'YakuHanJPs, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif';
+  const FONT_SERIF = 'YakuHanJPs, "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif';
 
   const FIXED = {
     titleScale: 1.8,

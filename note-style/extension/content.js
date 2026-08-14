@@ -1,5 +1,6 @@
 (function () {
   const STYLE_ID = 'note-style-injected';
+  const YAKUHAN_LINK_ID = 'note-style-yakuhanjp';
   const WIDGET_HOST_ID = 'note-style-widget-host';
   const STORAGE_KEY = 'noteStyle';
   const NUM_ATTR = 'data-note-style-num';
@@ -38,6 +39,17 @@
   function clearStyles() {
     const styleEl = document.getElementById(STYLE_ID);
     if (styleEl) styleEl.remove();
+    const yakuhanLink = document.getElementById(YAKUHAN_LINK_ID);
+    if (yakuhanLink) yakuhanLink.remove();
+  }
+
+  function ensureYakuHanFont() {
+    if (document.getElementById(YAKUHAN_LINK_ID)) return;
+    const link = document.createElement('link');
+    link.id = YAKUHAN_LINK_ID;
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/yakuhanjp@4.1.1/dist/css/yakuhanjp_s.css';
+    document.head.appendChild(link);
   }
 
   function unmountWidget() {
@@ -264,6 +276,7 @@
     }
 
     verticalWheelScroll = settings.writing === 'vertical';
+    ensureYakuHanFont();
     getStyleEl().textContent = NoteStyleSettings.buildCss(settings);
     syncNumbers(settings.writing === 'vertical');
     syncLandscape(settings.writing === 'vertical');

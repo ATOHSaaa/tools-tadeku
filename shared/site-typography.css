@@ -1,8 +1,14 @@
 @import url('site-radius.css');
+@import url('https://cdn.jsdelivr.net/npm/yakuhanjp@4.1.1/dist/css/yakuhanjp_s.css');
+
+:root {
+  --font-sans: YakuHanJPs, "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+}
 
 /* 全体で薄い文字をやめる */
 
 body {
+  font-family: var(--font-sans);
   font-weight: 500;
 }
 

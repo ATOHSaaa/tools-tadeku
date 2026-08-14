@@ -1,8 +1,10 @@
+@import url('https://cdn.jsdelivr.net/npm/yakuhanjp@4.1.1/dist/css/yakuhanjp_s.css');
+
 body {
     margin: 0;
     overflow: hidden;
     background-color: #ffffff;
-    font-family: "Yu Mincho", "MS Mincho", serif;
+    font-family: YakuHanJPs, "Yu Mincho", "MS Mincho", serif;
 }
 
 .word {

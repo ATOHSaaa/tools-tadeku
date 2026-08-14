@@ -407,7 +407,7 @@
     const fs = 32;
     const innerW = W - pad * 2;
     const measure = document.createElement('canvas').getContext('2d');
-    measure.font = fs + 'px "Noto Sans JP", sans-serif';
+    measure.font = fs + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
     const lines = wrapLines(measure, normalized, innerW);
     const perPage = Math.max(1, linesPerPage | 0);
     const parts = [];
@@ -419,14 +419,14 @@
     return parts.length ? parts : [''];
   }
 
-  function splitByLinesPerPage(text, linesPerPage, orientation) {
+  function splitByLinesPerPage(text, linesPerPage, orientation, opts) {
     const perPage = Math.max(1, linesPerPage | 0);
     if (orientation === 'vertical') {
       const G = global.TadekuGenkoRender;
       const split = G && G.splitVerticalText;
       // 縦書きの「行数」= 1枚の列数。字詰め（1列の文字数）は固定。
       const rows = (G && G.ETUDE_ROWS) || 26;
-      if (split) return split(text, rows, perPage);
+      if (split) return split(text, rows, perPage, opts);
       const normalized = String(text || '');
       return normalized.trim() ? [normalized] : [''];
     }
@@ -511,7 +511,7 @@
   }
 
   async function renderHorizontalTextImage({ prompt, body, partLabel, width, padding, fontSize, lineHeight }) {
-    await ensureFont(fontSize + 'px "Noto Sans JP"');
+    await ensureFont(fontSize + 'px YakuHanJPs, "Noto Sans JP"');
 
     const W = width || 1200;
     const pad = padding || 64;
@@ -520,11 +520,11 @@
     const innerW = W - pad * 2;
 
     const measure = document.createElement('canvas').getContext('2d');
-    measure.font = '700 ' + (fs * 0.72) + 'px "Noto Sans JP", sans-serif';
+    measure.font = '700 ' + (fs * 0.72) + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
 
     const headerLines = wrapLines(measure, 'お題：' + prompt, innerW);
     const bodyMeasure = document.createElement('canvas').getContext('2d');
-    bodyMeasure.font = fs + 'px "Noto Sans JP", sans-serif';
+    bodyMeasure.font = fs + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
     const bodyLines = wrapLines(bodyMeasure, body, innerW);
 
     const headerFs = fs * 0.72;
@@ -550,7 +550,7 @@
 
     let y = pad;
     ctx.fillStyle = '#1a1a1a';
-    ctx.font = '700 ' + headerFs + 'px "Noto Sans JP", sans-serif';
+    ctx.font = '700 ' + headerFs + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
     ctx.textBaseline = 'top';
     for (const line of headerLines) {
       ctx.fillText(line, pad, y);
@@ -558,7 +558,7 @@
     }
 
     y += gap;
-    ctx.font = fs + 'px "Noto Sans JP", sans-serif';
+    ctx.font = fs + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
     for (const line of bodyLines) {
       ctx.fillText(line, pad, y);
       y += bodyLhPx;
@@ -566,7 +566,7 @@
 
     if (partLabel) {
       ctx.fillStyle = '#999';
-      ctx.font = '700 ' + (fs * 0.55) + 'px "Noto Sans JP", sans-serif';
+      ctx.font = '700 ' + (fs * 0.55) + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText(partLabel, W - pad, canvas.height - pad * 0.65);
       ctx.textAlign = 'left';
@@ -595,7 +595,33 @@
     return renderHorizontalTextImage(options);
   }
 
-  async function renderTextImages({ prompt, body, linesPerPage, orientation }) {
+  async function renderTextImages({ prompt, body, linesPerPage, orientation, kinsoku }) {
+    if (orientation === 'vertical') {
+      const G = global.TadekuGenkoRender;
+      const splitPages = G && G.splitVerticalColumnPages;
+      if (splitPages) {
+        const docArr = [...String(body || '').replace(/\r\n/g, '\n')];
+        const rows = (G && G.ETUDE_ROWS) || 26;
+        const pageCols = splitPages(docArr, rows, linesPerPage, { kinsoku });
+        const images = [];
+        for (let i = 0; i < pageCols.length; i++) {
+          const label = pageCols.length > 1 ? (i + 1) + ' / ' + pageCols.length : '';
+          const canvas = await renderVerticalTextImage({
+            prompt,
+            body,
+            partLabel: label,
+            rowsPerPage: rows,
+            colsPerPage: linesPerPage,
+            linesPerPage,
+            columnLines: pageCols[i],
+            kinsoku,
+          });
+          images.push(canvas);
+        }
+        return images;
+      }
+    }
+
     const parts = splitByLinesPerPage(body, linesPerPage, orientation);
     const images = [];
     for (let i = 0; i < parts.length; i++) {
@@ -758,8 +784,8 @@
     return files.length;
   }
 
-  async function downloadTextImages({ prompt, body, linesPerPage, slotKey, orientation }) {
-    const canvases = await renderTextImages({ prompt, body, linesPerPage, orientation });
+  async function downloadTextImages({ prompt, body, linesPerPage, slotKey, orientation, kinsoku }) {
+    const canvases = await renderTextImages({ prompt, body, linesPerPage, orientation, kinsoku });
     const files = await canvasesToImageFiles(canvases, slotKey);
     return downloadImageFiles(files);
   }

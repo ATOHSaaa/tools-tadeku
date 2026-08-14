@@ -1,7 +1,7 @@
 (function (global) {
   'use strict';
 
-  const FONT = '"Noto Sans JP", "Hiragino Sans", sans-serif';
+  const FONT = 'YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif';
   const W = 720;
   const SCALE = 2;
   const PAD = 36;

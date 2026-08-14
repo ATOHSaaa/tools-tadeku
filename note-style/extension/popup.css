@@ -1,3 +1,5 @@
+@import url('https://cdn.jsdelivr.net/npm/yakuhanjp@4.1.1/dist/css/yakuhanjp_s.css');
+
 :root {
   --bg: #fdfcfa;
   --ink: #1a1a1a;
@@ -12,7 +14,7 @@
 
 body {
   width: 300px;
-  font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-family: YakuHanJPs, "Hiragino Sans", "Noto Sans JP", sans-serif;
   font-size: 13px;
   line-height: 1.5;
   color: var(--ink);

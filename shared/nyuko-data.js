@@ -99,7 +99,7 @@
     standard: {
       id: 'standard',
       label: 'Noto Serif JP',
-      family: '"Noto Serif JP", serif',
+      family: 'YakuHanJPs, "Noto Serif JP", serif',
       googleCssFamily: 'Noto+Serif+JP:wght@400;700',
       size: 9,
       lineHeight: 1.5,
@@ -107,7 +107,7 @@
     gothic: {
       id: 'gothic',
       label: 'Noto Sans JP',
-      family: '"Noto Sans JP", sans-serif',
+      family: 'YakuHanJPs, "Noto Sans JP", sans-serif',
       googleCssFamily: 'Noto+Sans+JP:wght@400;700',
       size: 9,
       lineHeight: 1.5,

@@ -35,7 +35,7 @@
     + '♪♫♬♩'
   );
   const ETUDE_FONT_SCALES = [0.92, 0.90, 0.82, 0.78, 0.72, 0.68, 0.60, 0.58, 0.52, 0.48];
-  const EXPORT_FONT_FAMILY = 'Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, YuMincho, serif';
+  const EXPORT_FONT_FAMILY = 'YakuHanJPs, Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, YuMincho, serif';
   const vGlyphCache = new Map();
 
   function isKutouten(ch) { return ch !== undefined && KUTOUTEN.has(ch); }
@@ -47,6 +47,9 @@
     return isKutouten(ch) || isExclamationOrQuestion(ch) || isClose(ch);
   }
   function isEndForbidden(ch) { return ch !== undefined && KINSOKU_END.has(ch); }
+  // 行頭禁則のうち、1マスを占有する文字（ぶら下げ不可）。追い出しで前の文字ごと次列へ送る
+  const LINE_START_SOLID = new Set([...'ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶーｰ々〻ゝゞヽヾ・…‥']);
+  function isStartForbiddenSolid(ch) { return ch !== undefined && LINE_START_SOLID.has(ch); }
   function tokenRole(ch) {
     if (isKutouten(ch)) return 'kutouten';
     if (isClose(ch)) return 'close';
@@ -82,6 +85,9 @@
       || (c >= 0xFF21 && c <= 0xFF3A)
       || (c >= 0xFF41 && c <= 0xFF5A);
   }
+  function isMusicNote(ch) {
+    return ch === '♪' || ch === '♫' || ch === '♬' || ch === '♩';
+  }
   function needsSidewaysDraw(ch) {
     if (ch === undefined) return false;
     const c = normalizeDrawChar(ch);
@@ -112,12 +118,39 @@
     return c;
   }
   function drawSidewaysGlyph(ctx, x, y, ch) {
+    // 音符など一部記号は transform 下の fillText が環境によって正立のままになるため、
+    // いったん正立で描いてから画像として 90° 回転する
+    if (isMusicNote(ch)) {
+      drawSidewaysViaBitmap(ctx, x, y, ch);
+      return;
+    }
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(Math.PI / 2);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  }
+  function drawSidewaysViaBitmap(ctx, x, y, ch) {
+    const font = ctx.font;
+    const fill = ctx.fillStyle || '#1a1a1a';
+    const m = /(\d+(?:\.\d+)?)px/.exec(font || '');
+    const px = m ? parseFloat(m[1]) : 24;
+    const size = Math.max(8, Math.ceil(px * 2.4));
+    const tmp = document.createElement('canvas');
+    tmp.width = size;
+    tmp.height = size;
+    const tctx = tmp.getContext('2d');
+    tctx.font = font;
+    tctx.fillStyle = fill;
+    tctx.textAlign = 'center';
+    tctx.textBaseline = 'middle';
+    tctx.fillText(ch, size / 2, size / 2);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(tmp, -size / 2, -size / 2);
     ctx.restore();
   }
   /** 連続する長音・ダッシュが途切れないよう、マス高さいっぱいの縦線を描く */
@@ -180,14 +213,31 @@
     prevLine.cells[lastIdx] = hangMarkOnCell(prevLine.cells[lastIdx], docArr, token);
     return true;
   }
+  function pushOutFromPreviousColumn(lines, cur, docArr, token) {
+    if (!canHang(docArr[token]) || !lines.length || cur.length > 1) return false;
+    const prevLine = lines[lines.length - 1];
+    if (prevLine.nl !== null || !prevLine.cells.length) return false;
+    // 追い出した文字自身が行頭禁則（小書き仮名等）なら、さらに手前まで一緒に送る
+    let take = 1;
+    while (take < prevLine.cells.length
+      && isStartForbiddenSolid(docArr[prevLine.cells[prevLine.cells.length - take].main])) take++;
+    if (take >= prevLine.cells.length) return false;
+    const movedCells = prevLine.cells.splice(prevLine.cells.length - take);
+    cur.splice(0, 0, ...movedCells);
+    cur.push(makeNormalCell(docArr, token));
+    return true;
+  }
+
   function addMarkToCell(cell, docArr, token) {
     cell.marks.push(markFor(docArr, token, 'auto'));
     cell.tokens.push(token);
     normalizeCellKind(cell);
   }
 
-  function computeColumns(docArr, rowsPerColumn) {
+  function computeColumns(docArr, rowsPerColumn, opts) {
     const maxRows = rowsPerColumn ?? ROWS;
+    // kinsoku: 'hang'（既定: 句読点・閉じ括弧を列末にぶら下げる）| 'pushout'（直前の文字ごと次列へ送る）
+    const hangMode = !opts || opts.kinsoku !== 'pushout';
     const lines = [];
     let cur = [];
     const flush = (nl) => { lines.push({ cells: cur, nl }); cur = []; };
@@ -217,9 +267,21 @@
         }
       }
       if (cur.length >= maxRows) {
-        if (canHang(ch)) {
+        if (hangMode && canHang(ch)) {
+          // ぶら下げ: あふれた句読点・閉じ括弧は列末のマスに付ける（描画時に列の下へはみ出す）
           const lastCell = cur[cur.length - 1];
           cur[cur.length - 1] = hangMarkOnCell(lastCell, docArr, i);
+          continue;
+        }
+        if (canHang(ch) || isStartForbiddenSolid(ch)) {
+          // 行頭禁則: 約物・小書き仮名・長音は直前の文字ごと次列へ追い出す。
+          // 追い出す文字自身が行頭禁則なら、さらに手前まで遡って一緒に送る
+          let moveFrom = cur.length - 1;
+          while (moveFrom > 0 && isStartForbiddenSolid(docArr[cur[moveFrom].main])) moveFrom--;
+          const moved = cur.splice(moveFrom);
+          flush(null);
+          cur = moved;
+          cur.push(makeNormalCell(docArr, i));
           continue;
         }
         if (isEndForbidden(docArr[cur[cur.length - 1].main])) {
@@ -230,8 +292,13 @@
           flush(null);
         }
       }
-      if (cur.length === 0 && canHang(ch) && pullHangToPreviousColumn(lines, docArr, i)) {
-        continue;
+      // 行頭禁則: 列頭に約物が来るときの処理（ぶら下げ or 追い出し）
+      if (canHang(ch)) {
+        if (hangMode) {
+          if (cur.length === 0 && pullHangToPreviousColumn(lines, docArr, i)) continue;
+        } else if (pushOutFromPreviousColumn(lines, cur, docArr, i)) {
+          continue;
+        }
       }
       cur.push(makeNormalCell(docArr, i));
     }
@@ -254,17 +321,23 @@
     return docArr.slice(min, max + 1).join('');
   }
 
-  function splitVerticalText(text, rowsPerPage, colsPerPage) {
+  function splitVerticalColumnPages(docArr, rowsPerPage, colsPerPage, opts) {
+    const columns = computeColumns(docArr, rowsPerPage, opts);
+    const maxCols = colsPerPage || COLS;
+    const pages = [];
+    for (let i = 0; i < columns.length; i += maxCols) {
+      pages.push(columns.slice(i, i + maxCols));
+    }
+    return pages.length ? pages : [[]];
+  }
+
+  function splitVerticalText(text, rowsPerPage, colsPerPage, opts) {
     const normalized = String(text || '').replace(/\r\n/g, '\n');
     if (!normalized.trim()) return [''];
     const docArr = [...normalized];
-    const columns = computeColumns(docArr, rowsPerPage);
-    const maxCols = colsPerPage || COLS;
-    const parts = [];
-    for (let i = 0; i < columns.length; i += maxCols) {
-      const part = columnsToText(columns.slice(i, i + maxCols), docArr);
-      if (part) parts.push(part);
-    }
+    const parts = splitVerticalColumnPages(docArr, rowsPerPage, colsPerPage, opts)
+      .map((pageCols) => columnsToText(pageCols, docArr))
+      .filter(Boolean);
     return parts.length ? parts : [''];
   }
 
@@ -272,7 +345,7 @@
     const rows = (opts && opts.rows) || ROWS;
     const colsPerPage = (opts && opts.cols) || COLS;
     const cellViewAt = new Map();
-    const lines = computeColumns(docArr, rows);
+    const lines = computeColumns(docArr, rows, opts);
     let colNum = 0;
     let lastLinear = -1;
     for (const line of lines) {
@@ -434,6 +507,23 @@
     // Etude 文庫レイアウト向け: ぶら下げが最終行の下に落ちて揃いが崩れるのを防ぐ
     const compact = cell.compactHang;
 
+    // ぶら下げ組み: 本文の文字は通常どおり、約物だけ列の下端の外（次のマス相当）に置く
+    if (cell.hangBelow) {
+      switch (slot) {
+        case 'slot-main-raised':
+          return { x: cell.x + s * 0.5, y: cell.y + s * 0.5, align: 'center', baseline: 'middle', fontScale: 0.90 };
+        case 'slot-lower':
+        case 'slot-lower-deep':
+          return { x: cell.x + s * 0.5, y: cell.y + s * 1.5, align: 'center', baseline: 'middle', fontScale: 0.90 };
+        case 'slot-lower-both':
+          return { x: cell.x + s * 0.5, y: cell.y + s * 1.28, align: 'center', baseline: 'middle', fontScale: 0.82 };
+        case 'slot-lower-deep-both':
+          return { x: cell.x + s * 0.55, y: cell.y + s * 1.72, align: 'center', baseline: 'middle', fontScale: 0.78 };
+        default:
+          break;
+      }
+    }
+
     switch (slot) {
       case 'slot-main-raised':
         return {
@@ -483,6 +573,9 @@
 
     // SVG 縦書き字形は em 内で正しい位置に来るので、マス中央に置く
     if (needsSidewaysDraw(ch)) {
+      if (isMusicNote(ch)) {
+        return { x: cell.x + s * 0.52, y: cell.y + s * 0.5, align: 'center', baseline: 'middle', fontScale: 1.02 };
+      }
       return { x: cell.x + s * 0.5, y: cell.y + s * 0.5, align: 'center', baseline: 'middle', fontScale: 0.92 };
     }
     if (/[ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ]/.test(ch)) {
@@ -509,7 +602,7 @@
     }
 
     if (needsSidewaysDraw(ch)) {
-      // SVG data URL は環境によって回転が効かないことがあるため canvas 回転を優先
+      // SVG data URL は環境（特に Safari）で回転が効かないことがあるため canvas 回転を優先
       ctx.font = `${px}px ${fontFamily}`;
       drawSidewaysGlyph(ctx, layout.x, layout.y, ch);
       ctx.restore();
@@ -575,6 +668,7 @@
   async function ensureVerticalFonts(fontSize) {
     if (!document.fonts || !document.fonts.load) return;
     const families = [
+      'YakuHanJPs',
       '"Hiragino Mincho ProN"',
       '"Yu Mincho"',
       '"Noto Serif JP"',
@@ -608,7 +702,8 @@
    * 明朝体でマス目なしの本文として描画する。
    * rowsPerPage = 1列の字数（ページ高さ）、colsPerPage = 1枚の行数（ページ幅）。
    */
-  async function renderEtudeVerticalImage({ prompt, body, partLabel, width, padding, fontSize, rowsPerPage, colsPerPage }) {
+  async function renderEtudeVerticalImage({ prompt, body, partLabel, width, padding, fontSize, rowsPerPage, colsPerPage, columnLines, kinsoku }) {
+    const hangMode = kinsoku !== 'pushout';
     const pad = padding ?? 28;
     const scale = 2;
     const maxPageH = 1520;
@@ -625,14 +720,17 @@
     let pageRows = Math.max(8, (rowsPerPage || ETUDE_ROWS) | 0);
     const pageColsTarget = Math.max(1, (colsPerPage || ETUDE_COLS) | 0);
 
-    if (rowsPerPage || colsPerPage) {
-      layout = computeLayout(docArr, { rows: pageRows, cols: 9999 });
+    if (columnLines) {
+      pageRows = Math.max(pageRows, ...columnLines.map((line) => line.cells.length), 1);
+      layout = { lines: columnLines };
+    } else if (rowsPerPage || colsPerPage) {
+      layout = computeLayout(docArr, { rows: pageRows, cols: 9999, kinsoku });
     } else {
       for (let attempt = 0; attempt < 12; attempt++) {
         const footerH = partLabel ? Math.round(cellSize * 0.9) : 0;
         headerFs = Math.round(cellSize * 0.72);
         const headerMeasure = document.createElement('canvas').getContext('2d');
-        headerMeasure.font = '700 ' + headerFs + 'px "Noto Sans JP", "Hiragino Sans", sans-serif';
+        headerMeasure.font = '700 ' + headerFs + 'px YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif';
         const headerTextW = headerMeasure.measureText('お題：' + (prompt || '')).width;
         const headerLines = measureWrappedLines(
           headerMeasure,
@@ -643,7 +741,7 @@
 
         const bodyHeight = maxPageH - headerBlock - pad - footerH;
         const rows = Math.max(12, Math.floor(bodyHeight / cellSize));
-        layout = computeLayout(docArr, { rows, cols: 9999 });
+        layout = computeLayout(docArr, { rows, cols: 9999, kinsoku });
         pageRows = Math.max(1, ...layout.lines.map((line) => line.cells.length));
         const neededH = headerBlock + pageRows * cellSize + pad + footerH;
         if (neededH <= maxPageH || cellSize <= 14) break;
@@ -659,19 +757,28 @@
     const bodyW = Math.max(cellSize, (pageCols - 1) * colPitch + cellSize);
     const W = Math.ceil(bodyW + pad * 2);
     const headerMeasure = document.createElement('canvas').getContext('2d');
-    headerMeasure.font = '700 ' + headerFs + 'px "Noto Sans JP", "Hiragino Sans", sans-serif';
+    headerMeasure.font = '700 ' + headerFs + 'px YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif';
     const headerLines = measureWrappedLines(headerMeasure, 'お題：' + (prompt || ''), W - pad * 2);
     headerBlock = pad + headerLines.length * headerFs * 1.55 + cellSize * 0.45;
     const footerH = partLabel ? Math.round(cellSize * 0.9) : 0;
     // 字詰め固定なのでページ高さは行数スライダーで変わらない
     const bodyRows = pageRows;
-    const hangBleed = Math.ceil(cellSize * 0.28);
+    // ぶら下げ組みは約物1マス分が列の下端からはみ出すため余白を広げる
+    const hangBleed = Math.ceil(cellSize * (hangMode ? 1.15 : 0.28));
     const H = Math.ceil(headerBlock + bodyRows * cellSize + hangBleed + pad + footerH);
     const bodyLeft = pad;
     const bodyTop = headerBlock;
 
     const vChars = new Set();
-    for (const ch of docArr) {
+    const glyphSource = columnLines
+      ? columnLines.flatMap((line) => line.cells.flatMap((cell) => {
+        const out = [];
+        if (cell.mainChar !== undefined) out.push(cell.mainChar);
+        for (const m of cell.marks) out.push(m.char);
+        return out;
+      }))
+      : docArr;
+    for (const ch of glyphSource) {
       const c = normalizeDrawChar(ch);
       if (needsSvgVerticalGlyph(c)) vChars.add(verticalSvgChar(c));
     }
@@ -688,7 +795,7 @@
 
     // header
     ctx.fillStyle = '#1a1a1a';
-    ctx.font = '700 ' + headerFs + 'px "Noto Sans JP", "Hiragino Sans", sans-serif';
+    ctx.font = '700 ' + headerFs + 'px YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif';
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     let hy = pad;
@@ -729,6 +836,7 @@
     for (let colIndex = 0; colIndex < layout.lines.length; colIndex++) {
       const line = layout.lines[colIndex];
       for (let row = 0; row < line.cells.length; row++) {
+        const cellView = line.cells[row];
         const geom = cellGeometry(
           colIndex,
           row,
@@ -739,13 +847,14 @@
           colPitch,
           bodyRows,
         );
-        drawCellView(ctx, line.cells[row], geom);
+        if (hangMode && /^hang/.test(cellView.kind)) geom.hangBelow = true;
+        drawCellView(ctx, cellView, geom);
       }
     }
 
     if (partLabel) {
       ctx.fillStyle = '#999';
-      ctx.font = '700 ' + Math.round(cellSize * 0.48) + 'px "Noto Sans JP", sans-serif';
+      ctx.font = '700 ' + Math.round(cellSize * 0.48) + 'px YakuHanJPs, "Noto Sans JP", sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'alphabetic';
       ctx.fillText(partLabel, W - pad, H - pad * 0.55);
@@ -825,6 +934,7 @@
     computeColumns,
     columnsToText,
     splitVerticalText,
+    splitVerticalColumnPages,
     PER_PAGE,
     COLS,
     ROWS,

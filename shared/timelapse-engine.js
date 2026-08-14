@@ -138,7 +138,7 @@
 
     let bodyTop = paddingY;
     if (title) {
-      ctx.font = `900 ${titleSize}px "Noto Sans JP", "Hiragino Sans", sans-serif`;
+      ctx.font = `900 ${titleSize}px YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif`;
       ctx.fillStyle = '#000000';
       ctx.textBaseline = 'top';
       const titleLines = wrapLine(ctx, title, width - paddingX * 2);
@@ -153,7 +153,7 @@
     const maxWidth = width - paddingX * 2;
     const lineHeightPx = bodySize * lineHeight;
 
-    ctx.font = `400 ${bodySize}px "Noto Sans JP", "Hiragino Sans", sans-serif`;
+    ctx.font = `400 ${bodySize}px YakuHanJPs, "Noto Sans JP", "Hiragino Sans", sans-serif`;
     const layout = buildTextLayout(ctx, snapshot.text, maxWidth);
     const { lineIndex, colOffset } = findCursorLine(layout, snapshot.cursor);
     const scrollY = computeScrollY(lineIndex, lineHeightPx, bodyTop, bodyHeight);
