@@ -184,7 +184,7 @@
     .result-score small {
       font-size: 0.42em;
       font-weight: 700;
-      margin-left: 0.15em;
+      margin-right: 0.15em;
       letter-spacing: 0.08em;
     }
 
@@ -208,13 +208,14 @@
       margin-top: 1.1rem;
       text-align: left;
       width: 100%;
+      color: var(--ink);
     }
 
     .match-detail-title {
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.12em;
-      color: var(--muted);
+      color: var(--ink);
       margin-bottom: 0.55rem;
     }
 
@@ -241,17 +242,18 @@
     .match-item-label {
       font-size: 0.68rem;
       font-weight: 700;
-      color: var(--muted);
+      color: var(--ink);
       line-height: 1.45;
     }
 
-    .match-item-text { font-weight: 700; }
-
-    .match-item.is-close .match-item-text { color: var(--accent); }
+    .match-item-text {
+      font-weight: 700;
+      color: var(--ink);
+    }
 
     .match-detail--diff .match-item-text {
       font-weight: 500;
-      color: var(--muted);
+      color: var(--ink);
     }
 
     .match-phrases {
@@ -457,11 +459,7 @@
     .result-share {
       display: flex;
       justify-content: center;
-      margin: 1rem 0 1.25rem;
-    }
-
-    .result-share[hidden] {
-      display: none;
+      margin: 1.15rem 0 1.1rem;
     }
 
     .btn-share {
@@ -617,12 +615,6 @@
       <h2 class="panel-title">ランキング</h2>
       <div class="result-top" id="result-top"></div>
       <div id="style-map-wrap"></div>
-      <div class="result-share" id="result-share" hidden>
-        <button type="button" class="btn btn-share" id="share-btn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          Xでシェア
-        </button>
-      </div>
       <ol class="rank-list" id="rank-list"></ol>
     </section>
 
@@ -674,8 +666,6 @@
       resultPromos: document.getElementById('result-promos'),
       resultTop: document.getElementById('result-top'),
       styleMapWrap: document.getElementById('style-map-wrap'),
-      resultShare: document.getElementById('result-share'),
-      shareBtn: document.getElementById('share-btn'),
       rankList: document.getElementById('rank-list'),
     };
 
@@ -718,7 +708,7 @@
 
     function buildShareText(top) {
       const score = Math.min(CI_MAX, Math.round(top.ci));
-      return '文豪タイプ診断の結果：' + top.name + '（一致指数' + score + '）';
+      return '文豪タイプ診断の結果：' + top.name + '（一致指数：' + score + '）';
     }
 
     function openShare() {
@@ -726,6 +716,15 @@
       const text = buildShareText(lastShareTop) + '\n' + SHARE_URL + ' @tadeku_net #TadekuTools';
       const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
       window.open(shareUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
+    }
+
+    function renderShareButton() {
+      return '<div class="result-share">' +
+        '<button type="button" class="btn btn-share" data-share-btn>' +
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>' +
+          'Xでシェア' +
+        '</button>' +
+      '</div>';
     }
 
     function renderMatchDetails(detail) {
@@ -736,6 +735,7 @@
           '</div>';
       }
       if (detail.similar.length) {
+        html += renderShareButton();
         html += '<div class="match-detail"><h3 class="match-detail-title">似ているところ</h3><ul class="match-detail-list">';
         detail.similar.forEach((item) => {
           html += '<li class="match-item' + (item.closeness === 'close' ? ' is-close' : '') + '">' +
@@ -745,6 +745,7 @@
         html += '</ul></div>';
       }
       if (detail.different.length) {
+        if (!detail.similar.length) html += renderShareButton();
         html += '<div class="match-detail match-detail--diff"><h3 class="match-detail-title">あまり似ていないところ</h3><ul class="match-detail-list">';
         detail.different.forEach((item) => {
           html += '<li class="match-item">' +
@@ -1167,7 +1168,7 @@
         '<p class="result-label">いちばん近い文豪</p>' +
         '<p class="result-name">' + esc(top.name) + '</p>' +
         '<p class="result-era">' + esc(top.era) + '</p>' +
-        '<p class="result-score">' + ci + '<small>一致指数</small></p>' +
+        '<p class="result-score"><small>一致指数：</small>' + ci + '</p>' +
         renderMatchDetails(matchDetail) +
         '<p class="works-used">参照作品：' + renderWorkLink(matchedWork, top.matchedWork) + '</p>';
 
@@ -1204,7 +1205,6 @@
 
       els.result.classList.add('is-visible');
       els.resultPromos.classList.add('is-visible');
-      els.resultShare.hidden = false;
       lastShareTop = top;
       els.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
@@ -1259,7 +1259,9 @@
 
     els.input.addEventListener('input', updateMeta);
     els.diagnoseBtn.addEventListener('click', runDiagnosis);
-    els.shareBtn.addEventListener('click', openShare);
+    els.result.addEventListener('click', (e) => {
+      if (e.target.closest('[data-share-btn]')) openShare();
+    });
 
     updateMeta();
   </script>
