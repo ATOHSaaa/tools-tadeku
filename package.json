@@ -4,7 +4,8 @@
     "build:hajimete-hon": "node scripts/build-hajimete-hon-data.mjs",
     "build:hajimete-hon:fast": "node scripts/build-hajimete-hon-data.mjs --fast",
     "build:hajimete-hon:full": "node scripts/build-hajimete-hon-data.mjs --with-openlibrary",
-    "test:hajimete-hon": "node scripts/test-hajimete-hon.mjs"
+    "test:hajimete-hon": "node scripts/test-hajimete-hon.mjs",
+    "reinfer:hajimete-hon-dims": "node scripts/reinfer-hajimete-hon-dims.mjs"
   },
   "devDependencies": {
     "kuromoji": "^0.1.2",

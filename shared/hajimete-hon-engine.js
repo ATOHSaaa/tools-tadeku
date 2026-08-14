@@ -54,19 +54,30 @@
     return user;
   }
 
+  function axisMatch(userVal, bookVal) {
+    return Math.max(0, 10 - Math.abs(userVal - bookVal)) / 10;
+  }
+
   function rankBooks(answers) {
     const userDims = computeUserDims(answers);
     const user10 = normalizeUserDimsTo10Float(userDims);
+    const focusKeys = [...DIMENSIONS]
+      .sort((a, b) => user10[b] - user10[a] || a.localeCompare(b, 'ja'))
+      .slice(0, 3);
+    const focusWeights = [3, 2, 1];
+    const maxScore = focusWeights.reduce((sum, w) => sum + w, 0) + DIMENSIONS.length * 0.12;
 
     const ranked = BOOKS.map((book) => {
       const bookDims = book.dims;
-      let sumSq = 0;
-      DIMENSIONS.forEach((key) => {
-        const diff = user10[key] - (bookDims[key] || 0);
-        sumSq += diff * diff;
+      let score = 0;
+      focusKeys.forEach((key, index) => {
+        score += axisMatch(user10[key], bookDims[key] || 0) * focusWeights[index];
       });
-      const rms = Math.sqrt(sumSq / DIMENSIONS.length);
-      const matchPct = Math.round(Math.max(0, Math.min(100, (1 - rms / 10) * 100)));
+      DIMENSIONS.forEach((key) => {
+        if (focusKeys.includes(key)) return;
+        score += axisMatch(user10[key], bookDims[key] || 0) * 0.12;
+      });
+      const matchPct = Math.round(Math.max(0, Math.min(100, (score / maxScore) * 100)));
       return {
         id: book.id,
         name: book.name,
@@ -81,12 +92,12 @@
         coverUrl: book.coverUrl,
         amazonUrl: book.amazonUrl,
         dims: bookDims,
-        score: sumSq,
+        score,
         matchPct,
       };
     });
 
-    ranked.sort((a, b) => b.matchPct - a.matchPct || a.score - b.score);
+    ranked.sort((a, b) => b.matchPct - a.matchPct || a.score - b.score || a.id.localeCompare(b.id, 'ja'));
     const top = ranked[0];
     const topPct = top.matchPct || 1;
     ranked.forEach((item) => {

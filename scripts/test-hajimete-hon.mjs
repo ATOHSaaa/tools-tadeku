@@ -43,11 +43,24 @@ unique.add(runProfile('短時間派', (i) => ([2, 3, 9].includes(i) ? (i === 9 ?
 unique.add(runProfile('深く読みたい', (i) => ([5, 6, 8].includes(i) ? 1 : 2)));
 unique.add(runProfile('日常ドラマ', (i) => ([1, 4, 7].includes(i) ? 1 : 0)));
 
+let epicurusWins = 0;
+for (let t = 0; t < 2000; t += 1) {
+  const answers = QUESTIONS.map((q) => q.choices[Math.floor(Math.random() * q.choices.length)]);
+  const { top } = rankBooks(answers);
+  if (top.name === 'エピクロスの処方箋') epicurusWins += 1;
+}
+
 console.log(`\nBooks: ${BOOKS.length}, winners: ${winners}, catalog: ${meta?.catalog || 'n/a'}`);
 console.log(`Unique top picks: ${unique.size}`);
+console.log(`Epicurus random-win rate: ${(epicurusWins / 20).toFixed(1)}%`);
 
-if (unique.size < 3) {
+if (unique.size < 4) {
   console.error('Too few unique winners — check dimension balance');
+  process.exit(1);
+}
+
+if (epicurusWins > 400) {
+  console.error('エピクロスの処方箋が出すぎます — check dimension balance');
   process.exit(1);
 }
 
