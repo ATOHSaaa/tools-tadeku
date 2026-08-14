@@ -2,4 +2,9 @@ node_modules/
 .cursor/
 package-lock.json
 scripts/.cache/
+scripts/.env
+scripts/hajimete-hon-asin-cache.json
+scripts/hajimete-hon-synopsis-cache.json
 shared/kuromoji-dict/*.gz
+docs/cloud-sync-design.md
+docs/monetization-strategy.html

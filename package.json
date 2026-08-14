@@ -1,6 +1,10 @@
 {
   "scripts": {
-    "prepare:kuromoji": "mkdir -p shared/kuromoji-dict && cp node_modules/kuromoji/dict/* shared/kuromoji-dict/"
+    "prepare:kuromoji": "mkdir -p shared/kuromoji-dict && cp node_modules/kuromoji/dict/* shared/kuromoji-dict/",
+    "build:hajimete-hon": "node scripts/build-hajimete-hon-data.mjs",
+    "build:hajimete-hon:fast": "node scripts/build-hajimete-hon-data.mjs --fast",
+    "build:hajimete-hon:full": "node scripts/build-hajimete-hon-data.mjs --with-openlibrary",
+    "test:hajimete-hon": "node scripts/test-hajimete-hon.mjs"
   },
   "devDependencies": {
     "kuromoji": "^0.1.2",
