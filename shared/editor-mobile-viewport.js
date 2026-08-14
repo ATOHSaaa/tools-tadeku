@@ -13,6 +13,7 @@
 
     const breakpoint = options?.breakpoint || DEFAULT_BREAKPOINT;
     const isActive = typeof options?.isActive === 'function' ? options.isActive : () => true;
+    const useTransform = options?.useTransform !== false;
     const mobileMq = global.matchMedia(breakpoint);
     let bound = false;
 
@@ -54,7 +55,7 @@
       if (keyboardOpen) {
         el.classList.add('is-keyboard-open');
         el.style.height = `${viewportHeight}px`;
-        el.style.transform = offsetTop > 0 ? `translateY(${offsetTop}px)` : '';
+        el.style.transform = useTransform && offsetTop > 0 ? `translateY(${offsetTop}px)` : '';
       } else {
         reset();
       }

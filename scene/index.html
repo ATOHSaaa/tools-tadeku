@@ -1117,7 +1117,21 @@
       await library.initFromUrl();
     })();
   </script>
-  <script>TadekuEditorMobileViewport.bind({ root: '.app' });</script>
+  <script>
+    const sceneViewport = TadekuEditorMobileViewport.bind({
+      root: '.app',
+      id: 'scene',
+      useTransform: false,
+      isActive: () => {
+        const el = document.activeElement;
+        return !!el && el.closest('.app') && el.matches('input, textarea');
+      },
+    });
+    document.addEventListener('focusin', () => sceneViewport.sync());
+    document.addEventListener('focusout', () => {
+      requestAnimationFrame(() => sceneViewport.sync());
+    });
+  </script>
   <script src="../shared/site-link.js"></script>
 </body>
 </html>
