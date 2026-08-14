@@ -78,11 +78,7 @@
       line-height: 1.9;
       padding: 0.85rem 1rem;
       resize: vertical;
-    }
-
-    .input-area:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
+      outline: none;
     }
 
     .input-meta {
@@ -135,13 +131,6 @@
       border-color: var(--accent);
     }
 
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.55rem;
-      margin-top: 1rem;
-    }
-
     .status {
       font-size: 0.78rem;
       color: var(--muted);
@@ -153,6 +142,9 @@
 
     .result { display: none; }
     .result.is-visible { display: block; }
+
+    .result-promos { display: none; }
+    .result-promos.is-visible { display: block; }
 
     .result-top {
       text-align: center;
@@ -215,7 +207,6 @@
     .match-detail {
       margin-top: 1.1rem;
       text-align: left;
-      max-width: 28rem;
       width: 100%;
     }
 
@@ -598,7 +589,6 @@
         grid-template-columns: 1.75rem 1fr auto;
         gap: 0.45rem;
       }
-      .actions .btn { flex: 1; }
     }
   </style>
   <link rel="stylesheet" href="../shared/site-typography.css">
@@ -617,12 +607,8 @@
       <div class="input-meta">
         <span id="char-count">0 字</span>
         <div class="input-meta-actions">
-          <button type="button" class="btn" id="sample-btn">サンプル</button>
-          <button type="button" class="btn" id="clear-btn">消す</button>
+          <button type="button" class="btn btn-primary" id="diagnose-btn" disabled>診断する</button>
         </div>
-      </div>
-      <div class="actions">
-        <button type="button" class="btn btn-primary" id="diagnose-btn" disabled>診断する</button>
       </div>
       <p class="status" id="status" aria-live="polite"></p>
     </section>
@@ -638,6 +624,9 @@
         </button>
       </div>
       <ol class="rank-list" id="rank-list"></ol>
+    </section>
+
+    <div class="result-promos" id="result-promos">
       <div class="cross-banner-list" aria-label="診断でも遊ぶ">
         <span class="cross-banner-list-label">診断でも遊ぶ</span>
         <div class="cross-banner-grid">
@@ -664,7 +653,7 @@
           </a>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
@@ -673,17 +662,16 @@
   <script>
     const MIN_CHARS = 150;
     const CI_RELIABLE = 50;
+    const CI_MAX = 98;
     const SHARE_URL = 'https://tools.tadeku.net/bungo/';
-    const SAMPLE = '　私はその男の写真を三葉、見たことがある。一葉は、その男が、幼年のころ、たぶん十歳前後かと思われる頃で、それと一緒に母親らしい人の写真がある。もう一葉は、その男が、青年のころ、たぶん二十歳前後かと思われる頃で、それと一緒に、彼の妻らしい人の写真がある。どちらも、どこかの下町の写真屋で撮ったものらしく、背景には、よく見る、安い絨毯がかかっている。男は、どちらも、正面を向いて、無表情で、眼を細めて、口をへの字に結んでいる。';
 
     const els = {
       input: document.getElementById('text-input'),
       charCount: document.getElementById('char-count'),
       diagnoseBtn: document.getElementById('diagnose-btn'),
-      clearBtn: document.getElementById('clear-btn'),
-      sampleBtn: document.getElementById('sample-btn'),
       status: document.getElementById('status'),
       result: document.getElementById('result'),
+      resultPromos: document.getElementById('result-promos'),
       resultTop: document.getElementById('result-top'),
       styleMapWrap: document.getElementById('style-map-wrap'),
       resultShare: document.getElementById('result-share'),
@@ -729,7 +717,7 @@
     }
 
     function buildShareText(top) {
-      const score = Math.min(100, Math.round(top.ci));
+      const score = Math.min(CI_MAX, Math.round(top.ci));
       return '文豪タイプ診断の結果：' + top.name + '（一致指数' + score + '）';
     }
 
@@ -881,59 +869,165 @@
       return svg;
     }
 
-    function styleMapLabelPos(pt, map, px, py, index) {
-      const x = px(pt.plotX);
-      const y = py(pt.plotY);
+    function labelBox(x, y, anchor, text) {
+      const width = estimateLabelWidth(text);
+      const height = 12;
+      const left = anchor === 'middle' ? x - width / 2 : anchor === 'start' ? x : x - width;
+      return { left, right: left + width, top: y - height + 2, bottom: y + 2 };
+    }
+
+    function boxesCollide(a, b, pad = 3) {
+      return !(
+        a.right + pad < b.left ||
+        a.left - pad > b.right ||
+        a.bottom + pad < b.top ||
+        a.top - pad > b.bottom
+      );
+    }
+
+    function collidesAny(box, occupied, pad = 3) {
+      return occupied.some((o) => boxesCollide(box, o, pad));
+    }
+
+    function reservedStyleMap2DBoxes(map, P, plot, mid, W) {
+      const boxes = [];
+      const yAxisLen = estimateLabelWidth(map.yAxis);
+      boxes.push({
+        left: 0,
+        right: 42,
+        top: mid - Math.max(yAxisLen / 2, 28),
+        bottom: mid + Math.max(yAxisLen / 2, 10),
+      });
+      const yHighW = estimateLabelWidth(map.yHigh + ' ↑');
+      boxes.push({ left: P - 8 - yHighW, right: P, top: P - 4, bottom: P + 22 });
+      const yLowW = estimateLabelWidth(map.yLow + ' ↓');
+      boxes.push({ left: P - 8 - yLowW, right: P, top: P + plot - 14, bottom: P + plot + 8 });
+      const xLowW = estimateLabelWidth('← ' + map.xLow);
+      boxes.push({ left: P - 4, right: P + xLowW, top: P + plot + 2, bottom: P + plot + 28 });
+      const xHighW = estimateLabelWidth(map.xHigh + ' →');
+      boxes.push({ left: P + plot - xHighW, right: P + plot + 6, top: P + plot + 2, bottom: P + plot + 28 });
+      const xAxisW = estimateLabelWidth(map.xAxis);
+      boxes.push({ left: mid - xAxisW / 2, right: mid + xAxisW / 2, top: W - 24, bottom: W });
+      return boxes;
+    }
+
+    function styleMap2DLabelCandidates(pt, cx, cy, index) {
       const dx = pt.plotX - 50;
       const dy = pt.plotY - 50;
       const len = Math.hypot(dx, dy);
-      const angle = len < 2
-        ? -Math.PI / 2 + (index * 0.72)
-        : Math.atan2(dy, dx);
-      const dist = pt.kind === 'user' || pt.kind === 'top' ? 16 : 13;
-      let anchor = 'middle';
-      if (Math.cos(angle) > 0.25) anchor = 'start';
-      else if (Math.cos(angle) < -0.25) anchor = 'end';
-      return {
-        x: x + Math.cos(angle) * dist,
-        y: y + Math.sin(angle) * dist,
-        anchor,
-      };
+      const baseAngle = len < 2 ? -Math.PI / 2 + (index * 0.72) : Math.atan2(dy, dx);
+      const dists = pt.kind === 'user' || pt.kind === 'top' ? [16, 22, 28, 34] : [13, 18, 24, 30];
+      const seen = new Set();
+      const candidates = [];
+
+      function add(angle, dist) {
+        const key = angle.toFixed(3) + ':' + dist;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const x = cx + Math.cos(angle) * dist;
+        const y = cy + Math.sin(angle) * dist;
+        let anchor = 'middle';
+        if (Math.cos(angle) > 0.25) anchor = 'start';
+        else if (Math.cos(angle) < -0.25) anchor = 'end';
+        candidates.push({ x, y, anchor });
+      }
+
+      dists.forEach((dist) => {
+        add(baseAngle, dist);
+        for (let i = 1; i < 8; i++) add(baseAngle + (i * Math.PI) / 4, dist);
+      });
+
+      if (pt.plotX < 42 && pt.plotY > 58) {
+        add(0, 18);
+        add(Math.PI / 4, 20);
+        add(Math.PI / 2, 18);
+      }
+
+      return candidates;
     }
 
-    function renderStyleMapDots(map, px, py, tooltip) {
-      let dots = '';
+    function layoutStyleMap2DLabels(points, px, py, map, P, plot, mid, W) {
+      const priority = (pt) => (pt.kind === 'user' ? 0 : pt.kind === 'top' ? 1 : 2);
+      const occupied = reservedStyleMap2DBoxes(map, P, plot, mid, W);
+      const items = points.map((pt, index) => ({
+        pt,
+        index,
+        cx: px(pt.plotX),
+        cy: py(pt.plotY),
+      })).sort((a, b) =>
+        priority(a.pt) - priority(b.pt) ||
+        a.cx - b.cx ||
+        a.cy - b.cy
+      );
+
+      const result = new Array(points.length);
+
+      items.forEach((item) => {
+        const { pt, index, cx, cy } = item;
+        const candidates = styleMap2DLabelCandidates(pt, cx, cy, index);
+        let placed = null;
+
+        for (const candidate of candidates) {
+          const box = labelBox(candidate.x, candidate.y, candidate.anchor, pt.name);
+          if (collidesAny(box, occupied)) continue;
+          occupied.push(box);
+          placed = { ...candidate, index };
+          break;
+        }
+
+        if (!placed) {
+          const fallback = candidates[0];
+          occupied.push(labelBox(fallback.x, fallback.y, fallback.anchor, pt.name));
+          placed = { ...fallback, index };
+        }
+
+        result[placed.index] = placed;
+      });
+
+      return result;
+    }
+
+    function renderStyleMap2DDots(map, px, py, P, plot, mid, W, tooltip) {
+      const layouts = layoutStyleMap2DLabels(map.points, px, py, map, P, plot, mid, W);
+      let svg = '';
+
       map.points.forEach((pt, index) => {
+        const layout = layouts[index];
         const cls = pt.kind === 'user' ? 'is-user' : (pt.kind === 'top' ? 'is-top' : 'is-author');
         const r = pt.kind === 'user' ? 7 : (pt.kind === 'top' ? 6.5 : 4.5);
         const cx = px(pt.plotX).toFixed(1);
         const cy = py(pt.plotY).toFixed(1);
-        dots += '<circle class="style-map-dot ' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '">' +
+
+        svg += '<circle class="style-map-dot ' + cls + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '">' +
           '<title>' + tooltip(pt) + '</title></circle>';
 
-        const label = styleMapLabelPos(pt, map, px, py, index);
-        dots += '<text class="style-map-label ' + cls + '" x="' +
-          label.x.toFixed(1) + '" y="' + label.y.toFixed(1) + '" text-anchor="' + label.anchor + '">' +
-          esc(pt.name) + '</text>';
+        if (layout) {
+          svg += '<text class="style-map-label ' + cls + '" x="' +
+            layout.x.toFixed(1) + '" y="' + layout.y.toFixed(1) + '" text-anchor="' + layout.anchor + '">' +
+            esc(pt.name) + '</text>';
+        }
       });
-      return dots;
+
+      return svg;
     }
 
     function renderStyleMap2D(map) {
       const W = 640;
       const P = 56;
+      const PAD_L = 88;
+      const PAD_T = 6;
       const plot = W - P * 2;
       const mid = P + plot / 2;
       const px = (v) => P + ((v - 12) / 76) * plot;
       const py = (v) => P + plot - ((v - 12) / 76) * plot;
-      const dots = renderStyleMapDots(map, px, py, (pt) =>
+      const dots = renderStyleMap2DDots(map, px, py, P, plot, mid, W, (pt) =>
         esc(pt.name) + '：' + esc(pt.xText) + ' × ' + esc(pt.yText)
       );
 
       return '<p class="style-map-lead">「' + esc(map.xAxis) + '」と「' + esc(map.yAxis) +
         '」の2つで並べた地図です。左右・上下は相対的な順位で、点が近いほど似ています。</p>' +
         (map.summary ? '<p class="style-map-summary">' + esc(map.summary) + '</p>' : '') +
-        '<svg viewBox="0 0 ' + W + ' ' + W + '" class="style-map-svg is-2d" role="img" aria-label="文体マップ">' +
+        '<svg viewBox="-' + PAD_L + ' -' + PAD_T + ' ' + (W + PAD_L) + ' ' + (W + PAD_T) + '" class="style-map-svg is-2d" role="img" aria-label="文体マップ">' +
           '<rect x="' + mid + '" y="' + P + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-tr" />' +
           '<rect x="' + P + '" y="' + P + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-tl" />' +
           '<rect x="' + P + '" y="' + mid + '" width="' + (plot / 2) + '" height="' + (plot / 2) + '" class="style-map-quad q-bl" />' +
@@ -945,7 +1039,7 @@
           '<text x="' + (P - 8) + '" y="' + (P + 6) + '" class="style-map-tick" text-anchor="end">' + esc(map.yHigh) + ' ↑</text>' +
           '<text x="' + (P - 8) + '" y="' + (P + plot) + '" class="style-map-tick" text-anchor="end">' + esc(map.yLow) + ' ↓</text>' +
           '<text x="' + mid + '" y="' + (W - 10) + '" class="style-map-axis-label" text-anchor="middle">' + esc(map.xAxis) + '</text>' +
-          '<text x="20" y="' + mid + '" class="style-map-axis-label" text-anchor="middle" transform="rotate(-90 20 ' + mid + ')">' + esc(map.yAxis) + '</text>' +
+          '<text x="12" y="' + mid + '" class="style-map-axis-label" text-anchor="middle" transform="rotate(-90 12 ' + mid + ')">' + esc(map.yAxis) + '</text>' +
           dots +
         '</svg>';
     }
@@ -954,6 +1048,8 @@
       const W = 640;
       const H = 200;
       const P = 16;
+      const PAD_L = 48;
+      const PAD_R = 8;
       const plot = W - P * 2;
       const midY = 96;
       const px = (v) => P + ((v - 12) / 76) * plot;
@@ -965,7 +1061,7 @@
       return '<p class="style-map-lead">「' + esc(map.axis) +
         '」だけで並べた分布です。左から右へ相対的な順位で、点が近いほど似ています。</p>' +
         (map.summary ? '<p class="style-map-summary">' + esc(map.summary) + '</p>' : '') +
-        '<svg viewBox="0 0 ' + W + ' ' + H + '" class="style-map-svg is-1d" role="img" aria-label="文体分布">' +
+        '<svg viewBox="-' + PAD_L + ' 0 ' + (W + PAD_L + PAD_R) + ' ' + H + '" class="style-map-svg is-1d" role="img" aria-label="文体分布">' +
           '<line x1="' + P + '" y1="' + midY + '" x2="' + (P + plot) + '" y2="' + midY + '" class="style-map-axis" />' +
           '<text x="' + P + '" y="' + (H - 8) + '" class="style-map-tick" text-anchor="start">← ' + esc(map.axisLow) + '</text>' +
           '<text x="' + (P + plot) + '" y="' + (H - 8) + '" class="style-map-tick" text-anchor="end">' + esc(map.axisHigh) + ' →</text>' +
@@ -1065,7 +1161,7 @@
         top.triSim || 0,
         top.name
       );
-      const ci = Math.min(100, Math.round(top.ci));
+      const ci = Math.min(CI_MAX, Math.round(top.ci));
 
       els.resultTop.innerHTML =
         '<p class="result-label">いちばん近い文豪</p>' +
@@ -1095,19 +1191,19 @@
 
       const maxScore = data.ranked[0].score || 1;
       els.rankList.innerHTML = data.ranked.map((item, i) => {
-        const bar = Math.round((item.score / maxScore) * 100);
-        const itemCi = Math.min(100, Math.round(item.ci));
+        const bar = Math.round((item.score / maxScore) * CI_MAX);
         return '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
           '<span class="rank-num">' + (i + 1) + '</span>' +
           '<div class="rank-body">' +
             '<div class="rank-name">' + esc(item.name) + '</div>' +
             '<div class="rank-bar"><div class="rank-fill" style="width:' + bar + '%"></div></div>' +
           '</div>' +
-          '<span class="rank-pct">' + itemCi + '</span>' +
+          '<span class="rank-pct">' + bar + '</span>' +
         '</li>';
       }).join('');
 
       els.result.classList.add('is-visible');
+      els.resultPromos.classList.add('is-visible');
       els.resultShare.hidden = false;
       lastShareTop = top;
       els.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1163,21 +1259,6 @@
 
     els.input.addEventListener('input', updateMeta);
     els.diagnoseBtn.addEventListener('click', runDiagnosis);
-    els.clearBtn.addEventListener('click', () => {
-      els.input.value = '';
-      updateMeta();
-      setStatus('');
-      els.result.classList.remove('is-visible');
-      els.resultShare.hidden = true;
-      els.styleMapWrap.innerHTML = '';
-      lastMapContext = null;
-      styleMapSelection = null;
-      lastShareTop = null;
-    });
-    els.sampleBtn.addEventListener('click', () => {
-      els.input.value = SAMPLE;
-      updateMeta();
-    });
     els.shareBtn.addEventListener('click', openShare);
 
     updateMeta();

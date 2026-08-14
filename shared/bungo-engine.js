@@ -13,6 +13,7 @@
   const CI_SS_UNIT = 40;
   const CI_QUAD_WEIGHT = 2;
   const DISPLAY_MATCH_SCALE = 2.4;
+  const DISPLAY_CI_MAX = 98;
   const KUROMOJI_DIC_LOCAL = '../shared/kuromoji-dict/';
   const KUROMOJI_DIC_CDN = 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/';
   const KUROMOJI_LOAD_TIMEOUT_MS = 90000;
@@ -194,7 +195,7 @@
   }
 
   function displayConsistencyIndex(ci, triSim, morphemeCount) {
-    return Math.min(100, Math.max(0, Math.round(matchScore(ci, triSim, morphemeCount) * DISPLAY_MATCH_SCALE)));
+    return Math.min(DISPLAY_CI_MAX, Math.max(0, Math.round(matchScore(ci, triSim, morphemeCount) * DISPLAY_MATCH_SCALE)));
   }
 
   function matchScore(ci, triSim, morphemeCount) {
