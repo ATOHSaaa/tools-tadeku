@@ -649,12 +649,13 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js"></script>
-  <script src="../shared/bungo-engine.js"></script>
+  <script src="../shared/bungo-engine.js?v=5"></script>
   <script src="../shared/bungo-profiles.js"></script>
   <script>
     const MIN_CHARS = 150;
     const CI_RELIABLE = 50;
     const CI_MAX = 98;
+    const RANK_DISPLAY_FLOOR = 58;
     const SHARE_URL = 'https://tools.tadeku.net/bungo/';
 
     const els = {
@@ -674,6 +675,22 @@
     let styleMapSelection = null;
     let diagnosing = false;
     let dictReady = false;
+
+    function displayTopCi(top, ranked) {
+      if (typeof BungoEngine.displayTopCi === 'function') {
+        return BungoEngine.displayTopCi(top, ranked);
+      }
+      const margin = top.score - (ranked[1]?.score ?? 0);
+      return Math.min(CI_MAX, Math.round(Math.max(91, 90 + margin * 2 + top.ci * 0.12)));
+    }
+
+    function displayRankBar(item, topScore, topCi) {
+      if (typeof BungoEngine.displayRankCi === 'function') {
+        return BungoEngine.displayRankCi(item, topScore, topCi);
+      }
+      if (!topScore || item.score >= topScore) return topCi;
+      return Math.round(RANK_DISPLAY_FLOOR + (topCi - RANK_DISPLAY_FLOOR) * (item.score / topScore));
+    }
 
     function esc(s) {
       return String(s)
@@ -707,7 +724,7 @@
     }
 
     function buildShareText(top) {
-      const score = Math.min(CI_MAX, Math.round(top.ci));
+      const score = top.displayCi ?? Math.min(CI_MAX, Math.round(top.ci));
       return '文豪タイプ診断の結果：' + top.name + '（一致指数：' + score + '）';
     }
 
@@ -1162,13 +1179,14 @@
         top.triSim || 0,
         top.name
       );
-      const ci = Math.min(CI_MAX, Math.round(top.ci));
+      const topDisplayCi = displayTopCi(top, data.ranked);
+      const rawCi = top.ci;
 
       els.resultTop.innerHTML =
         '<p class="result-label">いちばん近い文豪</p>' +
         '<p class="result-name">' + esc(top.name) + '</p>' +
         '<p class="result-era">' + esc(top.era) + '</p>' +
-        '<p class="result-score"><small>一致指数：</small>' + ci + '</p>' +
+        '<p class="result-score"><small>一致指数：</small>' + topDisplayCi + '</p>' +
         renderMatchDetails(matchDetail) +
         '<p class="works-used">参照作品：' + renderWorkLink(matchedWork, top.matchedWork) + '</p>';
 
@@ -1190,9 +1208,10 @@
         '</div>';
       bindStyleMapControls(styleMap);
 
-      const maxScore = data.ranked[0].score || 1;
       els.rankList.innerHTML = data.ranked.map((item, i) => {
-        const bar = Math.round((item.score / maxScore) * CI_MAX);
+        const bar = i === 0
+          ? topDisplayCi
+          : displayRankBar(item, data.ranked[0].score, topDisplayCi);
         return '<li class="rank-item' + (i === 0 ? ' is-top' : '') + '">' +
           '<span class="rank-num">' + (i + 1) + '</span>' +
           '<div class="rank-body">' +
@@ -1205,12 +1224,12 @@
 
       els.result.classList.add('is-visible');
       els.resultPromos.classList.add('is-visible');
-      lastShareTop = top;
+      lastShareTop = { ...top, displayCi: topDisplayCi };
       els.result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-      if (data.morphemeCount < 400 && ci < 50) {
+      if (data.morphemeCount < 400 && rawCi < 50) {
         setStatus('文章が短いため参考程度です。長めの文章だと精度が上がります。');
-      } else if (ci < CI_RELIABLE) {
+      } else if (rawCi < CI_RELIABLE) {
         setStatus('一致指数が ' + CI_RELIABLE + ' 未満です。もう少し長い文章で試してください。');
       }
     }
@@ -1233,6 +1252,7 @@
           renderResult(result);
         })
         .catch((err) => {
+          console.error('Bungo diagnosis failed:', err);
           if (err && err.message === 'timeout') {
             setStatus('辞書の読み込みがタイムアウトしました。通信環境を確認して再試行してください。', true);
             return;

@@ -6,7 +6,8 @@
 
 const CI_SS_UNIT = 40;
 const CI_QUAD_WEIGHT = 2;
-const DISPLAY_MATCH_SCALE = 2.4;
+const DISPLAY_MATCH_SCALE = 1.1;
+const RANK_DISPLAY_FLOOR = 58;
 const DISPLAY_CI_MAX = 98;
 
 export const FEATURE_KEYS = [
@@ -245,6 +246,16 @@ export function consistencyIndex(authorSS, userSS, activeIndices) {
 
 export function displayConsistencyIndex(ci, triSim, morphemeCount) {
   return Math.min(DISPLAY_CI_MAX, Math.max(0, Math.round(matchScore(ci, triSim, morphemeCount) * DISPLAY_MATCH_SCALE)));
+}
+
+export function displayRankCi(item, topScore, topCi) {
+  if (!topScore || item.score >= topScore) return topCi;
+  return Math.round(RANK_DISPLAY_FLOOR + (topCi - RANK_DISPLAY_FLOOR) * (item.score / topScore));
+}
+
+export function displayTopCi(top, ranked) {
+  const margin = top.score - (ranked[1]?.score ?? 0);
+  return Math.min(DISPLAY_CI_MAX, Math.round(Math.max(91, 90 + margin * 2 + top.ci * 0.12)));
 }
 
 export function matchScore(ci, triSim, morphemeCount) {
